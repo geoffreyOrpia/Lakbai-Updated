@@ -18,6 +18,7 @@ const items: NavItem[] = [
   { key: 'home', label: 'Home', icon: 'home-outline', activeIcon: 'home' },
   { key: 'explore', label: 'Explore', icon: 'compass-outline', activeIcon: 'compass' },
   { key: 'downloads', label: 'Downloads', icon: 'download-outline', activeIcon: 'download' },
+  { key: 'trips', label: 'Trips', icon: 'calendar-outline', activeIcon: 'calendar' },
   { key: 'safety', label: 'Safety', icon: 'shield-checkmark-outline', activeIcon: 'shield-checkmark' },
 ];
 
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     backgroundColor: colors.surface,
     flexDirection: 'row',
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.xs,
     paddingTop: 7,
     paddingBottom: 8,
   },
@@ -71,7 +72,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   iconWrap: {
-    width: 34,
+    width: 32,
     height: 28,
     borderRadius: 12,
     alignItems: 'center',
@@ -82,7 +83,7 @@ const styles = StyleSheet.create({
   },
   label: {
     color: colors.muted,
-    fontSize: 9.5,
+    fontSize: 9,
     fontWeight: '700',
   },
   labelActive: {

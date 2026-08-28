@@ -184,7 +184,8 @@ Initial tabs:
 1. Home
 2. Explore
 3. Downloads
-4. Safety
+4. Trips
+5. Safety
 
 Rules:
 
@@ -231,6 +232,20 @@ Order:
 2. Downloaded packs
 3. Available packs
 4. Update/size metadata
+
+### Trips
+
+Purpose: let registered users build personal itineraries from curated LakbayLokal destinations while keeping the plan available offline.
+
+Order:
+
+1. Local-storage readiness note
+2. Saved itineraries
+3. Create itinerary action
+4. Curated destination selection
+5. Reorderable itinerary stops with optional time and notes
+
+Guest users may open Trips but must sign in or create an account before creating or managing itineraries. Personal itineraries do not publish new destination information.
 
 ### Safety
 

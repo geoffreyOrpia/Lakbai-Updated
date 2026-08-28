@@ -1,6 +1,10 @@
-# LakbayLokal
+<p align="center">
+  <img src="./assets/logo.png" alt="LakbayLokal Logo" width="180" />
+</p>
 
-**Go Beyond, Go Lokal.**
+<h1 align="center">LakbayLokal</h1>
+
+<p align="center"><strong>Go Beyond, Go Lokal.</strong></p>
 
 LakbayLokal is an **offline-first tourist trail and destination information mobile application for Davao del Norte**. It is designed to help travelers prepare destination information before a trip and continue accessing essential local guidance when mobile data or internet connectivity becomes weak or unavailable.
 
@@ -16,13 +20,14 @@ The project is intended to provide a compact, practical tourism companion rather
 
 ## Core Product Features
 
-The planned LakbayLokal experience centers on five features:
+The planned LakbayLokal experience centers on six core features:
 
 - **Destination Pack Download** — save selected destination content before traveling.
 - **Offline Tourist Map** — access locally stored map information without mobile data.
 - **Predefined Tourist Trails** — follow curated routes prepared for local destinations.
 - **Offline GPS Position** — use device positioning while viewing saved travel content.
 - **Travel & Safety Information** — keep destination notes, reminders, and essential safety information available offline.
+- **Personal Itineraries** — registered users can organize curated LakbayLokal destinations into their own locally stored, offline-ready trip plans.
 
 ## Target Users
 
@@ -41,9 +46,11 @@ The repository currently contains the front-end foundation of the application. T
 
 Current main screens:
 
+- **Authentication** — optional Login, Create Account, or Continue as Guest entry flow.
 - **Home** — destination discovery, offline-readiness status, and recommended packs.
 - **Explore** — searchable and filterable destination-pack discovery.
 - **Downloads** — presentation of downloaded and available destination packs.
+- **Trips** — registered-user personal itinerary creation using curated destination packs, with local SQLite persistence.
 - **Safety** — offline travel preparation, safety reminders, and essential-information categories.
 
 Current sample destination packs include Samal Island, Tagum City, Kapalong, and San Isidro.
@@ -69,13 +76,13 @@ The complete UI rules, spacing system, typography, component patterns, accessibi
 - **React 19.1**
 - **TypeScript 5.9**
 - **Expo Vector Icons / Ionicons**
+- **Expo SQLite** — persistent on-device storage for personal itineraries.
 
 ### Planned offline-first integrations
 
 - Expo Location / device GPS
 - MapLibre React Native
 - OpenStreetMap-based map data
-- SQLite
 - Expo FileSystem
 - JSON destination-pack metadata
 - GeoJSON trails, points of interest, and route data
@@ -102,10 +109,14 @@ LakbayLokal/
 │   ├── data/
 │   │   └── destinations.ts
 │   ├── screens/
+│   │   ├── AuthScreen.tsx
 │   │   ├── HomeScreen.tsx
 │   │   ├── ExploreScreen.tsx
 │   │   ├── DownloadsScreen.tsx
+│   │   ├── TripsScreen.tsx
 │   │   └── SafetyScreen.tsx
+│   ├── storage/
+│   │   └── itineraryStore.ts
 │   ├── types/
 │   │   └── navigation.ts
 │   └── theme.ts
