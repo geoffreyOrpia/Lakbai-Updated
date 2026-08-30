@@ -17,8 +17,8 @@ type NavItem = {
 const items: NavItem[] = [
   { key: 'home', label: 'Home', icon: 'home-outline', activeIcon: 'home' },
   { key: 'explore', label: 'Explore', icon: 'compass-outline', activeIcon: 'compass' },
-  { key: 'downloads', label: 'Downloads', icon: 'download-outline', activeIcon: 'download' },
   { key: 'trips', label: 'Trips', icon: 'calendar-outline', activeIcon: 'calendar' },
+  { key: 'downloads', label: 'Downloads', icon: 'download-outline', activeIcon: 'download' },
   { key: 'safety', label: 'Safety', icon: 'shield-checkmark-outline', activeIcon: 'shield-checkmark' },
 ];
 
@@ -32,17 +32,22 @@ export function BottomNav({ active, onChange }: Props) {
     <View style={styles.bar}>
       {items.map((item) => {
         const isActive = active === item.key;
+        const isPrimaryTrips = item.key === 'trips';
         return (
           <Pressable
             key={item.key}
             onPress={() => onChange(item.key)}
             style={({ pressed }) => [styles.item, pressed && styles.pressed]}
           >
-            <View style={[styles.iconWrap, isActive && styles.iconWrapActive]}>
+            <View style={[
+              styles.iconWrap,
+              isActive && styles.iconWrapActive,
+              isActive && isPrimaryTrips && styles.iconWrapTripsActive,
+            ]}>
               <Ionicons
                 name={isActive ? item.activeIcon : item.icon}
                 size={20}
-                color={isActive ? colors.forest : colors.muted}
+                color={isActive && isPrimaryTrips ? colors.white : isActive ? colors.forest : colors.muted}
               />
             </View>
             <Text style={[styles.label, isActive && styles.labelActive]}>{item.label}</Text>
@@ -80,6 +85,9 @@ const styles = StyleSheet.create({
   },
   iconWrapActive: {
     backgroundColor: colors.softGreen,
+  },
+  iconWrapTripsActive: {
+    backgroundColor: colors.forest,
   },
   label: {
     color: colors.muted,
