@@ -25,7 +25,7 @@ const features = [
   },
 ];
 
-export function OnboardingScreen({ onContinue }: Props) {
+export function LandingScreen({ onContinue }: Props) {
   return (
     <ScrollView
       contentContainerStyle={styles.content}
