@@ -20,7 +20,7 @@ export function HomeScreen({ onNavigate }: Props) {
 
   return (
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <AppHeader />
+      <AppHeader compact />
 
       <View style={styles.intro}>
         <Text style={styles.eyebrow}>DAVAO DEL NORTE</Text>
