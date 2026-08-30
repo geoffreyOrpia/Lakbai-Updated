@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { SafeAreaView, StyleSheet, View } from 'react-native';
+import { Platform, SafeAreaView, StatusBar as NativeStatusBar, StyleSheet, View } from 'react-native';
 
 import { BottomNav } from './src/components/BottomNav';
 import { AuthScreen, type AuthView } from './src/screens/AuthScreen';
@@ -95,6 +95,7 @@ function renderScreen(
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+    paddingTop: Platform.OS === 'android' ? (NativeStatusBar.currentHeight ?? 0) : 0,
     backgroundColor: colors.offWhite,
   },
   screen: {
