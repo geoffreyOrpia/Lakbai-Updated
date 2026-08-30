@@ -20,8 +20,8 @@ type Props = {
   view: AuthView;
   onViewChange: (view: AuthView) => void;
   onContinueAsGuest: () => void;
-  onLogin: (email: string) => void;
-  onRegister: (name: string, email: string) => void;
+  onLogin: (email: string, password: string) => Promise<void>;
+  onRegister: (name: string, email: string, password: string) => Promise<void>;
 };
 
 export function AuthScreen({
@@ -107,8 +107,8 @@ type FormProps = {
   onBack: () => void;
   onAlternate: () => void;
   onContinueAsGuest: () => void;
-  onSubmitLogin?: (email: string) => void;
-  onSubmitRegister?: (name: string, email: string) => void;
+  onSubmitLogin?: (email: string, password: string) => Promise<void>;
+  onSubmitRegister?: (name: string, email: string, password: string) => Promise<void>;
 };
 
 function AuthForm({
@@ -126,8 +126,9 @@ function AuthForm({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const submit = () => {
+  const submit = async () => {
     const cleanName = name.trim();
     const cleanEmail = email.trim().toLowerCase();
 
@@ -152,10 +153,17 @@ function AuthForm({
     }
 
     setError('');
-    if (isRegister) {
-      onSubmitRegister?.(cleanName, cleanEmail);
-    } else {
-      onSubmitLogin?.(cleanEmail);
+    setSubmitting(true);
+    try {
+      if (isRegister) {
+        await onSubmitRegister?.(cleanName, cleanEmail, password);
+      } else {
+        await onSubmitLogin?.(cleanEmail, password);
+      }
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Authentication could not be completed.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -259,10 +267,14 @@ function AuthForm({
             </View>
           ) : null}
 
-          <PrimaryButton label={isRegister ? 'Create account' : 'Sign in'} onPress={submit} />
+          <PrimaryButton
+            label={submitting ? (isRegister ? 'Creating account…' : 'Signing in…') : isRegister ? 'Create account' : 'Sign in'}
+            onPress={() => void submit()}
+            disabled={submitting}
+          />
 
           <Text style={styles.prototypeNote}>
-            Version 1 uses a local prototype account flow. Secure server-side account verification and cloud sync can be connected later without affecting guest access.
+            Accounts are stored locally on this device for the offline-first prototype. Registration, login verification, and session restoration now persist between app restarts.
           </Text>
         </View>
 
@@ -342,9 +354,13 @@ function Feature({ icon, label }: FeatureProps) {
   );
 }
 
-function PrimaryButton({ label, onPress }: { label: string; onPress: () => void }) {
+function PrimaryButton({ label, onPress, disabled = false }: { label: string; onPress: () => void; disabled?: boolean }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
+    <Pressable
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [styles.primaryButton, disabled && styles.disabled, pressed && !disabled && styles.pressed]}
+    >
       <Text style={styles.primaryButtonText}>{label}</Text>
       <Ionicons name="arrow-forward" size={18} color={colors.white} />
     </Pressable>
@@ -658,6 +674,9 @@ const styles = StyleSheet.create({
     color: colors.forest,
     fontSize: 12,
     fontWeight: '800',
+  },
+  disabled: {
+    opacity: 0.55,
   },
   pressed: {
     opacity: 0.72,

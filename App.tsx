@@ -11,6 +11,13 @@ import { HomeScreen } from './src/screens/HomeScreen';
 import { SafetyScreen } from './src/screens/SafetyScreen';
 import { TripsScreen } from './src/screens/TripsScreen';
 import {
+  authenticateLocalAccount,
+  clearSession,
+  getSessionEmail,
+  registerLocalAccount,
+  saveSessionEmail,
+} from './src/storage/authStore';
+import {
   listDownloadedPackIds,
   removeDownloadedPack,
   saveDownloadedPack,
@@ -24,11 +31,31 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
   const [accessMode, setAccessMode] = useState<AccessMode>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [sessionRestored, setSessionRestored] = useState(false);
   const [authView, setAuthView] = useState<AuthView>('welcome');
   const [exploreQuery, setExploreQuery] = useState('');
   const [downloadedIds, setDownloadedIds] = useState<Set<string>>(
     () => new Set(destinationPacks.filter((pack) => pack.downloaded).map((pack) => pack.id)),
   );
+
+  useEffect(() => {
+    let active = true;
+
+    void getSessionEmail()
+      .then((email) => {
+        if (active && email) {
+          setUserEmail(email);
+          setAccessMode('user');
+        }
+      })
+      .finally(() => {
+        if (active) setSessionRestored(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -83,6 +110,14 @@ export default function App() {
     setActiveTab('explore');
   };
 
+  if (!sessionRestored) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar style="dark" backgroundColor={colors.offWhite} />
+      </SafeAreaView>
+    );
+  }
+
   if (!accessMode) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -91,15 +126,20 @@ export default function App() {
           view={authView}
           onViewChange={setAuthView}
           onContinueAsGuest={() => {
+            void clearSession();
             setUserEmail(null);
             setAccessMode('guest');
           }}
-          onLogin={(email) => {
-            setUserEmail(email);
+          onLogin={async (email, password) => {
+            const account = await authenticateLocalAccount(email, password);
+            await saveSessionEmail(account.email);
+            setUserEmail(account.email);
             setAccessMode('user');
           }}
-          onRegister={(_name, email) => {
-            setUserEmail(email);
+          onRegister={async (name, email, password) => {
+            const account = await registerLocalAccount(name, email, password);
+            await saveSessionEmail(account.email);
+            setUserEmail(account.email);
             setAccessMode('user');
           }}
         />
