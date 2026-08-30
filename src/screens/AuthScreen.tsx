@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 
+import { useFeedback } from '../feedback/FeedbackProvider';
 import { colors, layout, radius, spacing } from '../theme';
 
 export type AuthView = 'welcome' | 'login' | 'register';
@@ -127,6 +128,7 @@ function AuthForm({
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const { hideHud, showHud, showSnackbar, showToast } = useFeedback();
 
   const submit = async () => {
     const cleanName = name.trim();
@@ -154,15 +156,22 @@ function AuthForm({
 
     setError('');
     setSubmitting(true);
+    showHud(isRegister ? 'Creating your account…' : 'Signing you in…');
     try {
       if (isRegister) {
         await onSubmitRegister?.(cleanName, cleanEmail, password);
+        showToast('Account created. Complete your travel setup next.', 'success', 2600);
       } else {
         await onSubmitLogin?.(cleanEmail, password);
+        showToast('Welcome back to LakbayLokal.', 'success');
       }
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Authentication could not be completed.');
+      showSnackbar({
+        message: submitError instanceof Error ? submitError.message : 'Authentication could not be completed.',
+        tone: 'error',
+      });
     } finally {
+      hideHud();
       setSubmitting(false);
     }
   };

@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
 import type { DestinationCategory } from '../data/destinations';
+import { useFeedback } from '../feedback/FeedbackProvider';
 import type { SignupOnboardingPreferences, TravelPace } from '../storage/onboardingStore';
 import { colors, layout, radius, spacing } from '../theme';
 
@@ -37,6 +38,7 @@ export function SignupOnboardingScreen({ onComplete }: Props) {
   const [offlineReminder, setOfflineReminder] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const { hideHud, showHud, showSnackbar, showToast } = useFeedback();
 
   const progress = useMemo(() => `${step + 1} of 3`, [step]);
 
@@ -59,11 +61,15 @@ export function SignupOnboardingScreen({ onComplete }: Props) {
     }
 
     setSaving(true);
+    showHud('Finishing your LakbayLokal setup…');
     try {
       await onComplete({ interests, travelPace, offlineReminder });
+      showToast('Travel preferences saved.', 'success');
     } catch {
-      setError('Your setup could not be saved. Please try again.');
       setSaving(false);
+      showSnackbar({ message: 'Your setup could not be saved. Please try again.', tone: 'error' });
+    } finally {
+      hideHud();
     }
   };
 

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Platform, SafeAreaView, StatusBar as NativeStatusBar, StyleSheet, View } from 'react-native';
 
 import { BottomNav } from './src/components/BottomNav';
-import { FeedbackProvider } from './src/feedback/FeedbackProvider';
+import { FeedbackProvider, useFeedback } from './src/feedback/FeedbackProvider';
 import { destinationPacks } from './src/data/destinations';
 import { AuthScreen, type AuthView } from './src/screens/AuthScreen';
 import { DownloadsScreen } from './src/screens/DownloadsScreen';
@@ -40,6 +40,7 @@ export default function App() {
 }
 
 function AppContent() {
+  const { showSnackbar, showToast } = useFeedback();
   const [activeTab, setActiveTab] = useState<TabKey>('home');
   const [accessMode, setAccessMode] = useState<AccessMode>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -131,12 +132,17 @@ function AppContent() {
   };
 
   const logout = async () => {
-    await clearSession();
-    setUserEmail(null);
-    setSignupOnboardingEmail(null);
-    setAccessMode(null);
-    setAuthView('welcome');
-    setActiveTab('home');
+    try {
+      await clearSession();
+      setUserEmail(null);
+      setSignupOnboardingEmail(null);
+      setAccessMode(null);
+      setAuthView('welcome');
+      setActiveTab('home');
+      showToast('Signed out of LakbayLokal.', 'info');
+    } catch {
+      showSnackbar({ message: 'LakbayLokal could not sign you out. Please try again.', tone: 'error' });
+    }
   };
 
   if (!sessionRestored) {
@@ -182,6 +188,7 @@ function AppContent() {
             void clearSession();
             setUserEmail(null);
             setAccessMode('guest');
+            showToast('Guest mode enabled.', 'info');
           }}
           onLogin={async (email, password) => {
             const account = await authenticateLocalAccount(email, password);
