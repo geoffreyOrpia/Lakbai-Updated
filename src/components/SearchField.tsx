@@ -7,9 +7,10 @@ type Props = {
   value: string;
   onChangeText: (value: string) => void;
   placeholder?: string;
+  onSubmit?: (value: string) => void;
 };
 
-export function SearchField({ value, onChangeText, placeholder = 'Search destinations' }: Props) {
+export function SearchField({ value, onChangeText, placeholder = 'Search destinations', onSubmit }: Props) {
   return (
     <View style={styles.container}>
       <Ionicons name="search-outline" size={19} color={colors.muted} />
@@ -20,6 +21,7 @@ export function SearchField({ value, onChangeText, placeholder = 'Search destina
         placeholderTextColor={colors.muted}
         style={styles.input}
         returnKeyType="search"
+        onSubmitEditing={() => onSubmit?.(value.trim())}
       />
       {value ? (
         <Ionicons name="close-circle" size={18} color={colors.muted} onPress={() => onChangeText('')} />

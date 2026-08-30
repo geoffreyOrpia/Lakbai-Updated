@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AppHeader } from '../components/AppHeader';
@@ -9,16 +9,21 @@ import type { DestinationPack } from '../data/destinations';
 import { colors, layout, radius, spacing } from '../theme';
 
 type Props = {
+  initialQuery?: string;
   packs: DestinationPack[];
   onDownloadPack: (packId: string) => Promise<void>;
   onRemovePack: (packId: string) => Promise<void>;
 };
 
-export function ExploreScreen({ packs, onDownloadPack, onRemovePack }: Props) {
-  const [query, setQuery] = useState('');
+export function ExploreScreen({ initialQuery = '', packs, onDownloadPack, onRemovePack }: Props) {
+  const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState<CategoryKey>('all');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
 
   const results = useMemo(() => {
     const normalized = query.trim().toLowerCase();

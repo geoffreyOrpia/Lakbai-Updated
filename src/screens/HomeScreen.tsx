@@ -13,9 +13,10 @@ import type { TabKey } from '../types/navigation';
 type Props = {
   packs: DestinationPack[];
   onNavigate: (tab: TabKey) => void;
+  onOpenExplore: (query?: string) => void;
 };
 
-export function HomeScreen({ packs, onNavigate }: Props) {
+export function HomeScreen({ packs, onNavigate, onOpenExplore }: Props) {
   const [query, setQuery] = useState('');
   const featured = packs.filter((pack) => pack.featured).slice(0, 3);
   const downloaded = packs.filter((pack) => pack.downloaded);
@@ -31,7 +32,12 @@ export function HomeScreen({ packs, onNavigate }: Props) {
         <Text style={styles.subtitle}>Prepare local destination packs before your trip and keep essential travel information on-device.</Text>
       </View>
 
-      <SearchField value={query} onChangeText={setQuery} placeholder="Search destination packs" />
+      <SearchField
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Search destination packs"
+        onSubmit={(value) => onOpenExplore(value)}
+      />
 
       <Pressable style={({ pressed }) => [styles.readiness, pressed && styles.pressed]} onPress={() => onNavigate('downloads')}>
         <View style={styles.readinessIcon}>
@@ -47,9 +53,11 @@ export function HomeScreen({ packs, onNavigate }: Props) {
       </Pressable>
 
       <View style={styles.section}>
-        <SectionHeader eyebrow="Recommended" title="Start with these packs" actionLabel="Explore all" onAction={() => onNavigate('explore')} />
+        <SectionHeader eyebrow="Recommended" title="Start with these packs" actionLabel="Explore all" onAction={() => onOpenExplore()} />
         <View style={styles.list}>
-          {featured.map((pack) => <DestinationCard key={pack.id} pack={pack} compact />)}
+          {featured.map((pack) => (
+            <DestinationCard key={pack.id} pack={pack} compact onPress={() => onOpenExplore(pack.name)} />
+          ))}
         </View>
       </View>
 

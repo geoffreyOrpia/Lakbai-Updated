@@ -25,6 +25,7 @@ export default function App() {
   const [accessMode, setAccessMode] = useState<AccessMode>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [authView, setAuthView] = useState<AuthView>('welcome');
+  const [exploreQuery, setExploreQuery] = useState('');
   const [downloadedIds, setDownloadedIds] = useState<Set<string>>(
     () => new Set(destinationPacks.filter((pack) => pack.downloaded).map((pack) => pack.id)),
   );
@@ -77,6 +78,11 @@ export default function App() {
     setAccessMode(null);
   };
 
+  const openExplore = (query = '') => {
+    setExploreQuery(query);
+    setActiveTab('explore');
+  };
+
   if (!accessMode) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -115,6 +121,8 @@ export default function App() {
             packs,
             downloadPack,
             removePack,
+            exploreQuery,
+            openExplore,
           )}
         </View>
         <BottomNav active={activeTab} onChange={setActiveTab} />
@@ -132,10 +140,12 @@ function renderScreen(
   packs: typeof destinationPacks,
   onDownloadPack: (packId: string) => Promise<void>,
   onRemovePack: (packId: string) => Promise<void>,
+  exploreQuery: string,
+  onOpenExplore: (query?: string) => void,
 ) {
   switch (activeTab) {
     case 'explore':
-      return <ExploreScreen packs={packs} onDownloadPack={onDownloadPack} onRemovePack={onRemovePack} />;
+      return <ExploreScreen initialQuery={exploreQuery} packs={packs} onDownloadPack={onDownloadPack} onRemovePack={onRemovePack} />;
     case 'downloads':
       return <DownloadsScreen packs={packs} onDownloadPack={onDownloadPack} onRemovePack={onRemovePack} />;
     case 'trips':
@@ -152,7 +162,7 @@ function renderScreen(
       return <SafetyScreen />;
     case 'home':
     default:
-      return <HomeScreen packs={packs} onNavigate={onNavigate} />;
+      return <HomeScreen packs={packs} onNavigate={onNavigate} onOpenExplore={onOpenExplore} />;
   }
 }
 
