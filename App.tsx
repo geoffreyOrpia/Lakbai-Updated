@@ -10,6 +10,7 @@ import { ExploreScreen } from './src/screens/ExploreScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { LandingScreen } from './src/screens/LandingScreen';
 import { SafetyScreen } from './src/screens/SafetyScreen';
+import { SignupOnboardingScreen } from './src/screens/SignupOnboardingScreen';
 import { TripsScreen } from './src/screens/TripsScreen';
 import {
   authenticateLocalAccount,
@@ -23,6 +24,7 @@ import {
   removeDownloadedPack,
   saveDownloadedPack,
 } from './src/storage/downloadStore';
+import { hasCompletedSignupOnboarding, saveSignupOnboarding } from './src/storage/onboardingStore';
 import { colors } from './src/theme';
 import type { TabKey } from './src/types/navigation';
 
@@ -34,6 +36,7 @@ export default function App() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [sessionRestored, setSessionRestored] = useState(false);
   const [landingDismissed, setLandingDismissed] = useState(false);
+  const [signupOnboardingEmail, setSignupOnboardingEmail] = useState<string | null>(null);
   const [authView, setAuthView] = useState<AuthView>('welcome');
   const [exploreQuery, setExploreQuery] = useState('');
   const [downloadedIds, setDownloadedIds] = useState<Set<string>>(
@@ -44,10 +47,16 @@ export default function App() {
     let active = true;
 
     void getSessionEmail()
-      .then((email) => {
+      .then(async (email) => {
         if (active && email) {
           setUserEmail(email);
-          setAccessMode('user');
+          const onboardingComplete = await hasCompletedSignupOnboarding(email);
+          if (!active) return;
+          if (onboardingComplete) {
+            setAccessMode('user');
+          } else {
+            setSignupOnboardingEmail(email);
+          }
         }
       })
       .finally(() => {
@@ -115,6 +124,7 @@ export default function App() {
   const logout = async () => {
     await clearSession();
     setUserEmail(null);
+    setSignupOnboardingEmail(null);
     setAccessMode(null);
     setAuthView('welcome');
     setActiveTab('home');
@@ -124,6 +134,21 @@ export default function App() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <StatusBar style="dark" backgroundColor={colors.offWhite} />
+      </SafeAreaView>
+    );
+  }
+
+  if (signupOnboardingEmail) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar style="dark" backgroundColor={colors.offWhite} />
+        <SignupOnboardingScreen
+          onComplete={async (preferences) => {
+            await saveSignupOnboarding(signupOnboardingEmail, preferences);
+            setSignupOnboardingEmail(null);
+            setAccessMode('user');
+          }}
+        />
       </SafeAreaView>
     );
   }
@@ -153,13 +178,18 @@ export default function App() {
             const account = await authenticateLocalAccount(email, password);
             await saveSessionEmail(account.email);
             setUserEmail(account.email);
-            setAccessMode('user');
+            const onboardingComplete = await hasCompletedSignupOnboarding(account.email);
+            if (onboardingComplete) {
+              setAccessMode('user');
+            } else {
+              setSignupOnboardingEmail(account.email);
+            }
           }}
           onRegister={async (name, email, password) => {
             const account = await registerLocalAccount(name, email, password);
             await saveSessionEmail(account.email);
             setUserEmail(account.email);
-            setAccessMode('user');
+            setSignupOnboardingEmail(account.email);
           }}
         />
       </SafeAreaView>
