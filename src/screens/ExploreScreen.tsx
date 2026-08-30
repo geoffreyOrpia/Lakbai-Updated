@@ -6,7 +6,8 @@ import { CategoryChips, type CategoryKey } from '../components/CategoryChips';
 import { DestinationCard } from '../components/DestinationCard';
 import { SearchField } from '../components/SearchField';
 import type { DestinationPack } from '../data/destinations';
-import { colors, layout, radius, spacing } from '../theme';
+import { useFeedback } from '../feedback/FeedbackProvider';
+import { colors, layout, spacing } from '../theme';
 
 type Props = {
   initialQuery?: string;
@@ -19,7 +20,7 @@ export function ExploreScreen({ initialQuery = '', packs, onDownloadPack, onRemo
   const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState<CategoryKey>('all');
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState('');
+  const { showSnackbar } = useFeedback();
 
   useEffect(() => {
     setQuery(initialQuery);
@@ -36,15 +37,16 @@ export function ExploreScreen({ initialQuery = '', packs, onDownloadPack, onRemo
 
   const runDownloadAction = async (pack: DestinationPack) => {
     setBusyId(pack.id);
-    setError('');
     try {
       if (pack.downloaded) {
         await onRemovePack(pack.id);
+        showSnackbar({ message: `${pack.name} removed from offline downloads.`, tone: 'info' });
       } else {
         await onDownloadPack(pack.id);
+        showSnackbar({ message: `${pack.name} is ready for offline use.`, tone: 'success' });
       }
     } catch {
-      setError('The destination pack could not be updated. Please try again.');
+      showSnackbar({ message: 'The destination pack could not be updated. Please try again.', tone: 'error' });
     } finally {
       setBusyId(null);
     }
@@ -61,12 +63,6 @@ export function ExploreScreen({ initialQuery = '', packs, onDownloadPack, onRemo
 
       <SearchField value={query} onChangeText={setQuery} />
       <CategoryChips selected={category} onSelect={setCategory} />
-
-      {error ? (
-        <View style={styles.errorBox}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : null}
 
       <View style={styles.resultHeader}>
         <Text style={styles.resultCount}>{results.length} {results.length === 1 ? 'result' : 'results'}</Text>
@@ -112,17 +108,6 @@ const styles = StyleSheet.create({
     marginTop: 3,
     color: colors.muted,
     fontSize: 12.5,
-  },
-  errorBox: {
-    padding: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: colors.softOrange,
-  },
-  errorText: {
-    color: colors.danger,
-    fontSize: 11.2,
-    lineHeight: 15,
-    fontWeight: '700',
   },
   resultHeader: {
     flexDirection: 'row',

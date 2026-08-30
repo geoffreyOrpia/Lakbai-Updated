@@ -6,6 +6,7 @@ import { AppHeader } from '../components/AppHeader';
 import { DestinationCard } from '../components/DestinationCard';
 import { SectionHeader } from '../components/SectionHeader';
 import type { DestinationPack } from '../data/destinations';
+import { useFeedback } from '../feedback/FeedbackProvider';
 import { colors, layout, radius, spacing } from '../theme';
 
 type Props = {
@@ -16,22 +17,23 @@ type Props = {
 
 export function DownloadsScreen({ packs, onDownloadPack, onRemovePack }: Props) {
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState('');
+  const { showSnackbar } = useFeedback();
   const downloaded = packs.filter((pack) => pack.downloaded);
   const available = packs.filter((pack) => pack.status === 'available' && !pack.downloaded);
   const usedMb = downloaded.reduce((total, pack) => total + (Number.parseFloat(pack.sizeLabel) || 0), 0);
 
   const runAction = async (pack: DestinationPack) => {
     setBusyId(pack.id);
-    setError('');
     try {
       if (pack.downloaded) {
         await onRemovePack(pack.id);
+        showSnackbar({ message: `${pack.name} removed from this device.`, tone: 'info' });
       } else {
         await onDownloadPack(pack.id);
+        showSnackbar({ message: `${pack.name} saved to your offline library.`, tone: 'success' });
       }
     } catch {
-      setError('The offline library could not be updated. Please try again.');
+      showSnackbar({ message: 'The offline library could not be updated. Please try again.', tone: 'error' });
     } finally {
       setBusyId(null);
     }
@@ -59,13 +61,6 @@ export function DownloadsScreen({ packs, onDownloadPack, onRemovePack }: Props) 
           <Text style={styles.readyText}>Ready</Text>
         </View>
       </View>
-
-      {error ? (
-        <View style={styles.errorBox}>
-          <Ionicons name="alert-circle-outline" size={17} color={colors.danger} />
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : null}
 
       <View style={styles.section}>
         <SectionHeader eyebrow="On this device" title="Downloaded packs" />
@@ -192,22 +187,6 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 11.5,
     lineHeight: 16,
-  },
-  errorBox: {
-    minHeight: 44,
-    borderRadius: radius.md,
-    backgroundColor: colors.softOrange,
-    padding: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  errorText: {
-    flex: 1,
-    color: colors.danger,
-    fontSize: 11.2,
-    lineHeight: 15,
-    fontWeight: '700',
   },
   note: {
     flexDirection: 'row',

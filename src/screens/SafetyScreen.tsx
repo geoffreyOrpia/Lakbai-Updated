@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AppHeader } from '../components/AppHeader';
 import { SectionHeader } from '../components/SectionHeader';
+import { useFeedback } from '../feedback/FeedbackProvider';
 import {
   listCompletedSafetyItems,
   resetSafetyChecklist,
@@ -21,7 +22,7 @@ const checklist = [
 export function SafetyScreen() {
   const [completed, setCompleted] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { showSnackbar, showToast } = useFeedback();
 
   useEffect(() => {
     let active = true;
@@ -30,7 +31,7 @@ export function SafetyScreen() {
         if (active) setCompleted(new Set(keys));
       })
       .catch(() => {
-        if (active) setError('Your saved safety checklist could not be loaded.');
+        if (active) showSnackbar({ message: 'Your saved safety checklist could not be loaded.', tone: 'error' });
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -39,11 +40,10 @@ export function SafetyScreen() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [showSnackbar]);
 
   const toggleItem = async (itemKey: string) => {
     const nextValue = !completed.has(itemKey);
-    setError('');
     setCompleted((current) => {
       const next = new Set(current);
       if (nextValue) next.add(itemKey);
@@ -53,6 +53,8 @@ export function SafetyScreen() {
 
     try {
       await setSafetyItemCompleted(itemKey, nextValue);
+      const item = checklist.find((entry) => entry.key === itemKey);
+      showToast(nextValue ? `${item?.label ?? 'Checklist item'} marked ready.` : 'Checklist item reopened.', nextValue ? 'success' : 'info', 1700);
     } catch {
       setCompleted((current) => {
         const next = new Set(current);
@@ -60,17 +62,17 @@ export function SafetyScreen() {
         else next.add(itemKey);
         return next;
       });
-      setError('The checklist change could not be saved.');
+      showSnackbar({ message: 'The checklist change could not be saved.', tone: 'error' });
     }
   };
 
   const resetChecklist = async () => {
-    setError('');
     try {
       await resetSafetyChecklist();
       setCompleted(new Set());
+      showSnackbar({ message: 'Safety checklist reset.', tone: 'success' });
     } catch {
-      setError('The checklist could not be reset.');
+      showSnackbar({ message: 'The checklist could not be reset.', tone: 'error' });
     }
   };
 
@@ -94,13 +96,6 @@ export function SafetyScreen() {
           <Text style={styles.emergencyText}>Keep official local emergency contacts inside downloaded packs. Call 911 when service is available.</Text>
         </View>
       </View>
-
-      {error ? (
-        <View style={styles.errorBox}>
-          <Ionicons name="alert-circle-outline" size={17} color={colors.danger} />
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : null}
 
       <View style={styles.section}>
         <SectionHeader
@@ -223,22 +218,6 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 11.2,
     lineHeight: 16,
-  },
-  errorBox: {
-    minHeight: 44,
-    borderRadius: radius.md,
-    backgroundColor: colors.softOrange,
-    padding: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  errorText: {
-    flex: 1,
-    color: colors.danger,
-    fontSize: 11.2,
-    lineHeight: 15,
-    fontWeight: '700',
   },
   section: {
     gap: spacing.sm,
