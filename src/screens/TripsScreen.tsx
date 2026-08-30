@@ -155,18 +155,19 @@ export function TripsScreen({
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Sign out"
+          accessibilityLabel="Sign out of LakbayLokal"
           style={({ pressed }) => [styles.logoutButton, pressed && styles.pressed]}
           onPress={onLogout}
         >
-          <Ionicons name="log-out-outline" size={18} color={colors.forest} />
+          <Ionicons name="log-out-outline" size={16} color={colors.danger} />
+          <Text style={styles.logoutButtonText}>Sign out</Text>
         </Pressable>
       </View>
 
       <View style={styles.quickStatsRow}>
-        <TripStat icon="calendar-outline" value={String(trips.length)} label={trips.length === 1 ? 'Trip' : 'Trips'} />
-        <TripStat icon="location-outline" value={String(totalStops)} label={totalStops === 1 ? 'Stop' : 'Stops'} />
-        <TripStat icon="cloud-done-outline" value={String(offlineStops)} label="Offline" />
+        <TripStat value={String(trips.length)} label={trips.length === 1 ? 'Trip' : 'Trips'} />
+        <TripStat value={String(totalStops)} label={totalStops === 1 ? 'Stop' : 'Stops'} />
+        <TripStat value={String(offlineStops)} label="Offline ready" />
       </View>
 
       <Pressable style={({ pressed }) => [styles.createTripButton, pressed && styles.pressed]} onPress={() => setMode('create')}>
@@ -423,14 +424,11 @@ function CreateTrip({
   );
 }
 
-function TripStat({ icon, value, label }: { icon: keyof typeof Ionicons.glyphMap; value: string; label: string }) {
+function TripStat({ value, label }: { value: string; label: string }) {
   return (
     <View style={styles.tripStat}>
-      <Ionicons name={icon} size={17} color={colors.forest} />
-      <View>
-        <Text style={styles.tripStatValue}>{value}</Text>
-        <Text style={styles.tripStatLabel}>{label}</Text>
-      </View>
+      <Text style={styles.tripStatLabel}>{label}</Text>
+      <Text style={styles.tripStatValue}>{value}</Text>
     </View>
   );
 }
@@ -611,11 +609,12 @@ const styles = StyleSheet.create({
   subtitle: { color: colors.muted, fontSize: 12.8, lineHeight: 18 },
   tripsHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
   tripsHeaderCopy: { flex: 1, gap: spacing.xs },
-  logoutButton: { width: 42, height: 42, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  logoutButton: { minHeight: 40, paddingHorizontal: spacing.sm, borderRadius: radius.md, borderWidth: 1, borderColor: '#E3C6C0', backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xxs },
+  logoutButtonText: { color: colors.danger, fontSize: 10.5, fontWeight: '900' },
   quickStatsRow: { flexDirection: 'row', gap: spacing.sm },
-  tripStat: { flex: 1, minHeight: 74, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', gap: 3 },
-  tripStatValue: { color: colors.text, fontSize: 17, lineHeight: 19, fontWeight: '900' },
-  tripStatLabel: { color: colors.muted, fontSize: 9.5, fontWeight: '800' },
+  tripStat: { flex: 1, minHeight: 72, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface, paddingHorizontal: spacing.sm, alignItems: 'flex-start', justifyContent: 'center', gap: spacing.xs },
+  tripStatValue: { color: colors.text, fontSize: 23, lineHeight: 25, fontWeight: '900', letterSpacing: -0.6 },
+  tripStatLabel: { color: colors.muted, fontSize: 9.5, lineHeight: 12, fontWeight: '800' },
   statDivider: { display: 'none' },
   createTripButton: { minHeight: 76, borderRadius: radius.lg, backgroundColor: colors.forest, padding: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   createTripIcon: { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' },
