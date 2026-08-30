@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { colors, radius, spacing } from '../theme';
 
@@ -11,9 +11,11 @@ export function AppHeader({ compact = false }: Props) {
   return (
     <View style={styles.header}>
       <View style={styles.brandRow}>
-        <View style={[styles.logoMark, compact && styles.logoMarkCompact]}>
-          <Ionicons name="navigate" size={compact ? 17 : 19} color={colors.white} />
-        </View>
+        <Image
+          source={require('../../assets/logo-mark.png')}
+          style={[styles.logoMark, compact && styles.logoMarkCompact]}
+          resizeMode="contain"
+        />
         <View>
           <Text style={[styles.brandName, compact && styles.brandNameCompact]}>
             Lakbay<Text style={styles.brandAccent}>Lokal</Text>
@@ -46,10 +48,6 @@ const styles = StyleSheet.create({
   logoMark: {
     width: 40,
     height: 40,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.forest,
   },
   logoMarkCompact: {
     width: 34,
