@@ -11,6 +11,7 @@ import {
 
 import { AppHeader } from '../components/AppHeader';
 import type { DestinationPack } from '../data/destinations';
+import { useFeedback } from '../feedback/FeedbackProvider';
 import {
   deleteItinerary,
   listItineraries,
@@ -43,7 +44,7 @@ export function TripsScreen({
   const [trips, setTrips] = useState<Itinerary[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<Itinerary | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const { hideHud, showHud, showSnackbar } = useFeedback();
 
   const loadTrips = useCallback(async () => {
     if (!isRegistered || !ownerKey) {
@@ -52,15 +53,14 @@ export function TripsScreen({
     }
 
     setLoading(true);
-    setError('');
     try {
       setTrips(await listItineraries(ownerKey));
     } catch {
-      setError('Saved itineraries could not be loaded on this device.');
+      showSnackbar({ message: 'Saved itineraries could not be loaded on this device.', tone: 'error' });
     } finally {
       setLoading(false);
     }
-  }, [isRegistered, ownerKey]);
+  }, [isRegistered, ownerKey, showSnackbar]);
 
   useEffect(() => {
     void loadTrips();
@@ -122,15 +122,19 @@ export function TripsScreen({
           setMode('list');
         }}
         onDelete={async () => {
-          setError('');
+          showHud('Deleting itinerary…');
           try {
             await deleteItinerary(selectedTrip.id, ownerKey);
+            const deletedTitle = selectedTrip.title;
             setSelectedTrip(null);
             await loadTrips();
             setMode('list');
+            showSnackbar({ message: `${deletedTitle} deleted.`, tone: 'success' });
           } catch {
-            setError('The itinerary could not be deleted.');
+            showSnackbar({ message: 'The itinerary could not be deleted.', tone: 'error' });
             setMode('list');
+          } finally {
+            hideHud();
           }
         }}
       />
@@ -181,7 +185,6 @@ export function TripsScreen({
         <Ionicons name="chevron-forward" size={18} color={colors.white} />
       </Pressable>
 
-      {error ? <MessageBox message={error} danger /> : null}
       {loading ? <Text style={styles.mutedCenter}>Loading saved trips…</Text> : null}
 
       {!loading && trips.length === 0 ? (
@@ -236,6 +239,7 @@ function CreateTrip({
   const [stops, setStops] = useState<ItineraryStop[]>([]);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const { hideHud, showHud, showSnackbar } = useFeedback();
 
   const selectedIds = useMemo(() => new Set(stops.map((stop) => stop.destinationId)), [stops]);
 
@@ -301,12 +305,15 @@ function CreateTrip({
 
     setSaving(true);
     setError('');
+    showHud('Saving your itinerary…');
     try {
       await saveItinerary(trip);
+      showSnackbar({ message: `${cleanTitle} saved to My Trips.`, tone: 'success' });
       await onSaved();
     } catch {
-      setError('The itinerary could not be saved on this device.');
+      showSnackbar({ message: 'The itinerary could not be saved on this device.', tone: 'error' });
     } finally {
+      hideHud();
       setSaving(false);
     }
   };
@@ -480,6 +487,18 @@ function TripCard({ trip, packs, onPress }: { trip: Itinerary; packs: Destinatio
 }
 
 function TripDetails({ trip, onBack, onDelete }: { trip: Itinerary; onBack: () => void; onDelete: () => Promise<void> }) {
+  const { showSnackbar } = useFeedback();
+
+  const confirmDelete = () => {
+    showSnackbar({
+      message: `Delete ${trip.title}? This removes the saved itinerary from this device.`,
+      tone: 'error',
+      actionLabel: 'Delete',
+      duration: 6000,
+      onAction: () => void onDelete(),
+    });
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <BackAction label="My Trips" onPress={onBack} />
@@ -532,7 +551,7 @@ function TripDetails({ trip, onBack, onDelete }: { trip: Itinerary; onBack: () =
         </View>
       </View>
 
-      <Pressable style={({ pressed }) => [styles.deleteButton, pressed && styles.pressed]} onPress={() => void onDelete()}>
+      <Pressable style={({ pressed }) => [styles.deleteButton, pressed && styles.pressed]} onPress={confirmDelete}>
         <Ionicons name="trash-outline" size={18} color={colors.danger} />
         <Text style={styles.deleteButtonText}>Delete itinerary</Text>
       </Pressable>
