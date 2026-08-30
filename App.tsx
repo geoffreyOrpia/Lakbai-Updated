@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Platform, SafeAreaView, StatusBar as NativeStatusBar, StyleSheet, View } from 'react-native';
 
 import { BottomNav } from './src/components/BottomNav';
+import { FeedbackProvider } from './src/feedback/FeedbackProvider';
 import { destinationPacks } from './src/data/destinations';
 import { AuthScreen, type AuthView } from './src/screens/AuthScreen';
 import { DownloadsScreen } from './src/screens/DownloadsScreen';
@@ -31,6 +32,14 @@ import type { TabKey } from './src/types/navigation';
 type AccessMode = 'guest' | 'user' | null;
 
 export default function App() {
+  return (
+    <FeedbackProvider>
+      <AppContent />
+    </FeedbackProvider>
+  );
+}
+
+function AppContent() {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
   const [accessMode, setAccessMode] = useState<AccessMode>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
