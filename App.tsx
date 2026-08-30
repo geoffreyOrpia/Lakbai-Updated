@@ -110,6 +110,14 @@ export default function App() {
     setActiveTab('explore');
   };
 
+  const logout = async () => {
+    await clearSession();
+    setUserEmail(null);
+    setAccessMode(null);
+    setAuthView('welcome');
+    setActiveTab('home');
+  };
+
   if (!sessionRestored) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -163,6 +171,7 @@ export default function App() {
             removePack,
             exploreQuery,
             openExplore,
+            logout,
           )}
         </View>
         <BottomNav active={activeTab} onChange={setActiveTab} />
@@ -182,6 +191,7 @@ function renderScreen(
   onRemovePack: (packId: string) => Promise<void>,
   exploreQuery: string,
   onOpenExplore: (query?: string) => void,
+  onLogout: () => Promise<void>,
 ) {
   switch (activeTab) {
     case 'explore':
@@ -196,6 +206,7 @@ function renderScreen(
           ownerKey={userEmail}
           onLoginRequest={() => onOpenAuth('login')}
           onRegisterRequest={() => onOpenAuth('register')}
+          onLogout={() => void onLogout()}
         />
       );
     case 'safety':

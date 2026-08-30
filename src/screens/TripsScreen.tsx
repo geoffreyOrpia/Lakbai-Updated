@@ -26,6 +26,7 @@ type Props = {
   ownerKey: string | null;
   onLoginRequest: () => void;
   onRegisterRequest: () => void;
+  onLogout: () => void;
 };
 
 type ViewMode = 'list' | 'create' | 'details';
@@ -36,6 +37,7 @@ export function TripsScreen({
   ownerKey,
   onLoginRequest,
   onRegisterRequest,
+  onLogout,
 }: Props) {
   const [mode, setMode] = useState<ViewMode>('list');
   const [trips, setTrips] = useState<Itinerary[]>([]);
@@ -152,14 +154,24 @@ export function TripsScreen({
             <Text style={styles.title}>Plan less. Explore more.</Text>
             <Text style={styles.subtitle}>Build personal itineraries from curated destinations and keep the important details available offline.</Text>
           </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Create a new itinerary"
-            style={({ pressed }) => [styles.heroCreateButton, pressed && styles.pressed]}
-            onPress={() => setMode('create')}
-          >
-            <Ionicons name="add" size={22} color={colors.white} />
-          </Pressable>
+          <View style={styles.heroActions}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Create a new itinerary"
+              style={({ pressed }) => [styles.heroCreateButton, pressed && styles.pressed]}
+              onPress={() => setMode('create')}
+            >
+              <Ionicons name="add" size={22} color={colors.white} />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Sign out"
+              style={({ pressed }) => [styles.heroLogoutButton, pressed && styles.pressed]}
+              onPress={onLogout}
+            >
+              <Ionicons name="log-out-outline" size={19} color={colors.forest} />
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.tripStatsRow}>
@@ -634,7 +646,9 @@ const styles = StyleSheet.create({
   },
   heroTopRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
   heroCopy: { flex: 1, gap: spacing.xs },
+  heroActions: { gap: spacing.xs },
   heroCreateButton: { width: 46, height: 46, borderRadius: radius.pill, backgroundColor: colors.forest, alignItems: 'center', justifyContent: 'center' },
+  heroLogoutButton: { width: 46, height: 40, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   tripStatsRow: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md },
   tripStat: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
   tripStatValue: { color: colors.text, fontSize: 15, lineHeight: 17, fontWeight: '900' },
