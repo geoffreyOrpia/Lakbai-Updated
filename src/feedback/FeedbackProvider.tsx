@@ -136,7 +136,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
                     }}
                     style={({ pressed }) => [styles.snackbarAction, pressed && styles.pressed]}
                   >
-                    <Text style={styles.snackbarActionText}>{snackbar.actionLabel}</Text>
+                    <Text style={[styles.snackbarActionText, snackbar.tone === 'error' && styles.snackbarActionTextDanger]}>{snackbar.actionLabel}</Text>
                   </Pressable>
                 ) : (
                   <Pressable hitSlop={8} onPress={dismissSnackbar} style={({ pressed }) => pressed && styles.pressed}>
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   },
   toastPosition: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 54 : 18,
+    top: Platform.OS === 'android' ? 86 : 52,
     left: spacing.lg,
     right: spacing.lg,
     alignItems: 'center',
@@ -221,6 +221,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    elevation: 6,
+    shadowColor: '#000000',
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
   },
   toastText: {
     flexShrink: 1,
@@ -248,6 +253,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    elevation: 7,
+    shadowColor: '#000000',
+    shadowOpacity: 0.12,
+    shadowRadius: 9,
+    shadowOffset: { width: 0, height: 4 },
   },
   snackbarIcon: {
     width: 34,
@@ -275,6 +285,9 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     textTransform: 'uppercase',
   },
+  snackbarActionTextDanger: {
+    color: colors.danger,
+  },
   hudBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(23, 35, 29, 0.28)',
@@ -293,6 +306,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
+    elevation: 10,
+    shadowColor: '#000000',
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
   },
   hudText: {
     color: colors.text,
