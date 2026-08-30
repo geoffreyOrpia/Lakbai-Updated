@@ -84,7 +84,7 @@ export function TripsScreen({
           <Text style={styles.lockedText}>
             Guest mode can still browse destinations, download packs, and use offline travel information. An account is only required to create and manage personal trips.
           </Text>
-          <Pressable style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]} onPress={onLoginRequest}>
+          <Pressable style={({ pressed }) => [styles.primaryButton, styles.lockedActionButton, pressed && styles.pressed]} onPress={onLoginRequest}>
             <Text style={styles.primaryButtonText}>Login</Text>
           </Pressable>
           <Pressable style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]} onPress={onRegisterRequest}>
@@ -715,6 +715,7 @@ const styles = StyleSheet.create({
   inlineEmpty: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, padding: spacing.md },
   inlineEmptyText: { color: colors.muted, fontSize: 11.5, textAlign: 'center' },
   primaryButton: { minHeight: 48, borderRadius: radius.md, backgroundColor: colors.forest, paddingHorizontal: spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
+  lockedActionButton: { width: '100%' },
   primaryButtonText: { color: colors.white, fontSize: 13, fontWeight: '900' },
   secondaryButton: { minHeight: 48, width: '100%', borderRadius: radius.md, borderWidth: 1, borderColor: colors.forest, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.md },
   secondaryButtonText: { color: colors.forest, fontSize: 13, fontWeight: '900' },
