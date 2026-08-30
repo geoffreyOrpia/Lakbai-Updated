@@ -5,21 +5,45 @@ import { AppHeader } from '../components/AppHeader';
 import { CategoryChips, type CategoryKey } from '../components/CategoryChips';
 import { DestinationCard } from '../components/DestinationCard';
 import { SearchField } from '../components/SearchField';
-import { destinationPacks } from '../data/destinations';
-import { colors, layout, spacing } from '../theme';
+import type { DestinationPack } from '../data/destinations';
+import { colors, layout, radius, spacing } from '../theme';
 
-export function ExploreScreen() {
+type Props = {
+  packs: DestinationPack[];
+  onDownloadPack: (packId: string) => Promise<void>;
+  onRemovePack: (packId: string) => Promise<void>;
+};
+
+export function ExploreScreen({ packs, onDownloadPack, onRemovePack }: Props) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<CategoryKey>('all');
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState('');
 
   const results = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    return destinationPacks.filter((pack) => {
+    return packs.filter((pack) => {
       const matchesCategory = category === 'all' || pack.category === category;
       const matchesQuery = !normalized || [pack.name, pack.area, pack.municipality, pack.summary].some((value) => value.toLowerCase().includes(normalized));
       return matchesCategory && matchesQuery;
     });
-  }, [category, query]);
+  }, [category, packs, query]);
+
+  const runDownloadAction = async (pack: DestinationPack) => {
+    setBusyId(pack.id);
+    setError('');
+    try {
+      if (pack.downloaded) {
+        await onRemovePack(pack.id);
+      } else {
+        await onDownloadPack(pack.id);
+      }
+    } catch {
+      setError('The destination pack could not be updated. Please try again.');
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -27,11 +51,17 @@ export function ExploreScreen() {
 
       <View>
         <Text style={styles.title}>Explore</Text>
-        <Text style={styles.subtitle}>Find downloadable local destination packs.</Text>
+        <Text style={styles.subtitle}>Find and save local destination packs for offline use.</Text>
       </View>
 
       <SearchField value={query} onChangeText={setQuery} />
       <CategoryChips selected={category} onSelect={setCategory} />
+
+      {error ? (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : null}
 
       <View style={styles.resultHeader}>
         <Text style={styles.resultCount}>{results.length} {results.length === 1 ? 'result' : 'results'}</Text>
@@ -39,7 +69,15 @@ export function ExploreScreen() {
       </View>
 
       <View style={styles.list}>
-        {results.map((pack) => <DestinationCard key={pack.id} pack={pack} />)}
+        {results.map((pack) => (
+          <DestinationCard
+            key={pack.id}
+            pack={pack}
+            actionLabel={pack.status === 'available' ? (busyId === pack.id ? 'Updating…' : pack.downloaded ? 'Remove' : 'Download') : undefined}
+            actionDisabled={busyId !== null}
+            onAction={pack.status === 'available' ? () => void runDownloadAction(pack) : undefined}
+          />
+        ))}
       </View>
 
       {!results.length ? (
@@ -69,6 +107,17 @@ const styles = StyleSheet.create({
     marginTop: 3,
     color: colors.muted,
     fontSize: 12.5,
+  },
+  errorBox: {
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.softOrange,
+  },
+  errorText: {
+    color: colors.danger,
+    fontSize: 11.2,
+    lineHeight: 15,
+    fontWeight: '700',
   },
   resultHeader: {
     flexDirection: 'row',

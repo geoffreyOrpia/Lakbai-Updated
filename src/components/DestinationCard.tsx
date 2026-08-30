@@ -8,6 +8,9 @@ type Props = {
   pack: DestinationPack;
   compact?: boolean;
   onPress?: () => void;
+  actionLabel?: string;
+  onAction?: () => void;
+  actionDisabled?: boolean;
 };
 
 function categoryIcon(category: DestinationCategory) {
@@ -23,14 +26,22 @@ function categoryIcon(category: DestinationCategory) {
   }
 }
 
-export function DestinationCard({ pack, compact = false, onPress }: Props) {
+export function DestinationCard({
+  pack,
+  compact = false,
+  onPress,
+  actionLabel,
+  onAction,
+  actionDisabled = false,
+}: Props) {
   const offlineReady = Boolean(pack.downloaded);
   const available = pack.status === 'available';
 
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.card, compact && styles.cardCompact, pressed && styles.pressed]}
+      disabled={!onPress}
+      style={({ pressed }) => [styles.card, compact && styles.cardCompact, pressed && onPress && styles.pressed]}
     >
       <View style={[styles.iconWrap, offlineReady && styles.iconWrapReady]}>
         <Ionicons name={categoryIcon(pack.category)} size={22} color={colors.forest} />
@@ -42,7 +53,7 @@ export function DestinationCard({ pack, compact = false, onPress }: Props) {
             <Text numberOfLines={1} style={styles.title}>{pack.name}</Text>
             <Text numberOfLines={1} style={styles.area}>{pack.area}</Text>
           </View>
-          <Ionicons name="chevron-forward" size={17} color={colors.muted} />
+          {onPress ? <Ionicons name="chevron-forward" size={17} color={colors.muted} /> : null}
         </View>
 
         {!compact ? <Text numberOfLines={2} style={styles.summary}>{pack.summary}</Text> : null}
@@ -54,10 +65,32 @@ export function DestinationCard({ pack, compact = false, onPress }: Props) {
             {available ? <Meta icon="archive-outline" text={pack.sizeLabel} /> : null}
           </View>
 
-          <View style={[styles.status, offlineReady ? styles.statusReady : available ? styles.statusAvailable : styles.statusSoon]}>
-            <Text style={[styles.statusText, offlineReady ? styles.statusTextReady : available ? styles.statusTextAvailable : styles.statusTextSoon]}>
-              {offlineReady ? 'Offline ready' : available ? 'Available' : 'Coming soon'}
-            </Text>
+          <View style={styles.footerActions}>
+            <View style={[styles.status, offlineReady ? styles.statusReady : available ? styles.statusAvailable : styles.statusSoon]}>
+              <Text style={[styles.statusText, offlineReady ? styles.statusTextReady : available ? styles.statusTextAvailable : styles.statusTextSoon]}>
+                {offlineReady ? 'Offline ready' : available ? 'Available' : 'Coming soon'}
+              </Text>
+            </View>
+            {actionLabel && onAction ? (
+              <Pressable
+                accessibilityRole="button"
+                disabled={actionDisabled}
+                onPress={onAction}
+                style={({ pressed }) => [
+                  styles.actionButton,
+                  offlineReady && styles.actionButtonRemove,
+                  actionDisabled && styles.actionButtonDisabled,
+                  pressed && !actionDisabled && styles.actionButtonPressed,
+                ]}
+              >
+                <Ionicons
+                  name={offlineReady ? 'trash-outline' : 'download-outline'}
+                  size={13}
+                  color={offlineReady ? colors.danger : colors.white}
+                />
+                <Text style={[styles.actionText, offlineReady && styles.actionTextRemove]}>{actionLabel}</Text>
+              </Pressable>
+            ) : null}
           </View>
         </View>
       </View>
@@ -140,9 +173,6 @@ const styles = StyleSheet.create({
   },
   footer: {
     marginTop: 'auto',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     gap: spacing.sm,
   },
   metaRow: {
@@ -150,7 +180,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: spacing.sm,
-    flex: 1,
   },
   meta: {
     flexDirection: 'row',
@@ -161,6 +190,12 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 10.5,
     fontWeight: '600',
+  },
+  footerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
   status: {
     paddingHorizontal: 8,
@@ -188,5 +223,34 @@ const styles = StyleSheet.create({
   },
   statusTextSoon: {
     color: colors.muted,
+  },
+  actionButton: {
+    minHeight: 32,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.forest,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xxs,
+  },
+  actionButtonRemove: {
+    borderWidth: 1,
+    borderColor: '#E8C5BD',
+    backgroundColor: '#FFF7F5',
+  },
+  actionButtonDisabled: {
+    opacity: 0.45,
+  },
+  actionButtonPressed: {
+    opacity: 0.72,
+  },
+  actionText: {
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  actionTextRemove: {
+    color: colors.danger,
   },
 });

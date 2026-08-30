@@ -1,14 +1,20 @@
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Platform, SafeAreaView, StatusBar as NativeStatusBar, StyleSheet, View } from 'react-native';
 
 import { BottomNav } from './src/components/BottomNav';
+import { destinationPacks } from './src/data/destinations';
 import { AuthScreen, type AuthView } from './src/screens/AuthScreen';
 import { DownloadsScreen } from './src/screens/DownloadsScreen';
 import { ExploreScreen } from './src/screens/ExploreScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { SafetyScreen } from './src/screens/SafetyScreen';
 import { TripsScreen } from './src/screens/TripsScreen';
+import {
+  listDownloadedPackIds,
+  removeDownloadedPack,
+  saveDownloadedPack,
+} from './src/storage/downloadStore';
 import { colors } from './src/theme';
 import type { TabKey } from './src/types/navigation';
 
@@ -19,6 +25,51 @@ export default function App() {
   const [accessMode, setAccessMode] = useState<AccessMode>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [authView, setAuthView] = useState<AuthView>('welcome');
+  const [downloadedIds, setDownloadedIds] = useState<Set<string>>(
+    () => new Set(destinationPacks.filter((pack) => pack.downloaded).map((pack) => pack.id)),
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    void listDownloadedPackIds()
+      .then((ids) => {
+        if (active) setDownloadedIds(new Set(ids));
+      })
+      .catch(() => {
+        // Keep the bundled default state when local storage cannot be opened.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const packs = useMemo(
+    () => destinationPacks.map((pack) => ({ ...pack, downloaded: downloadedIds.has(pack.id) })),
+    [downloadedIds],
+  );
+
+  const downloadPack = async (packId: string) => {
+    const pack = destinationPacks.find((item) => item.id === packId);
+    if (!pack || pack.status !== 'available') return;
+
+    await saveDownloadedPack(packId);
+    setDownloadedIds((current) => {
+      const next = new Set(current);
+      next.add(packId);
+      return next;
+    });
+  };
+
+  const removePack = async (packId: string) => {
+    await removeDownloadedPack(packId);
+    setDownloadedIds((current) => {
+      const next = new Set(current);
+      next.delete(packId);
+      return next;
+    });
+  };
 
   const openAuth = (view: 'login' | 'register') => {
     setAuthView(view);
@@ -55,7 +106,16 @@ export default function App() {
       <StatusBar style="dark" backgroundColor={colors.offWhite} />
       <View style={styles.screen}>
         <View style={styles.content}>
-          {renderScreen(activeTab, setActiveTab, accessMode, userEmail, openAuth)}
+          {renderScreen(
+            activeTab,
+            setActiveTab,
+            accessMode,
+            userEmail,
+            openAuth,
+            packs,
+            downloadPack,
+            removePack,
+          )}
         </View>
         <BottomNav active={activeTab} onChange={setActiveTab} />
       </View>
@@ -69,15 +129,19 @@ function renderScreen(
   accessMode: Exclude<AccessMode, null>,
   userEmail: string | null,
   onOpenAuth: (view: 'login' | 'register') => void,
+  packs: typeof destinationPacks,
+  onDownloadPack: (packId: string) => Promise<void>,
+  onRemovePack: (packId: string) => Promise<void>,
 ) {
   switch (activeTab) {
     case 'explore':
-      return <ExploreScreen />;
+      return <ExploreScreen packs={packs} onDownloadPack={onDownloadPack} onRemovePack={onRemovePack} />;
     case 'downloads':
-      return <DownloadsScreen />;
+      return <DownloadsScreen packs={packs} onDownloadPack={onDownloadPack} onRemovePack={onRemovePack} />;
     case 'trips':
       return (
         <TripsScreen
+          packs={packs}
           isRegistered={accessMode === 'user'}
           ownerKey={userEmail}
           onLoginRequest={() => onOpenAuth('login')}
@@ -88,7 +152,7 @@ function renderScreen(
       return <SafetyScreen />;
     case 'home':
     default:
-      return <HomeScreen onNavigate={onNavigate} />;
+      return <HomeScreen packs={packs} onNavigate={onNavigate} />;
   }
 }
 

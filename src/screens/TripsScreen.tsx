@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 
 import { AppHeader } from '../components/AppHeader';
-import { destinationPacks } from '../data/destinations';
+import type { DestinationPack } from '../data/destinations';
 import {
   deleteItinerary,
   listItineraries,
@@ -21,6 +21,7 @@ import {
 import { colors, layout, radius, spacing } from '../theme';
 
 type Props = {
+  packs: DestinationPack[];
   isRegistered: boolean;
   ownerKey: string | null;
   onLoginRequest: () => void;
@@ -29,9 +30,8 @@ type Props = {
 
 type ViewMode = 'list' | 'create' | 'details';
 
-const availableDestinations = destinationPacks.filter((pack) => pack.status === 'available');
-
 export function TripsScreen({
+  packs,
   isRegistered,
   ownerKey,
   onLoginRequest,
@@ -95,10 +95,13 @@ export function TripsScreen({
     );
   }
 
+  const availableDestinations = packs.filter((pack) => pack.status === 'available');
+
   if (mode === 'create') {
     return (
       <CreateTrip
         ownerKey={ownerKey}
+        availableDestinations={availableDestinations}
         onCancel={() => setMode('list')}
         onSaved={async () => {
           await loadTrips();
@@ -134,7 +137,7 @@ export function TripsScreen({
 
   const totalStops = trips.reduce((count, trip) => count + trip.stops.length, 0);
   const offlineStops = trips.reduce(
-    (count, trip) => count + trip.stops.filter((stop) => destinationPacks.find((pack) => pack.id === stop.destinationId)?.downloaded).length,
+    (count, trip) => count + trip.stops.filter((stop) => packs.find((pack) => pack.id === stop.destinationId)?.downloaded).length,
     0,
   );
 
@@ -216,6 +219,7 @@ export function TripsScreen({
               <TripCard
                 key={trip.id}
                 trip={trip}
+                packs={packs}
                 onPress={() => {
                   setSelectedTrip(trip);
                   setMode('details');
@@ -231,10 +235,12 @@ export function TripsScreen({
 
 function CreateTrip({
   ownerKey,
+  availableDestinations,
   onCancel,
   onSaved,
 }: {
   ownerKey: string;
+  availableDestinations: DestinationPack[];
   onCancel: () => void;
   onSaved: () => Promise<void>;
 }) {
@@ -444,8 +450,8 @@ function TripStat({ icon, value, label }: { icon: keyof typeof Ionicons.glyphMap
   );
 }
 
-function TripCard({ trip, onPress }: { trip: Itinerary; onPress: () => void }) {
-  const readyStops = trip.stops.filter((stop) => destinationPacks.find((pack) => pack.id === stop.destinationId)?.downloaded).length;
+function TripCard({ trip, packs, onPress }: { trip: Itinerary; packs: DestinationPack[]; onPress: () => void }) {
+  const readyStops = trip.stops.filter((stop) => packs.find((pack) => pack.id === stop.destinationId)?.downloaded).length;
   const readinessPercent = trip.stops.length ? Math.round((readyStops / trip.stops.length) * 100) : 0;
 
   return (

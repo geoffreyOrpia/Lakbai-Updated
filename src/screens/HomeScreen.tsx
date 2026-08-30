@@ -6,17 +6,20 @@ import { AppHeader } from '../components/AppHeader';
 import { DestinationCard } from '../components/DestinationCard';
 import { SearchField } from '../components/SearchField';
 import { SectionHeader } from '../components/SectionHeader';
-import { destinationPacks } from '../data/destinations';
+import type { DestinationPack } from '../data/destinations';
 import { colors, layout, radius, spacing } from '../theme';
 import type { TabKey } from '../types/navigation';
 
 type Props = {
+  packs: DestinationPack[];
   onNavigate: (tab: TabKey) => void;
 };
 
-export function HomeScreen({ onNavigate }: Props) {
+export function HomeScreen({ packs, onNavigate }: Props) {
   const [query, setQuery] = useState('');
-  const featured = destinationPacks.filter((pack) => pack.featured).slice(0, 3);
+  const featured = packs.filter((pack) => pack.featured).slice(0, 3);
+  const downloaded = packs.filter((pack) => pack.downloaded);
+  const firstDownloaded = downloaded[0];
 
   return (
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -35,8 +38,10 @@ export function HomeScreen({ onNavigate }: Props) {
           <Ionicons name="cloud-done-outline" size={21} color={colors.forest} />
         </View>
         <View style={styles.readinessCopy}>
-          <Text style={styles.readinessTitle}>1 pack ready offline</Text>
-          <Text style={styles.readinessText}>Samal Island content is saved on this device.</Text>
+          <Text style={styles.readinessTitle}>{downloaded.length} {downloaded.length === 1 ? 'pack' : 'packs'} ready offline</Text>
+          <Text style={styles.readinessText}>
+            {firstDownloaded ? `${firstDownloaded.name} is saved on this device.` : 'Download a destination pack before heading offline.'}
+          </Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color={colors.forest} />
       </Pressable>
