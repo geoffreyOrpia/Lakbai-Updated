@@ -1,95 +1,209 @@
 <p align="center">
-  <img src="./assets/logo.png" alt="LakbayLokal Logo" width="180" />
+  <img src="./assets/logo.png" alt="LakbayLokal Logo" width="190" />
 </p>
 
 <h1 align="center">LakbayLokal</h1>
 
-<p align="center"><strong>Go Beyond, Go Lokal.</strong></p>
+<p align="center"><strong>Go beyond. Go local.</strong></p>
 
-LakbayLokal is an **offline-first tourist trail and destination information mobile application for Davao del Norte**. It is designed to help travelers prepare destination information before a trip and continue accessing essential local guidance when mobile data or internet connectivity becomes weak or unavailable.
+<p align="center">
+  An offline-first tourism companion for discovering, preparing, and organizing trips around Davao del Norte.
+</p>
 
-The application focuses on a simple travel flow:
+---
 
-**Download a destination pack → Travel offline → Follow saved local trails and information**
+## 🌿 Discover Davao del Norte, even beyond the signal
 
-## Purpose
+LakbayLokal is a **mobile tourism application for Davao del Norte** designed around one practical idea: travelers should be able to prepare useful destination information before leaving reliable internet coverage.
 
-Tourists visiting unfamiliar destinations can become dependent on an internet connection for directions, attraction information, and travel guidance. LakbayLokal aims to reduce that dependency by keeping important tourism content available on the user's device.
+The app brings destination discovery, offline preparation, personal itinerary planning, and travel-readiness tools into one compact experience inspired by local exploration.
 
-The project is intended to provide a compact, practical tourism companion rather than replace general-purpose navigation applications.
+**Explore → Save → Plan → Travel prepared**
 
-## Core Product Features
+LakbayLokal is intended to complement local tourism information and trip preparation. It is not meant to replace official advisories, emergency services, local guides, or full navigation platforms.
 
-The planned LakbayLokal experience centers on six core features:
+## 🧭 Current Travel Experience
 
-- **Destination Pack Download** — save selected destination content before traveling.
-- **Offline Tourist Map** — access locally stored map information without mobile data.
-- **Predefined Tourist Trails** — follow curated routes prepared for local destinations.
-- **Offline GPS Position** — use device positioning while viewing saved travel content.
-- **Travel & Safety Information** — keep destination notes, reminders, and essential safety information available offline.
-- **Personal Itineraries** — registered users can organize curated LakbayLokal destinations into their own locally stored, offline-ready trip plans.
+The application now has a working end-to-end prototype flow:
 
-## Target Users
+1. **Animated tourism landing page** introduces LakbayLokal using the standalone logo, travel accents, a gentle floating animation, and reduced-motion accessibility support.
+2. Travelers continue to the **authentication entry flow** and may log in, create an account, or continue as a guest.
+3. New accounts complete a separate **signup onboarding phase** for travel interests, travel pace, and offline-preparation preference.
+4. The main experience uses the navigation order **Home → Explore → Trips → Downloads → Safety**.
+5. Travelers can discover destination packs, save their offline-ready state, organize personal itineraries, and complete a persistent safety checklist.
 
-LakbayLokal is primarily designed for:
+The landing page and account onboarding are intentionally separate: the landing page introduces the tourism experience, while signup onboarding personalizes a newly created account.
 
-- First-time visitors
-- Solo travelers
-- Students and young travelers
-- Eco-tourists and hikers
-- Local tourism communities
-- Nearby tourism-related MSMEs
+## ✨ Implemented Features
 
-## Current Front-End
+### Tourism Landing Experience
 
-The repository currently contains the front-end foundation of the application. The interface uses local mock data while the offline map, storage, download, and GPS integrations are developed separately.
+- Animated standalone LakbayLokal logo using React Native's built-in animation system.
+- Tourism-inspired compass and location accents.
+- Coordinated logo, hero, feature, and call-to-action entrance motion.
+- Gentle idle floating and halo animation after the initial reveal.
+- Reduced-motion support through React Native accessibility settings.
 
-Current main screens:
+### Guest and Local Account Access
 
-- **Authentication** — optional Login, Create Account, or Continue as Guest entry flow.
-- **Home** — destination discovery, offline-readiness status, and recommended packs.
-- **Explore** — searchable and filterable destination-pack discovery.
-- **Downloads** — presentation of downloaded and available destination packs.
-- **Trips** — registered-user personal itinerary creation using curated destination packs, with local SQLite persistence.
-- **Safety** — offline travel preparation, safety reminders, and essential-information categories.
+- Optional **Login**, **Create Account**, or **Continue as Guest** flow.
+- Local account registration and authentication using SQLite.
+- Salted password hashing for the current offline prototype.
+- Persistent signed-in session restoration after restarting the app.
+- Explicit sign-out action for authenticated users.
+- Guest users can still browse destinations, manage offline pack state, and use travel-preparation features.
 
-Current sample destination packs include Samal Island, Tagum City, Kapalong, and San Isidro.
+> The current account system is an on-device prototype and is not a production cloud authentication service.
 
-## Design Direction
+### Signup Onboarding
 
-LakbayLokal follows a **compact, clean, information-focused** mobile design. The interface prioritizes quick scanning, restrained spacing, clear offline status, and minimal visual clutter.
+Newly registered accounts complete a three-step onboarding experience:
 
-Primary theme:
+- **Travel interests** — island, city, nature, and adventure experiences.
+- **Travel pace** — relaxed, balanced, or active.
+- **Offline preparation** — preference for preparation reminders before travel.
 
-- Forest Green — `#1F5B3A`
-- Warm Orange — `#E99A2B`
-- Off-white — `#F6F2EA`
+Onboarding completion and preferences are persisted locally with SQLite.
 
-The complete UI rules, spacing system, typography, component patterns, accessibility guidance, and front-end guardrails are documented in [`design.md`](./design.md).
+### Home
 
-## Technology Stack
+- Tourism-focused Davao del Norte introduction.
+- Search field that opens Explore with the submitted destination query.
+- Dynamic offline-readiness summary based on locally saved packs.
+- Recommended destination packs.
+- Quick access to the Downloads screen.
+- Simple travel preparation flow explaining how LakbayLokal is intended to work.
 
-### Current repository
+### Explore
 
-- **React Native 0.81.5**
+- Search destination packs by name, area, municipality, or description.
+- Filter destinations by tourism category.
+- View destination summary information, spot counts, trail counts, and estimated pack size.
+- Save or remove available destination packs from the local offline library state.
+- Success and error feedback through the global snackbar system.
+
+### Downloads
+
+- Persistent local offline-pack state using SQLite.
+- Separate views for packs already saved on the device and packs still available to save.
+- Dynamic count of downloaded packs and estimated storage usage.
+- Download/remove controls with busy states.
+- Offline state remains available after restarting LakbayLokal.
+
+### Personal Trips
+
+Registered users can create and manage their own itineraries using curated LakbayLokal destinations.
+
+Implemented trip tools include:
+
+- Create a named itinerary with a travel date.
+- Add optional trip notes.
+- Add available destination packs as itinerary stops.
+- Add a planned time and note to each stop.
+- Reorder stops before saving.
+- Remove stops while building an itinerary.
+- Persist itineraries locally using SQLite.
+- View saved itinerary details and timeline.
+- See total trips, stops, and offline-ready stops.
+- View per-trip offline-readiness percentage.
+- Delete itineraries with an actionable confirmation snackbar.
+
+Guest users can view the Trips area but must sign in before creating or managing personal itineraries.
+
+### Safety & Travel Readiness
+
+- Persistent pre-travel safety checklist.
+- Mark checklist items ready or reopen them later.
+- Reset the checklist when preparing for a new trip.
+- Checklist state is saved locally on the device.
+- Travel-preparation categories for medical information, contacts, routes, and advisories.
+- Reminder that LakbayLokal supplements rather than replaces official safety information.
+
+### App-Wide Feedback System
+
+LakbayLokal uses one consistent feedback system instead of mixing native alerts and custom messages:
+
+- **HUD** — blocking progress feedback for important operations such as account creation, login, onboarding completion, itinerary saving, and itinerary deletion.
+- **Snackbar** — actionable or persistent success/error feedback for downloads, itinerary actions, safety actions, and destructive confirmation.
+- **Toast** — lightweight confirmation for short-lived status changes such as guest mode, sign-in, sign-out, and checklist updates.
+
+## 🗺️ Destination Packs
+
+Current prototype destination data includes:
+
+- **Samal Island** — island tourism
+- **Tagum City** — city discovery
+- **Kapalong** — nature-focused destinations
+- **San Isidro** — outdoor and adventure destinations
+
+Destination packs currently contain prototype metadata such as destination category, municipality, description, spot count, trail count, availability status, and estimated size.
+
+### Important prototype boundary
+
+The application currently persists whether a pack has been saved to the local offline library, but it does **not yet download complete production map tiles, GeoJSON trail files, attraction media, or live tourism datasets**.
+
+Actual offline map rendering, downloadable trail datasets, and device GPS navigation remain future integration work. The README separates those planned capabilities from the features that are already functioning in the repository.
+
+## 🏞️ Product Direction
+
+LakbayLokal is being developed as a practical tourism companion for travelers who may encounter weak or inconsistent connectivity while exploring local destinations.
+
+The experience prioritizes:
+
+- Local tourism discovery
+- Offline preparation before travel
+- Lightweight on-device storage
+- Clear trip organization
+- Simple safety reminders
+- Guest-friendly access
+- Minimal dependency on paid APIs
+
+Potential users include first-time visitors, solo travelers, students, eco-tourists, hikers, local travelers, tourism communities, and tourism-related MSMEs.
+
+## 🎨 Visual Identity
+
+LakbayLokal uses an earthy tourism-inspired palette influenced by nature, trails, and warm local travel experiences.
+
+| Role | Color |
+| --- | --- |
+| Forest Green | `#1F5B3A` |
+| Dark Forest | `#173F2B` |
+| Warm Orange | `#E99A2B` |
+| Off-white | `#F6F2EA` |
+| Surface | `#FFFEFB` |
+
+The UI follows a compact, information-focused design with strong offline-readiness indicators, clear hierarchy, and restrained visual clutter.
+
+Detailed front-end rules are documented in [`design.md`](./design.md).
+
+## 🛠️ Technology Stack
+
+### Current implementation
+
 - **Expo SDK 54**
+- **React Native 0.81.5**
 - **React 19.1**
 - **TypeScript 5.9**
+- **Expo SQLite** — accounts, sessions, onboarding preferences, download state, itineraries, and safety checklist persistence
+- **Expo Crypto** — local prototype password hashing support
 - **Expo Vector Icons / Ionicons**
-- **Expo SQLite** — persistent on-device storage for personal itineraries.
+- **React Native Animated API** — landing-page motion without an additional animation dependency
+- **Custom HUD / snackbar / toast feedback provider**
 
-### Planned offline-first integrations
+### Planned offline tourism integrations
+
+The following are product-direction items and are **not yet fully implemented**:
 
 - Expo Location / device GPS
+- Offline map rendering
 - MapLibre React Native
-- OpenStreetMap-based map data
-- Expo FileSystem
-- JSON destination-pack metadata
-- GeoJSON trails, points of interest, and route data
+- OpenStreetMap-derived map data
+- Downloadable JSON destination-pack content
+- GeoJSON tourist trails and points of interest
+- Local attraction media and richer destination details
+- Production tourism-data management or tourism-office content workflow
 
-The project is designed around free/open-source core technologies and does not require a paid AI API, Google Maps API, or special hardware for its core functionality.
-
-## Project Structure
+## 📁 Project Structure
 
 ```text
 LakbayLokal/
@@ -98,6 +212,9 @@ LakbayLokal/
 ├── app.json
 ├── design.md
 ├── README.md
+├── assets/
+│   ├── logo.png
+│   └── logo-mark.png
 ├── src/
 │   ├── components/
 │   │   ├── AppHeader.tsx
@@ -108,24 +225,31 @@ LakbayLokal/
 │   │   └── SectionHeader.tsx
 │   ├── data/
 │   │   └── destinations.ts
+│   ├── feedback/
+│   │   └── FeedbackProvider.tsx
 │   ├── screens/
+│   │   ├── LandingScreen.tsx
 │   │   ├── AuthScreen.tsx
+│   │   ├── SignupOnboardingScreen.tsx
 │   │   ├── HomeScreen.tsx
 │   │   ├── ExploreScreen.tsx
-│   │   ├── DownloadsScreen.tsx
 │   │   ├── TripsScreen.tsx
+│   │   ├── DownloadsScreen.tsx
 │   │   └── SafetyScreen.tsx
 │   ├── storage/
-│   │   └── itineraryStore.ts
+│   │   ├── authStore.ts
+│   │   ├── downloadStore.ts
+│   │   ├── itineraryStore.ts
+│   │   ├── onboardingStore.ts
+│   │   └── safetyStore.ts
 │   ├── types/
 │   │   └── navigation.ts
 │   └── theme.ts
-├── assets/
 ├── package.json
 └── tsconfig.json
 ```
 
-## Getting Started
+## 🚀 Getting Started
 
 ### Requirements
 
@@ -145,7 +269,7 @@ npm install
 npm start
 ```
 
-You can also use:
+Additional commands:
 
 ```bash
 npm run android
@@ -153,14 +277,22 @@ npm run ios
 npm run web
 ```
 
-## Development Notes
+If local network discovery causes Expo Go connectivity problems, Expo's tunnel mode can also be used during development.
+
+## 🧪 Development Notes
 
 - Keep the project on **Expo SDK 54** unless an upgrade is intentionally planned and tested.
-- Follow [`design.md`](./design.md) before introducing new screens or reusable UI components.
-- Reuse the centralized tokens in `src/theme.ts` instead of hardcoding new brand styles.
-- The application is currently **front-end only**; destination downloads, actual offline map rendering, persistent storage, and GPS navigation are not yet connected to production data or services.
-- Temporary feedback should use the application's custom notifier/snackbar system once implemented rather than native Android toast/snackbar UI.
+- Follow [`design.md`](./design.md) before introducing new screens or reusable UI patterns.
+- Reuse centralized theme values from `src/theme.ts`.
+- Keep the landing page and signup onboarding conceptually separate.
+- Use the global feedback provider for HUD, snackbar, and toast behavior rather than adding inconsistent per-screen notification systems.
+- Preserve guest access to core tourism discovery and preparation features.
+- Do not describe destination packs as complete offline maps until actual map/trail files are downloaded and rendered locally.
+- The local authentication implementation is suitable for the current prototype only and should be replaced or strengthened before a production deployment involving real user accounts.
 
-## License
+---
 
-See [`LICENSE`](./LICENSE) for repository licensing information.
+<p align="center">
+  <strong>LakbayLokal</strong><br />
+  Explore locally. Prepare before the signal fades.
+</p>
