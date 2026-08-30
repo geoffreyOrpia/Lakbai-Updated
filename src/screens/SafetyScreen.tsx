@@ -1,18 +1,81 @@
 import { Ionicons } from '@expo/vector-icons';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AppHeader } from '../components/AppHeader';
 import { SectionHeader } from '../components/SectionHeader';
+import {
+  listCompletedSafetyItems,
+  resetSafetyChecklist,
+  setSafetyItemCompleted,
+} from '../storage/safetyStore';
 import { colors, layout, radius, spacing } from '../theme';
 
 const checklist = [
-  ['Download your destination pack', 'download-outline'],
-  ['Charge your phone before leaving', 'battery-charging-outline'],
-  ['Tell someone your planned route', 'people-outline'],
-  ['Keep local emergency details saved', 'document-text-outline'],
+  { key: 'download-pack', label: 'Download your destination pack', icon: 'download-outline' },
+  { key: 'charge-phone', label: 'Charge your phone before leaving', icon: 'battery-charging-outline' },
+  { key: 'share-route', label: 'Tell someone your planned route', icon: 'people-outline' },
+  { key: 'save-emergency', label: 'Keep local emergency details saved', icon: 'document-text-outline' },
 ] as const;
 
 export function SafetyScreen() {
+  const [completed, setCompleted] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    void listCompletedSafetyItems()
+      .then((keys) => {
+        if (active) setCompleted(new Set(keys));
+      })
+      .catch(() => {
+        if (active) setError('Your saved safety checklist could not be loaded.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const toggleItem = async (itemKey: string) => {
+    const nextValue = !completed.has(itemKey);
+    setError('');
+    setCompleted((current) => {
+      const next = new Set(current);
+      if (nextValue) next.add(itemKey);
+      else next.delete(itemKey);
+      return next;
+    });
+
+    try {
+      await setSafetyItemCompleted(itemKey, nextValue);
+    } catch {
+      setCompleted((current) => {
+        const next = new Set(current);
+        if (nextValue) next.delete(itemKey);
+        else next.add(itemKey);
+        return next;
+      });
+      setError('The checklist change could not be saved.');
+    }
+  };
+
+  const resetChecklist = async () => {
+    setError('');
+    try {
+      await resetSafetyChecklist();
+      setCompleted(new Set());
+    } catch {
+      setError('The checklist could not be reset.');
+    }
+  };
+
+  const completedCount = completed.size;
+
   return (
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <AppHeader compact />
@@ -32,17 +95,50 @@ export function SafetyScreen() {
         </View>
       </View>
 
-      <View style={styles.section}>
-        <SectionHeader eyebrow="Before leaving" title="Offline-ready checklist" />
-        <View style={styles.checklistCard}>
-          {checklist.map(([label, icon], index) => (
-            <View key={label} style={[styles.checkRow, index < checklist.length - 1 && styles.checkRowBorder]}>
-              <View style={styles.checkIcon}><Ionicons name={icon} size={17} color={colors.forest} /></View>
-              <Text style={styles.checkText}>{label}</Text>
-              <Ionicons name="checkmark-circle" size={18} color={colors.forest} />
-            </View>
-          ))}
+      {error ? (
+        <View style={styles.errorBox}>
+          <Ionicons name="alert-circle-outline" size={17} color={colors.danger} />
+          <Text style={styles.errorText}>{error}</Text>
         </View>
+      ) : null}
+
+      <View style={styles.section}>
+        <SectionHeader
+          eyebrow="Before leaving"
+          title={loading ? 'Loading checklist…' : `${completedCount}/${checklist.length} ready`}
+          actionLabel={completedCount ? 'Reset' : undefined}
+          onAction={completedCount ? () => void resetChecklist() : undefined}
+        />
+        <View style={styles.checklistCard}>
+          {checklist.map((item, index) => {
+            const checked = completed.has(item.key);
+            return (
+              <Pressable
+                key={item.key}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked }}
+                onPress={() => void toggleItem(item.key)}
+                style={({ pressed }) => [
+                  styles.checkRow,
+                  index < checklist.length - 1 && styles.checkRowBorder,
+                  checked && styles.checkRowCompleted,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <View style={[styles.checkIcon, checked && styles.checkIconCompleted]}>
+                  <Ionicons name={item.icon} size={17} color={colors.forest} />
+                </View>
+                <Text style={[styles.checkText, checked && styles.checkTextCompleted]}>{item.label}</Text>
+                <Ionicons
+                  name={checked ? 'checkmark-circle' : 'ellipse-outline'}
+                  size={20}
+                  color={checked ? colors.forest : colors.muted}
+                />
+              </Pressable>
+            );
+          })}
+        </View>
+        <Text style={styles.checklistHint}>Tap each item as you complete it. Your checklist is saved on this device.</Text>
       </View>
 
       <View style={styles.section}>
@@ -128,6 +224,22 @@ const styles = StyleSheet.create({
     fontSize: 11.2,
     lineHeight: 16,
   },
+  errorBox: {
+    minHeight: 44,
+    borderRadius: radius.md,
+    backgroundColor: colors.softOrange,
+    padding: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  errorText: {
+    flex: 1,
+    color: colors.danger,
+    fontSize: 11.2,
+    lineHeight: 15,
+    fontWeight: '700',
+  },
   section: {
     gap: spacing.sm,
   },
@@ -139,7 +251,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   checkRow: {
-    minHeight: 52,
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
@@ -149,6 +261,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  checkRowCompleted: {
+    backgroundColor: colors.softGreen,
+  },
   checkIcon: {
     width: 30,
     height: 30,
@@ -157,11 +272,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  checkIconCompleted: {
+    backgroundColor: colors.surface,
+  },
   checkText: {
     flex: 1,
     color: colors.text,
     fontSize: 12,
     fontWeight: '700',
+  },
+  checkTextCompleted: {
+    color: colors.forestDark,
+  },
+  checklistHint: {
+    color: colors.muted,
+    fontSize: 10.5,
+    lineHeight: 15,
   },
   grid: {
     flexDirection: 'row',
@@ -201,5 +327,8 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 11,
     lineHeight: 16,
+  },
+  pressed: {
+    opacity: 0.72,
   },
 });
