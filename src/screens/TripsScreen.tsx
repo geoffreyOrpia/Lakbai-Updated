@@ -147,84 +147,57 @@ export function TripsScreen({
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <AppHeader compact />
 
-      <View style={styles.tripsHero}>
-        <View style={styles.heroTopRow}>
-          <View style={styles.heroCopy}>
-            <Text style={styles.eyebrow}>MY TRIPS</Text>
-            <Text style={styles.title}>Plan less. Explore more.</Text>
-            <Text style={styles.subtitle}>Build personal itineraries from curated destinations and keep the important details available offline.</Text>
-          </View>
-          <View style={styles.heroActions}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Create a new itinerary"
-              style={({ pressed }) => [styles.heroCreateButton, pressed && styles.pressed]}
-              onPress={() => setMode('create')}
-            >
-              <Ionicons name="add" size={22} color={colors.white} />
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Sign out"
-              style={({ pressed }) => [styles.heroLogoutButton, pressed && styles.pressed]}
-              onPress={onLogout}
-            >
-              <Ionicons name="log-out-outline" size={19} color={colors.forest} />
-            </Pressable>
-          </View>
+      <View style={styles.tripsHeader}>
+        <View style={styles.tripsHeaderCopy}>
+          <Text style={styles.eyebrow}>MY TRIPS</Text>
+          <Text style={styles.title}>Your itineraries</Text>
+          <Text style={styles.subtitle}>Plan, save, and review your personal trips in one place.</Text>
         </View>
-
-        <View style={styles.tripStatsRow}>
-          <TripStat icon="calendar-outline" value={String(trips.length)} label={trips.length === 1 ? 'Trip' : 'Trips'} />
-          <View style={styles.statDivider} />
-          <TripStat icon="location-outline" value={String(totalStops)} label={totalStops === 1 ? 'Stop' : 'Stops'} />
-          <View style={styles.statDivider} />
-          <TripStat icon="cloud-done-outline" value={String(offlineStops)} label="Offline" />
-        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Sign out"
+          style={({ pressed }) => [styles.logoutButton, pressed && styles.pressed]}
+          onPress={onLogout}
+        >
+          <Ionicons name="log-out-outline" size={18} color={colors.forest} />
+        </Pressable>
       </View>
 
-      <View style={styles.localBanner}>
-        <View style={styles.bannerIcon}>
-          <Ionicons name="phone-portrait-outline" size={18} color={colors.forest} />
-        </View>
-        <View style={styles.bannerCopy}>
-          <Text style={styles.bannerTitle}>Offline-first itinerary</Text>
-          <Text style={styles.bannerText}>Trip plans are saved on this device, so your schedule stays accessible even when the signal drops.</Text>
-        </View>
-        <Ionicons name="checkmark-circle" size={20} color={colors.forest} />
+      <View style={styles.quickStatsRow}>
+        <TripStat icon="calendar-outline" value={String(trips.length)} label={trips.length === 1 ? 'Trip' : 'Trips'} />
+        <TripStat icon="location-outline" value={String(totalStops)} label={totalStops === 1 ? 'Stop' : 'Stops'} />
+        <TripStat icon="cloud-done-outline" value={String(offlineStops)} label="Offline" />
       </View>
+
+      <Pressable style={({ pressed }) => [styles.createTripButton, pressed && styles.pressed]} onPress={() => setMode('create')}>
+        <View style={styles.createTripIcon}>
+          <Ionicons name="add" size={20} color={colors.white} />
+        </View>
+        <View style={styles.createTripCopy}>
+          <Text style={styles.createTripTitle}>Create a new itinerary</Text>
+          <Text style={styles.createTripText}>Choose destinations and arrange your route.</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={colors.white} />
+      </Pressable>
 
       {error ? <MessageBox message={error} danger /> : null}
       {loading ? <Text style={styles.mutedCenter}>Loading saved trips…</Text> : null}
 
       {!loading && trips.length === 0 ? (
         <View style={styles.emptyCard}>
-          <View style={styles.emptyIllustration}>
-            <View style={styles.largeIcon}>
-              <Ionicons name="map-outline" size={25} color={colors.forest} />
-            </View>
-            <View style={styles.emptyRouteLine} />
-            <View style={[styles.largeIcon, styles.emptyIconAccent]}>
-              <Ionicons name="flag-outline" size={23} color={colors.orange} />
-            </View>
+          <View style={styles.largeIcon}>
+            <Ionicons name="map-outline" size={24} color={colors.forest} />
           </View>
-          <Text style={styles.emptyTitle}>Your next trip starts here</Text>
-          <Text style={styles.emptyText}>Create an itinerary, choose curated destinations, and arrange each stop in the order you want to visit.</Text>
-          <Pressable style={({ pressed }) => [styles.primaryButton, styles.emptyPrimaryButton, pressed && styles.pressed]} onPress={() => setMode('create')}>
-            <Ionicons name="add-circle-outline" size={18} color={colors.white} />
-            <Text style={styles.primaryButtonText}>Create first itinerary</Text>
-          </Pressable>
+          <Text style={styles.emptyTitle}>No itineraries yet</Text>
+          <Text style={styles.emptyText}>Create your first trip to organize destinations, times, and notes before you go.</Text>
         </View>
       ) : (
         <View style={styles.tripSection}>
           <View style={styles.sectionHeadingRow}>
             <View>
               <Text style={styles.sectionKicker}>SAVED ITINERARIES</Text>
-              <Text style={styles.sectionTitle}>Upcoming plans</Text>
+              <Text style={styles.sectionTitle}>Your trips</Text>
             </View>
-            <Pressable hitSlop={8} onPress={() => setMode('create')}>
-              <Text style={styles.sectionAction}>+ New trip</Text>
-            </Pressable>
           </View>
           <View style={styles.tripList}>
             {trips.map((trip) => (
@@ -636,24 +609,19 @@ const styles = StyleSheet.create({
   eyebrow: { color: colors.orange, fontSize: 10.5, fontWeight: '900', letterSpacing: 0.8 },
   title: { color: colors.text, fontSize: 24, lineHeight: 28, fontWeight: '900', letterSpacing: -0.7 },
   subtitle: { color: colors.muted, fontSize: 12.8, lineHeight: 18 },
-  tripsHero: {
-    borderRadius: radius.xl,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    gap: spacing.lg,
-  },
-  heroTopRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
-  heroCopy: { flex: 1, gap: spacing.xs },
-  heroActions: { gap: spacing.xs },
-  heroCreateButton: { width: 46, height: 46, borderRadius: radius.pill, backgroundColor: colors.forest, alignItems: 'center', justifyContent: 'center' },
-  heroLogoutButton: { width: 46, height: 40, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  tripStatsRow: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md },
-  tripStat: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
-  tripStatValue: { color: colors.text, fontSize: 15, lineHeight: 17, fontWeight: '900' },
-  tripStatLabel: { marginTop: 1, color: colors.muted, fontSize: 9.5, fontWeight: '700' },
-  statDivider: { width: 1, height: 30, backgroundColor: colors.border },
+  tripsHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
+  tripsHeaderCopy: { flex: 1, gap: spacing.xs },
+  logoutButton: { width: 42, height: 42, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  quickStatsRow: { flexDirection: 'row', gap: spacing.sm },
+  tripStat: { flex: 1, minHeight: 74, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', gap: 3 },
+  tripStatValue: { color: colors.text, fontSize: 17, lineHeight: 19, fontWeight: '900' },
+  tripStatLabel: { color: colors.muted, fontSize: 9.5, fontWeight: '800' },
+  statDivider: { display: 'none' },
+  createTripButton: { minHeight: 76, borderRadius: radius.lg, backgroundColor: colors.forest, padding: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  createTripIcon: { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' },
+  createTripCopy: { flex: 1 },
+  createTripTitle: { color: colors.white, fontSize: 13.5, fontWeight: '900' },
+  createTripText: { marginTop: 2, color: '#E7F0E9', fontSize: 10.8, lineHeight: 15 },
   tripSection: { gap: spacing.md },
   sectionHeadingRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: spacing.md },
   sectionKicker: { color: colors.orange, fontSize: 9.5, fontWeight: '900', letterSpacing: 0.7 },
@@ -662,11 +630,6 @@ const styles = StyleSheet.create({
   largeIcon: { width: 48, height: 48, borderRadius: radius.lg, backgroundColor: colors.softGreen, alignItems: 'center', justifyContent: 'center' },
   lockedTitle: { color: colors.text, fontSize: 17, fontWeight: '900', textAlign: 'center' },
   lockedText: { color: colors.muted, fontSize: 12.5, lineHeight: 18, textAlign: 'center', marginBottom: spacing.xs },
-  localBanner: { minHeight: 72, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.softGreen, padding: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  bannerIcon: { width: 36, height: 36, borderRadius: radius.md, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  bannerCopy: { flex: 1 },
-  bannerTitle: { color: colors.forestDark, fontSize: 12.8, fontWeight: '900' },
-  bannerText: { marginTop: 2, color: colors.muted, fontSize: 10.8, lineHeight: 15 },
   tripList: { gap: spacing.sm },
   tripCard: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface, overflow: 'hidden', flexDirection: 'row' },
   tripCardAccent: { width: 4, backgroundColor: colors.forest },
@@ -687,12 +650,12 @@ const styles = StyleSheet.create({
   readinessPercent: { color: colors.forest, fontSize: 10.5, fontWeight: '900' },
   progressTrack: { height: 5, borderRadius: radius.pill, backgroundColor: colors.softGreen, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: radius.pill, backgroundColor: colors.forest },
-  emptyCard: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.xl, backgroundColor: colors.surface, padding: spacing.xl, alignItems: 'center', gap: spacing.sm },
-  emptyIllustration: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs },
-  emptyRouteLine: { width: 36, height: 2, backgroundColor: colors.border },
+  emptyCard: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface, padding: spacing.xl, alignItems: 'center', gap: spacing.sm },
+  emptyIllustration: { display: 'none' },
+  emptyRouteLine: { display: 'none' },
   emptyIconAccent: { backgroundColor: colors.softOrange },
-  emptyTitle: { color: colors.text, fontSize: 16, fontWeight: '900', textAlign: 'center' },
-  emptyText: { maxWidth: 300, color: colors.muted, fontSize: 12, lineHeight: 18, textAlign: 'center' },
+  emptyTitle: { color: colors.text, fontSize: 15, fontWeight: '900', textAlign: 'center' },
+  emptyText: { maxWidth: 290, color: colors.muted, fontSize: 11.5, lineHeight: 17, textAlign: 'center' },
   emptyPrimaryButton: { marginTop: spacing.xs, alignSelf: 'stretch' },
   mutedCenter: { color: colors.muted, fontSize: 12, textAlign: 'center' },
   createHero: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md, borderRadius: radius.xl, backgroundColor: colors.softOrange, padding: spacing.lg },
