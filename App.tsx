@@ -8,6 +8,7 @@ import { AuthScreen, type AuthView } from './src/screens/AuthScreen';
 import { DownloadsScreen } from './src/screens/DownloadsScreen';
 import { ExploreScreen } from './src/screens/ExploreScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
+import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { SafetyScreen } from './src/screens/SafetyScreen';
 import { TripsScreen } from './src/screens/TripsScreen';
 import {
@@ -22,6 +23,7 @@ import {
   removeDownloadedPack,
   saveDownloadedPack,
 } from './src/storage/downloadStore';
+import { completeOnboarding, hasCompletedOnboarding } from './src/storage/onboardingStore';
 import { colors } from './src/theme';
 import type { TabKey } from './src/types/navigation';
 
@@ -32,11 +34,29 @@ export default function App() {
   const [accessMode, setAccessMode] = useState<AccessMode>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [sessionRestored, setSessionRestored] = useState(false);
+  const [onboardingRestored, setOnboardingRestored] = useState(false);
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [authView, setAuthView] = useState<AuthView>('welcome');
   const [exploreQuery, setExploreQuery] = useState('');
   const [downloadedIds, setDownloadedIds] = useState<Set<string>>(
     () => new Set(destinationPacks.filter((pack) => pack.downloaded).map((pack) => pack.id)),
   );
+
+  useEffect(() => {
+    let active = true;
+
+    void hasCompletedOnboarding()
+      .then((completed) => {
+        if (active) setOnboardingComplete(completed);
+      })
+      .finally(() => {
+        if (active) setOnboardingRestored(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -118,10 +138,24 @@ export default function App() {
     setActiveTab('home');
   };
 
-  if (!sessionRestored) {
+  if (!sessionRestored || !onboardingRestored) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <StatusBar style="dark" backgroundColor={colors.offWhite} />
+      </SafeAreaView>
+    );
+  }
+
+  if (!onboardingComplete) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar style="dark" backgroundColor={colors.offWhite} />
+        <OnboardingScreen
+          onContinue={() => {
+            void completeOnboarding();
+            setOnboardingComplete(true);
+          }}
+        />
       </SafeAreaView>
     );
   }
