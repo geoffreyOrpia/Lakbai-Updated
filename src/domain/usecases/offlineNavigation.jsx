@@ -47,84 +47,111 @@ const alignedFraction = (referenceSnap, snap) => {
   return reversed ? 1 - snap.fraction : null;
 };
 
+const SNAP_ENDPOINT_EPSILON = 1e-6;
+
+const endpointNodeId = snap => {
+  if (snap.fraction <= SNAP_ENDPOINT_EPSILON) return String(snap.edge.from);
+  if (snap.fraction >= 1 - SNAP_ENDPOINT_EPSILON) return String(snap.edge.to);
+  return null;
+};
+
 const createSnappedRoutingIndex = (index, startSnap, endSnap, mode) => {
-  const startId = '__lakbai_route_start__';
-  const endId = '__lakbai_route_end__';
+  const snappedStartNodeId = endpointNodeId(startSnap);
+  const snappedEndNodeId = endpointNodeId(endSnap);
+  const startId = snappedStartNodeId ?? '__lakbai_route_start__';
+  const endId = snappedEndNodeId ?? '__lakbai_route_end__';
   const nodesById = new Map(index.nodesById);
   const adjacency = new Map(index.adjacency);
-  const startNode = { id: startId, ...startSnap.projected };
-  const endNode = { id: endId, ...endSnap.projected };
 
-  nodesById.set(startId, startNode);
-  nodesById.set(endId, endNode);
-  adjacency.set(startId, []);
-  adjacency.set(endId, []);
+  if (!snappedStartNodeId) {
+    nodesById.set(startId, { id: startId, ...startSnap.projected });
+    adjacency.set(startId, []);
+  }
+  if (!snappedEndNodeId) {
+    nodesById.set(endId, { id: endId, ...endSnap.projected });
+    adjacency.set(endId, []);
+  }
 
   const appendEdge = (fromId, edge) => {
     const key = String(fromId);
     adjacency.set(key, [...(adjacency.get(key) ?? []), edge]);
   };
 
-  const startForward = matchingDirectedEdge(
-    index,
-    startSnap.edge.from,
-    startSnap.edge.to,
-    startSnap.edge,
-    mode,
-  );
-  const startReverse = matchingDirectedEdge(
-    index,
-    startSnap.edge.to,
-    startSnap.edge.from,
-    startSnap.edge,
-    mode,
-  );
-  if (startForward) {
-    appendEdge(startId, partialEdge(
-      startForward,
-      startId,
-      String(startSnap.edge.to),
-      1 - startSnap.fraction,
-    ));
-  }
-  if (startReverse) {
-    appendEdge(startId, partialEdge(
-      startReverse,
-      startId,
-      String(startSnap.edge.from),
-      startSnap.fraction,
-    ));
+  const startForward = !snappedStartNodeId
+    ? matchingDirectedEdge(
+      index,
+      startSnap.edge.from,
+      startSnap.edge.to,
+      startSnap.edge,
+      mode,
+    )
+    : null;
+  const startReverse = !snappedStartNodeId
+    ? matchingDirectedEdge(
+      index,
+      startSnap.edge.to,
+      startSnap.edge.from,
+      startSnap.edge,
+      mode,
+    )
+    : null;
+  if (!snappedStartNodeId) {
+    if (startForward) {
+      appendEdge(startId, partialEdge(
+        startForward,
+        startId,
+        String(startSnap.edge.to),
+        1 - startSnap.fraction,
+      ));
+    }
+    if (startReverse) {
+      appendEdge(startId, partialEdge(
+        startReverse,
+        startId,
+        String(startSnap.edge.from),
+        startSnap.fraction,
+      ));
+    }
   }
 
-  const endForward = matchingDirectedEdge(
-    index,
-    endSnap.edge.from,
-    endSnap.edge.to,
-    endSnap.edge,
-    mode,
-  );
-  const endReverse = matchingDirectedEdge(
-    index,
-    endSnap.edge.to,
-    endSnap.edge.from,
-    endSnap.edge,
-    mode,
-  );
-  if (endForward) {
-    appendEdge(
-      String(endSnap.edge.from),
-      partialEdge(endForward, String(endSnap.edge.from), endId, endSnap.fraction),
-    );
-  }
-  if (endReverse) {
-    appendEdge(
-      String(endSnap.edge.to),
-      partialEdge(endReverse, String(endSnap.edge.to), endId, 1 - endSnap.fraction),
-    );
+  const endForward = !snappedEndNodeId
+    ? matchingDirectedEdge(
+      index,
+      endSnap.edge.from,
+      endSnap.edge.to,
+      endSnap.edge,
+      mode,
+    )
+    : null;
+  const endReverse = !snappedEndNodeId
+    ? matchingDirectedEdge(
+      index,
+      endSnap.edge.to,
+      endSnap.edge.from,
+      endSnap.edge,
+      mode,
+    )
+    : null;
+  if (!snappedEndNodeId) {
+    if (endForward) {
+      appendEdge(
+        String(endSnap.edge.from),
+        partialEdge(endForward, String(endSnap.edge.from), endId, endSnap.fraction),
+      );
+    }
+    if (endReverse) {
+      appendEdge(
+        String(endSnap.edge.to),
+        partialEdge(endReverse, String(endSnap.edge.to), endId, 1 - endSnap.fraction),
+      );
+    }
   }
 
   const endFraction = alignedFraction(startSnap, endSnap);
-  const sameSegment = endFraction != null && samePhysicalEdge(startSnap.edge, endSnap.edge);
+  const sameSegment = !snappedStartNodeId
+    && !snappedEndNodeId
+    && endFraction != null
+    && samePhysicalEdge(startSnap.edge, endSnap.edge);
   if (sameSegment) {
     if (endFraction >= startSnap.fraction && startForward) {
       appendEdge(startId, partialEdge(

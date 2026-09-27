@@ -124,6 +124,36 @@ describe('offline routing core', () => {
     expect(result.geometry.coordinates.at(-1)[1]).toBeCloseTo(7, 5);
   });
 
+  test('treats an exact edge endpoint as the graph junction', () => {
+    const oneWayIntoDestination = {
+      meta: { id: 'endpoint-fixture' },
+      nodes: [
+        { id: 'a', lat: 7, lng: 125 },
+        { id: 'b', lat: 7, lng: 125.01 },
+        { id: 'c', lat: 7, lng: 125.02 },
+        { id: 'd', lat: 7.01, lng: 125.02 },
+      ],
+      edges: [
+        { from: 'a', to: 'b', distanceKm: 1, walk: true, name: 'Main Road' },
+        { from: 'b', to: 'c', distanceKm: 1, walk: true, name: 'Main Road' },
+        { from: 'd', to: 'c', distanceKm: 1, walk: true, name: 'Side Path' },
+      ],
+    };
+
+    const result = calculateOfflineRoute({
+      graph: oneWayIntoDestination,
+      from: { lat: 7, lng: 125 },
+      to: { lat: 7, lng: 125.02 },
+      mode: 'walk',
+      maxSnapDistanceKm: 0.2,
+      targetLabel: 'Junction',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.distanceKm).toBeCloseTo(2, 5);
+    expect(result.geometry.coordinates.at(-1)).toEqual([125.02, 7]);
+  });
+
   test('classifies a right-angle road change as a right turn', () => {
     const result = calculateOfflineRoute({
       graph: turnGraph,
