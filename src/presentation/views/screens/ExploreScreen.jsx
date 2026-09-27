@@ -7,6 +7,7 @@ import { CategoryChips } from "../components/CategoryChips.jsx";
 import { DestinationCard } from "../components/DestinationCard.jsx";
 import { EmptyState } from "../components/EmptyState.jsx";
 import { InfoBanner } from "../components/InfoBanner.jsx";
+import { LoadingState } from "../components/LoadingState.jsx";
 import { SearchField } from "../components/SearchField.jsx";
 import { SecondaryButton } from "../components/Buttons.jsx";
 import { colors, layout, radius, spacing } from "../../../theme.jsx";
@@ -42,6 +43,18 @@ export const ExploreScreen = ({
   const {
     showSnackbar
   } = useFeedback();
+  if (state.loading && !state.items.length) {
+    return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <AppHeader />
+        <LoadingState title="Loading the local catalog" text="Reading destination guides stored with LakbayLokal." />
+      </ScrollView>;
+  }
+  if (state.error && !state.items.length) {
+    return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <AppHeader />
+        <EmptyState icon="alert-circle-outline" title="Explore could not load" text={state.error} actionLabel="Try again" onAction={() => void viewModel.load()} />
+      </ScrollView>;
+  }
   const runAction = async (destinationName, packId, downloaded) => {
     const result = downloaded ? await viewModel.remove(packId) : await viewModel.download(packId);
     showSnackbar({
@@ -101,7 +114,7 @@ export const ExploreScreen = ({
         <Text style={styles.helper}>Local catalog</Text>
       </View>
 
-      {state.error && !state.items.length ? <InfoBanner tone="warn" text={state.error} /> : null}
+      {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
 
       <View style={styles.list}>
         {results.map(item => <DestinationCard key={item.destination.id} item={item} onPress={onOpenDestination ? () => onOpenDestination(item.destination.id) : undefined} actionLabel={item.destination.status === 'available' ? state.busyId === item.destination.id ? 'Saving…' : item.downloaded ? 'Remove' : item.updateAvailable ? 'Update' : 'Save' : undefined} actionDisabled={state.busyId !== null} onAction={item.destination.status === 'available' ? () => void runAction(item.destination.name, item.destination.id, item.downloaded) : undefined} />)}

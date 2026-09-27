@@ -1,10 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
+import { SecondaryButton } from "./Buttons.jsx";
 import { colors, radius, spacing } from "../../../theme.jsx";
 export const EmptyState = ({
   icon,
   title,
-  text
+  text,
+  actionLabel,
+  onAction
 }) => {
   return <View style={styles.card}>
       <View style={styles.iconWrap}>
@@ -12,6 +15,9 @@ export const EmptyState = ({
       </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.text}>{text}</Text>
+      {actionLabel && onAction ? <View style={styles.action}>
+          <SecondaryButton label={actionLabel} icon="refresh-outline" onPress={onAction} />
+        </View> : null}
     </View>;
 };
 const styles = StyleSheet.create({
@@ -46,5 +52,10 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     lineHeight: 17,
     textAlign: 'center'
+  },
+  action: {
+    width: '100%',
+    maxWidth: 240,
+    marginTop: spacing.xs
   }
 });

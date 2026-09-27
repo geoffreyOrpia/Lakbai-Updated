@@ -24,19 +24,32 @@ export class DestinationViewModel extends ViewModel {
   };
   load = async () => {
     this.setState({
-      loading: true
+      loading: true,
+      error: null
     });
-    const {
-      pack,
-      source
-    } = await loadPackForViewing(this.deps, this.destinationId);
-    this.setState({
-      pack,
-      source,
-      downloaded: source === 'local',
-      loading: false,
-      error: pack || source === 'bundled' ? null : 'This destination pack is not bundled with this version of LakbayLokal yet.'
-    });
+    try {
+      const {
+        pack,
+        source
+      } = await loadPackForViewing(this.deps, this.destinationId);
+      this.setState({
+        pack,
+        source,
+        downloaded: source === 'local',
+        error: pack || source === 'bundled' ? null : 'This destination pack is not bundled with this version of LakbayLokal yet.'
+      });
+    } catch (error) {
+      this.setState({
+        pack: null,
+        source: 'none',
+        downloaded: false,
+        error: userMessage(error, 'This destination could not be loaded from local storage.')
+      });
+    } finally {
+      this.setState({
+        loading: false
+      });
+    }
   };
   download = async () => {
     this.setState({

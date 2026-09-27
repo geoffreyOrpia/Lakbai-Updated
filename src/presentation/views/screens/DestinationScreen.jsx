@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFeedback } from "../../../feedback/FeedbackProvider.jsx";
 import { BackAction } from "../components/Buttons.jsx";
 import { CoverArt } from "../components/CoverArt.jsx";
+import { EmptyState } from "../components/EmptyState.jsx";
 import { InfoBanner } from "../components/InfoBanner.jsx";
+import { LoadingState } from "../components/LoadingState.jsx";
 import { SectionHeader } from "../components/SectionHeader.jsx";
 import { TrailMiniMap } from "../components/TrailMiniMap.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
@@ -39,13 +41,13 @@ export const DestinationScreen = ({
   };
   if (state.loading) {
     return <View style={styles.centerScreen}>
-        <ActivityIndicator size="small" color={colors.primary} />
+        <LoadingState title="Opening destination guide" text="Reading the bundled guide and your local Library state." />
       </View>;
   }
   if (!pack) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <BackAction label="Back" onPress={() => viewModel.back()} />
-        <InfoBanner tone="warn" text={state.error ?? 'This destination pack is unavailable.'} />
+        <EmptyState icon="alert-circle-outline" title="Destination unavailable" text={state.error ?? 'This destination pack is unavailable.'} actionLabel="Try again" onAction={() => void viewModel.load()} />
       </ScrollView>;
   }
   const destination = pack.destination;

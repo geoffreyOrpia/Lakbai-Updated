@@ -6,6 +6,7 @@ import { useFeedback } from "../../../feedback/FeedbackProvider.jsx";
 import { BackAction, PrimaryButton } from "../components/Buttons.jsx";
 import { EmptyState } from "../components/EmptyState.jsx";
 import { InfoBanner } from "../components/InfoBanner.jsx";
+import { LoadingState } from "../components/LoadingState.jsx";
 import { ProgressBar } from "../components/ProgressBar.jsx";
 import { AppHeader } from "../components/AppHeader.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
@@ -28,6 +29,18 @@ const TripList = ({
   const state = viewModel.state;
   const totalStops = state.trips.reduce((count, trip) => count + trip.stops.length, 0);
   const offlineStops = state.trips.reduce((count, trip) => count + viewModel.tripReadiness(trip).ready, 0);
+  if (state.loading && !state.trips.length) {
+    return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <AppHeader />
+        <LoadingState title="Loading your itineraries" text="Reading trips saved on this device." />
+      </ScrollView>;
+  }
+  if (state.error && !state.trips.length) {
+    return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <AppHeader />
+        <EmptyState icon="alert-circle-outline" title="Trips could not load" text={state.error} actionLabel="Try again" onAction={() => void viewModel.load()} />
+      </ScrollView>;
+  }
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <AppHeader />
 
@@ -59,8 +72,6 @@ const TripList = ({
       </Pressable>
 
       {state.error ? <InfoBanner tone="danger" text={state.error} /> : null}
-
-      {state.loading ? <Text style={styles.mutedCenter}>Loading saved trips…</Text> : null}
 
       {!state.loading && state.trips.length === 0 ? <EmptyState icon="map-outline" title="No itineraries yet" text="Create your first trip to organize destinations, times, and notes before you go." /> : <View style={styles.tripSection}>
           <View style={styles.sectionHeadingRow}>

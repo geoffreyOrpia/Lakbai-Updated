@@ -4,6 +4,8 @@ import { useFeedback } from "../../../feedback/FeedbackProvider.jsx";
 import { AppHeader } from "../components/AppHeader.jsx";
 import { DestinationCard } from "../components/DestinationCard.jsx";
 import { InfoBanner } from "../components/InfoBanner.jsx";
+import { EmptyState } from "../components/EmptyState.jsx";
+import { LoadingState } from "../components/LoadingState.jsx";
 import { SectionHeader } from "../components/SectionHeader.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
 export const DownloadsScreen = ({
@@ -16,6 +18,18 @@ export const DownloadsScreen = ({
   } = useFeedback();
   const downloaded = viewModel.downloaded;
   const available = viewModel.available;
+  if (state.loading && !state.items.length) {
+    return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <AppHeader />
+        <LoadingState title="Opening your local Library" text="Checking which bundled destination packs you saved." />
+      </ScrollView>;
+  }
+  if (state.error && !state.items.length) {
+    return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <AppHeader />
+        <EmptyState icon="alert-circle-outline" title="Library could not load" text={state.error} actionLabel="Try again" onAction={() => void viewModel.load()} />
+      </ScrollView>;
+  }
   const performAction = async (packId, isDownloaded) => {
     const result = isDownloaded ? await viewModel.remove(packId) : await viewModel.download(packId);
     showSnackbar({
@@ -60,7 +74,7 @@ export const DownloadsScreen = ({
         </View>
       </View>
 
-      {state.error && !state.items.length ? <InfoBanner tone="warn" text={state.error} /> : null}
+      {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
 
       <View style={styles.section}>
         <SectionHeader eyebrow="On this device" title="Saved packs" />

@@ -9,7 +9,8 @@ export class SafetyViewModel extends ViewModel {
       checklist: [],
       completed: [],
       contacts: [],
-      loading: true
+      loading: true,
+      error: null
     });
     this.deps = deps;
     this.packRepository = packRepository;
@@ -18,6 +19,10 @@ export class SafetyViewModel extends ViewModel {
     void this.load();
   };
   load = async () => {
+    this.setState({
+      loading: true,
+      error: null
+    });
     try {
       const [checklist, completed] = await Promise.all([listChecklist(this.deps), listCompletedKeys(this.deps)]);
       const meta = await this.packRepository.listDownloadedMeta().catch(() => []);
@@ -36,9 +41,13 @@ export class SafetyViewModel extends ViewModel {
         checklist,
         completed,
         contacts,
-        loading: false
+        error: null
       });
-    } catch {
+    } catch (error) {
+      this.setState({
+        error: userMessage(error, 'Safety information could not be loaded from this device.')
+      });
+    } finally {
       this.setState({
         loading: false
       });

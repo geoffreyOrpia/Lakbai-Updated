@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFeedback } from "../../../feedback/FeedbackProvider.jsx";
 import { AppHeader } from "../components/AppHeader.jsx";
 import { EmptyState } from "../components/EmptyState.jsx";
+import { LoadingState } from "../components/LoadingState.jsx";
 import { SectionHeader } from "../components/SectionHeader.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
 export const SafetyScreen = ({
@@ -49,6 +50,18 @@ export const SafetyScreen = ({
       });
     }
   };
+  if (state.loading && !state.checklist.length) {
+    return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <AppHeader />
+        <LoadingState title="Preparing Safety" text="Loading your checklist and verified contacts from saved destination packs." />
+      </ScrollView>;
+  }
+  if (state.error && !state.checklist.length) {
+    return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <AppHeader />
+        <EmptyState icon="alert-circle-outline" title="Safety could not load" text={state.error} actionLabel="Try again" onAction={() => void viewModel.load()} />
+      </ScrollView>;
+  }
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <AppHeader />
 

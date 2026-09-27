@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppHeader } from "../components/AppHeader.jsx";
 import { DestinationCard } from "../components/DestinationCard.jsx";
+import { EmptyState } from "../components/EmptyState.jsx";
 import { InfoBanner } from "../components/InfoBanner.jsx";
+import { LoadingState } from "../components/LoadingState.jsx";
 import { SearchField } from "../components/SearchField.jsx";
 import { SectionHeader } from "../components/SectionHeader.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
@@ -14,6 +16,18 @@ export const HomeScreen = ({
   const [searchQuery, setSearchQuery] = useState('');
   const featured = state.items.filter(item => item.destination.featured).slice(0, 3);
   const firstDownloaded = state.items.find(item => item.downloaded);
+  if (state.loading && !state.items.length) {
+    return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <AppHeader />
+        <LoadingState title="Preparing your local guides" text="Reading the Davao del Norte catalog and your saved Library state." />
+      </ScrollView>;
+  }
+  if (state.error && !state.items.length) {
+    return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <AppHeader />
+        <EmptyState icon="alert-circle-outline" title="Home could not load" text={state.error} actionLabel="Try again" onAction={() => void viewModel.load()} />
+      </ScrollView>;
+  }
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <AppHeader />
 
@@ -44,7 +58,7 @@ export const HomeScreen = ({
         <Ionicons name="chevron-forward" size={18} color={colors.primary} />
       </Pressable>
 
-      {state.error && !state.items.length ? <InfoBanner tone="warn" text={state.error} /> : null}
+      {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
 
       <View style={styles.section}>
         <SectionHeader eyebrow="Recommended" title="Start with these packs" actionLabel="Explore all" onAction={() => viewModel.openExplore()} />
