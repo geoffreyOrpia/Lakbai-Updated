@@ -15,7 +15,8 @@
         "backgroundColor": "#F6F2EA",
         "foregroundImage": "./assets/logo.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.ywach.lakbaylokal"
     },
     "web": {
       "favicon": "./assets/logo.png"
@@ -40,6 +41,11 @@
       "@react-native-community/datetimepicker",
       "@maplibre/maplibre-react-native",
       "expo-asset"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "98a01ab0-c3ce-4f92-ab28-5a280aaa008c"
+      }
+    }
   }
 }
