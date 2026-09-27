@@ -6,6 +6,7 @@ import {
   createOfflineBasemapStyle,
   toPmtilesSourceUrl,
 } from '../src/core/maps/offlineBasemapStyle.jsx';
+import { OFFLINE_BASEMAP_META } from '../src/data/assets/offlineBasemapAsset.jsx';
 import {
   createOfflineContextMapData,
   offlineContextMapBounds,
@@ -80,6 +81,14 @@ describe('destination planning map data', () => {
 
     expect(samal.features[0].properties.adm3_en).toBe('Island Garden City of Samal');
     expect(panabo.features[0].properties.adm3_en).toBe('City of Panabo');
+  });
+
+  test('pins the bundled regional basemap metadata', () => {
+    expect(OFFLINE_BASEMAP_META).toEqual(expect.objectContaining({
+      region: 'Davao del Norte',
+      maxzoom: 13,
+      sizeBytes: 5939044,
+    }));
   });
 
   test('wraps a local file URI with the MapLibre PMTiles protocol', () => {
