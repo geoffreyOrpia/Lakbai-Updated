@@ -47,6 +47,64 @@ export const edgeSupportsMode = (edge, mode) => {
   return edge.walk !== false;
 };
 
+const projectOntoSegment = (position, fromNode, toNode) => {
+  const earthRadiusKm = 6371;
+  const metersPerDegreeLat = Math.PI * earthRadiusKm * 1000 / 180;
+  const metersPerDegreeLng = metersPerDegreeLat * Math.cos(position.lat * Math.PI / 180);
+  const toLocal = point => ({
+    x: (point.lng - position.lng) * metersPerDegreeLng,
+    y: (point.lat - position.lat) * metersPerDegreeLat,
+  });
+  const a = toLocal(fromNode);
+  const b = toLocal(toNode);
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const lengthSquared = dx * dx + dy * dy;
+  const fraction = lengthSquared > 0
+    ? Math.max(0, Math.min(1, -(a.x * dx + a.y * dy) / lengthSquared))
+    : 0;
+  const projectedX = a.x + fraction * dx;
+  const projectedY = a.y + fraction * dy;
+
+  return {
+    fraction,
+    distanceKm: Math.hypot(projectedX, projectedY) / 1000,
+    projected: {
+      lat: fromNode.lat + (toNode.lat - fromNode.lat) * fraction,
+      lng: fromNode.lng + (toNode.lng - fromNode.lng) * fraction,
+    },
+  };
+};
+
+export const nearestGraphEdge = (index, position, mode = 'walk', maxDistanceKm = 1.5) => {
+  let best = null;
+
+  for (const [fromId, edges] of index.adjacency.entries()) {
+    const fromNode = index.nodesById.get(fromId);
+    if (!fromNode) continue;
+
+    for (const edge of edges) {
+      if (!edgeSupportsMode(edge, mode)) continue;
+      const toNode = index.nodesById.get(String(edge.to));
+      if (!toNode) continue;
+
+      const projection = projectOntoSegment(position, fromNode, toNode);
+      if (!best || projection.distanceKm < best.distanceKm) {
+        best = {
+          edge,
+          fromNode,
+          toNode,
+          fraction: projection.fraction,
+          projected: projection.projected,
+          distanceKm: projection.distanceKm,
+        };
+      }
+    }
+  }
+
+  return best && best.distanceKm <= maxDistanceKm ? best : null;
+};
+
 export const nearestGraphNode = (index, position, mode = 'walk', maxDistanceKm = 1.5) => {
   let best = null;
   const candidates = index.modeNodes?.[mode] ?? new Set(index.nodesById.keys());

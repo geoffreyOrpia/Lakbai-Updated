@@ -1,5 +1,9 @@
 import { aStarRoute } from "../../core/routing/aStar.jsx";
-import { buildRoutingIndex, nearestGraphNode } from "../../core/routing/graph.jsx";
+import {
+  buildRoutingIndex,
+  edgeSupportsMode,
+  nearestGraphEdge,
+} from "../../core/routing/graph.jsx";
 import { routeGeometryFromPath, summarizeRoutePath } from "../../core/routing/routeGeometry.jsx";
 import { buildRouteManeuvers } from "../../core/routing/maneuvers.jsx";
 
@@ -14,6 +18,142 @@ const routingIndexFor = graph => {
   return index;
 };
 
+const samePhysicalEdge = (candidate, reference) => {
+  if (!candidate || !reference) return false;
+  if (candidate.osmId && reference.osmId) return candidate.osmId === reference.osmId;
+  return candidate.highway === reference.highway && candidate.name === reference.name;
+};
+
+const matchingDirectedEdge = (index, fromId, toId, reference, mode) => {
+  const candidates = (index.adjacency.get(String(fromId)) ?? [])
+    .filter(edge => String(edge.to) === String(toId) && edgeSupportsMode(edge, mode));
+  return candidates.find(edge => samePhysicalEdge(edge, reference)) ?? candidates[0] ?? null;
+};
+
+const partialEdge = (edge, from, to, fraction) => ({
+  ...edge,
+  from,
+  to,
+  distanceKm: Math.max(0, (edge.distanceKm ?? 0) * fraction),
+  virtual: true,
+});
+
+const alignedFraction = (referenceSnap, snap) => {
+  const sameDirection = String(referenceSnap.edge.from) === String(snap.edge.from)
+    && String(referenceSnap.edge.to) === String(snap.edge.to);
+  if (sameDirection) return snap.fraction;
+  const reversed = String(referenceSnap.edge.from) === String(snap.edge.to)
+    && String(referenceSnap.edge.to) === String(snap.edge.from);
+  return reversed ? 1 - snap.fraction : null;
+};
+
+const createSnappedRoutingIndex = (index, startSnap, endSnap, mode) => {
+  const startId = '__lakbai_route_start__';
+  const endId = '__lakbai_route_end__';
+  const nodesById = new Map(index.nodesById);
+  const adjacency = new Map(index.adjacency);
+  const startNode = { id: startId, ...startSnap.projected };
+  const endNode = { id: endId, ...endSnap.projected };
+
+  nodesById.set(startId, startNode);
+  nodesById.set(endId, endNode);
+  adjacency.set(startId, []);
+  adjacency.set(endId, []);
+
+  const appendEdge = (fromId, edge) => {
+    const key = String(fromId);
+    adjacency.set(key, [...(adjacency.get(key) ?? []), edge]);
+  };
+
+  const startForward = matchingDirectedEdge(
+    index,
+    startSnap.edge.from,
+    startSnap.edge.to,
+    startSnap.edge,
+    mode,
+  );
+  const startReverse = matchingDirectedEdge(
+    index,
+    startSnap.edge.to,
+    startSnap.edge.from,
+    startSnap.edge,
+    mode,
+  );
+  if (startForward) {
+    appendEdge(startId, partialEdge(
+      startForward,
+      startId,
+      String(startSnap.edge.to),
+      1 - startSnap.fraction,
+    ));
+  }
+  if (startReverse) {
+    appendEdge(startId, partialEdge(
+      startReverse,
+      startId,
+      String(startSnap.edge.from),
+      startSnap.fraction,
+    ));
+  }
+
+  const endForward = matchingDirectedEdge(
+    index,
+    endSnap.edge.from,
+    endSnap.edge.to,
+    endSnap.edge,
+    mode,
+  );
+  const endReverse = matchingDirectedEdge(
+    index,
+    endSnap.edge.to,
+    endSnap.edge.from,
+    endSnap.edge,
+    mode,
+  );
+  if (endForward) {
+    appendEdge(
+      String(endSnap.edge.from),
+      partialEdge(endForward, String(endSnap.edge.from), endId, endSnap.fraction),
+    );
+  }
+  if (endReverse) {
+    appendEdge(
+      String(endSnap.edge.to),
+      partialEdge(endReverse, String(endSnap.edge.to), endId, 1 - endSnap.fraction),
+    );
+  }
+
+  const endFraction = alignedFraction(startSnap, endSnap);
+  const sameSegment = endFraction != null && samePhysicalEdge(startSnap.edge, endSnap.edge);
+  if (sameSegment) {
+    if (endFraction >= startSnap.fraction && startForward) {
+      appendEdge(startId, partialEdge(
+        startForward,
+        startId,
+        endId,
+        endFraction - startSnap.fraction,
+      ));
+    } else if (endFraction < startSnap.fraction && startReverse) {
+      appendEdge(startId, partialEdge(
+        startReverse,
+        startId,
+        endId,
+        startSnap.fraction - endFraction,
+      ));
+    }
+  }
+
+  return {
+    index: {
+      ...index,
+      nodesById,
+      adjacency,
+    },
+    startId,
+    endId,
+  };
+};
+
 export const calculateOfflineRoute = ({
   graph,
   from,
@@ -23,8 +163,8 @@ export const calculateOfflineRoute = ({
   targetLabel = 'destination',
 }) => {
   const index = routingIndexFor(graph);
-  const startSnap = nearestGraphNode(index, from, mode, maxSnapDistanceKm);
-  const endSnap = nearestGraphNode(index, to, mode, maxSnapDistanceKm);
+  const startSnap = nearestGraphEdge(index, from, mode, maxSnapDistanceKm);
+  const endSnap = nearestGraphEdge(index, to, mode, maxSnapDistanceKm);
 
   if (!startSnap || !endSnap) {
     return {
@@ -35,7 +175,8 @@ export const calculateOfflineRoute = ({
     };
   }
 
-  const path = aStarRoute(index, startSnap.id, endSnap.id, mode);
+  const snapped = createSnappedRoutingIndex(index, startSnap, endSnap, mode);
+  const path = aStarRoute(snapped.index, snapped.startId, snapped.endId, mode);
   if (!path) {
     return {
       ok: false,
@@ -53,8 +194,8 @@ export const calculateOfflineRoute = ({
     endSnap,
     nodeIds: path.nodeIds,
     edges: path.edges,
-    geometry: routeGeometryFromPath(index, path),
-    maneuvers: buildRouteManeuvers(index, path, targetLabel),
+    geometry: routeGeometryFromPath(snapped.index, path),
+    maneuvers: buildRouteManeuvers(snapped.index, path, targetLabel),
     distanceKm: summary.distanceKm,
     durationMin: summary.durationMin,
   };

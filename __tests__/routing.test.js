@@ -1,5 +1,10 @@
 import { aStarRoute } from '../src/core/routing/aStar.jsx';
-import { buildRoutingIndex, nearestGraphNode, routeBounds } from '../src/core/routing/graph.jsx';
+import {
+  buildRoutingIndex,
+  nearestGraphEdge,
+  nearestGraphNode,
+  routeBounds,
+} from '../src/core/routing/graph.jsx';
 import { classifyTurn } from '../src/core/routing/maneuvers.jsx';
 import { nextRouteManeuver, projectPositionOntoRoute } from '../src/core/routing/routeProgress.jsx';
 import { calculateOfflineRoute } from '../src/domain/usecases/offlineNavigation.jsx';
@@ -51,6 +56,17 @@ describe('offline routing core', () => {
     expect(snap.distanceKm).toBeLessThan(0.1);
   });
 
+  test('projects a position onto the nearest routable road edge', () => {
+    const index = buildRoutingIndex(graph);
+    const snap = nearestGraphEdge(index, { lat: 7.0002, lng: 125.005 }, 'walk', 1);
+
+    expect(snap).toBeTruthy();
+    expect(snap.projected.lat).toBeCloseTo(7, 5);
+    expect(snap.projected.lng).toBeCloseTo(125.005, 5);
+    expect(snap.fraction).toBeCloseTo(0.5, 1);
+    expect(snap.distanceKm).toBeLessThan(0.05);
+  });
+
   test('A* finds the shortest accessible walking path', () => {
     const index = buildRoutingIndex(graph);
     const route = aStarRoute(index, 'a', 'c', 'walk');
@@ -88,6 +104,24 @@ describe('offline routing core', () => {
     expect(result.maneuvers[0].instruction).toBe('Start on First Road');
     expect(result.maneuvers.some(maneuver => maneuver.instruction === 'Continue onto Second Road')).toBe(true);
     expect(result.maneuvers.at(-1).instruction).toBe('Arrive at Test Destination');
+  });
+
+  test('routes between projected points instead of jumping to the nearest junctions', () => {
+    const result = calculateOfflineRoute({
+      graph,
+      from: { lat: 7.0002, lng: 125.005 },
+      to: { lat: 7.0002, lng: 125.015 },
+      mode: 'walk',
+      maxSnapDistanceKm: 1,
+      targetLabel: 'Mid-block destination',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.distanceKm).toBeCloseTo(1, 5);
+    expect(result.geometry.coordinates[0][0]).toBeCloseTo(125.005, 5);
+    expect(result.geometry.coordinates[0][1]).toBeCloseTo(7, 5);
+    expect(result.geometry.coordinates.at(-1)[0]).toBeCloseTo(125.015, 5);
+    expect(result.geometry.coordinates.at(-1)[1]).toBeCloseTo(7, 5);
   });
 
   test('classifies a right-angle road change as a right turn', () => {
