@@ -3,7 +3,12 @@ import { createOfflineContextMapData, OFFLINE_CONTEXT_META } from "../maps/offli
 
 const stringify = value => JSON.stringify(value, null, 2);
 
-export const buildOfflinePackFiles = (pack, savedAt = Date.now(), photoFiles = []) => {
+export const buildOfflinePackFiles = (
+  pack,
+  savedAt = Date.now(),
+  photoFiles = [],
+  routingGraph = null,
+) => {
   const map = createDestinationMapData(pack);
   const contextMap = createOfflineContextMapData(pack);
   const routes = pack.routeSuggestions ?? [];
@@ -14,13 +19,14 @@ export const buildOfflinePackFiles = (pack, savedAt = Date.now(), photoFiles = [
     version: pack.version,
     updatedAt: pack.updatedAt,
     savedAt,
-    format: 2,
+    format: 3,
     files: {
       guide: 'pack.json',
       map: 'places.geojson',
       contextMap: 'context.geojson',
       routes: 'routes.json',
       photos: 'photos.json',
+      ...(routingGraph ? { routingGraph: 'routing.graph.json' } : {}),
     },
     mapContext: OFFLINE_CONTEXT_META,
     imageStorage: 'saved-pack-files',
@@ -34,5 +40,6 @@ export const buildOfflinePackFiles = (pack, savedAt = Date.now(), photoFiles = [
     'context.geojson': stringify(contextMap),
     'routes.json': stringify(routes),
     'photos.json': stringify(photos),
+    ...(routingGraph ? { 'routing.graph.json': JSON.stringify(routingGraph) } : {}),
   };
 };

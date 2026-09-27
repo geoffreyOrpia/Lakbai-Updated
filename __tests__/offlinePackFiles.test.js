@@ -56,7 +56,7 @@ describe('offline pack file serialization', () => {
       packId: 'tagum',
       version: 4,
       savedAt: 12345,
-      format: 2,
+      format: 3,
       files: expect.objectContaining({
         map: 'places.geojson',
         contextMap: 'context.geojson',
@@ -68,5 +68,28 @@ describe('offline pack file serialization', () => {
       photoKeys: ['tagum-cathedral'],
       photoFiles: ['images/tagum-cathedral.jpg'],
     }));
+  });
+
+  test('adds an optional routing graph as a first-class pack file', () => {
+    const routingGraph = {
+      meta: { id: 'tagum-routing' },
+      nodes: [
+        { id: 'a', lat: 7.4, lng: 125.8 },
+        { id: 'b', lat: 7.41, lng: 125.81 },
+      ],
+      edges: [
+        { from: 'a', to: 'b', distanceKm: 1, walk: true },
+      ],
+    };
+    const files = buildOfflinePackFiles(
+      pack,
+      12345,
+      ['images/tagum-cathedral.jpg'],
+      routingGraph,
+    );
+    const manifest = JSON.parse(files['manifest.json']);
+
+    expect(manifest.files.routingGraph).toBe('routing.graph.json');
+    expect(JSON.parse(files['routing.graph.json'])).toEqual(routingGraph);
   });
 });

@@ -22,6 +22,7 @@ const createVm = ({
   fix = { lat: 7.2999, lng: 125.6801, accuracy: 8 },
   graphValue = graph,
   basemapUri = 'file:///maps/davao-del-norte.pmtiles',
+  routingGraphUri = 'file:///packs/panabo/routing.graph.json',
 } = {}) => {
   const routingDeps = {
     routingGraphRepository: {
@@ -35,7 +36,7 @@ const createVm = ({
   const destinationDeps = {
     packRepository: {
       getOfflineBundleStatus: jest.fn().mockResolvedValue(
-        basemapUri ? { basemapUri } : null,
+        basemapUri ? { basemapUri, routingGraphUri } : null,
       ),
     },
   };
@@ -77,7 +78,7 @@ const createVm = ({
 
 describe('NavigationViewModel', () => {
   test('loads the bundled graph and saved offline basemap', async () => {
-    const { vm } = createVm();
+    const { vm, routingDeps } = createVm();
 
     await vm.load();
 
@@ -85,6 +86,10 @@ describe('NavigationViewModel', () => {
     expect(vm.state.graphMeta.id).toBe('panabo-routing-pilot');
     expect(vm.state.offlineBasemapUri).toBe('file:///maps/davao-del-norte.pmtiles');
     expect(vm.state.error).toBeNull();
+    expect(routingDeps.routingGraphRepository.getForDestination).toHaveBeenCalledWith(
+      'panabo',
+      'file:///packs/panabo/routing.graph.json',
+    );
   });
 
   test('calculates an offline route from the foreground GPS fix', async () => {

@@ -3,6 +3,7 @@ import { Directory, File, Paths } from 'expo-file-system';
 import { buildOfflinePackFiles } from "../../core/offline/offlinePackFiles.jsx";
 import { getDestinationPhotoModule } from "../assets/destinationPhotos.jsx";
 import { getOfflineBasemapModule } from "../assets/offlineBasemapAsset.jsx";
+import { getBundledRoutingGraph } from "../assets/routingGraphs.jsx";
 
 const rootDirectory = () => new Directory(Paths.document, 'lakbaylokal', 'packs');
 const packDirectory = packId => new Directory(rootDirectory(), packId);
@@ -52,6 +53,7 @@ const statusFor = packId => {
   const contextMapFile = new File(directory, 'context.geojson');
   const manifestFile = new File(directory, 'manifest.json');
   if (!mapFile.exists || !contextMapFile.exists || !manifestFile.exists) return null;
+  const routingGraphFile = new File(directory, 'routing.graph.json');
   const basemap = sharedBasemapStatus();
   const sizeBytes = directory.size ?? 0;
   return {
@@ -59,6 +61,8 @@ const statusFor = packId => {
     mapUri: mapFile.uri,
     contextMapUri: contextMapFile.uri,
     manifestUri: manifestFile.uri,
+    routingGraphUri: routingGraphFile.exists ? routingGraphFile.uri : null,
+    routingGraphSizeBytes: routingGraphFile.exists ? routingGraphFile.size ?? 0 : 0,
     imageDirectoryUri: new Directory(directory, 'images').uri,
     sizeBytes,
     basemapUri: basemap?.uri ?? null,
@@ -95,7 +99,8 @@ const writePackDirectory = async (pack, directory) => {
     photoFiles.push(`images/${fileName}`);
   }
 
-  const files = buildOfflinePackFiles(pack, Date.now(), photoFiles);
+  const routingGraph = getBundledRoutingGraph(pack.id);
+  const files = buildOfflinePackFiles(pack, Date.now(), photoFiles, routingGraph);
   for (const [name, content] of Object.entries(files)) {
     const file = new File(directory, name);
     file.create({

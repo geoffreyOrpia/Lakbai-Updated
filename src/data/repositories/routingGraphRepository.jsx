@@ -1,15 +1,24 @@
-let panaboGraphCache = null;
+import { File } from 'expo-file-system';
+import { getBundledRoutingGraph } from "../assets/routingGraphs.jsx";
 
-const loadPanaboGraph = () => {
-  if (!panaboGraphCache) {
-    panaboGraphCache = require('../assets/panaboRoutingGraph.json');
-  }
-  return panaboGraphCache;
-};
+const defaultReadText = uri => new File(uri).textSync();
 
 export class BundledRoutingGraphRepository {
-  getForDestination = async destinationId => {
-    if (destinationId === 'panabo') return loadPanaboGraph();
-    return null;
+  constructor(readText = defaultReadText) {
+    this.readText = readText;
+  }
+
+  getForDestination = async (destinationId, savedGraphUri = null) => {
+    if (savedGraphUri) {
+      try {
+        const savedGraph = JSON.parse(this.readText(savedGraphUri));
+        if (savedGraph?.nodes?.length && savedGraph?.edges?.length) {
+          return savedGraph;
+        }
+      } catch {
+        // Corrupt or missing saved data falls back to a bundled pilot graph.
+      }
+    }
+    return getBundledRoutingGraph(destinationId);
   };
 }

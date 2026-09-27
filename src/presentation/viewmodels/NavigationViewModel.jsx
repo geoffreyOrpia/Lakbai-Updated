@@ -100,10 +100,13 @@ export class NavigationViewModel extends ViewModel {
 
   load = async () => {
     try {
-      const [graph, bundle] = await Promise.all([
-        this.routingDeps.routingGraphRepository.getForDestination(this.state.destinationId),
-        this.destinationDeps.packRepository.getOfflineBundleStatus?.(this.state.destinationId) ?? null,
-      ]);
+      const bundle = await (
+        this.destinationDeps.packRepository.getOfflineBundleStatus?.(this.state.destinationId) ?? null
+      );
+      const graph = await this.routingDeps.routingGraphRepository.getForDestination(
+        this.state.destinationId,
+        bundle?.routingGraphUri ?? null,
+      );
       this.setState({
         graph,
         graphMeta: graph?.meta ?? null,
