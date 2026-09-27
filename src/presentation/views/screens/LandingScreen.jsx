@@ -24,6 +24,8 @@ export const LandingScreen = ({
   const [footerEntrance] = useState(() => new Animated.Value(0));
   const [float] = useState(() => new Animated.Value(0));
   const [haloPulse] = useState(() => new Animated.Value(0));
+  const [sunGlow] = useState(() => new Animated.Value(0));
+  const [roadTravel] = useState(() => new Animated.Value(0));
   useEffect(() => {
     let active = true;
     let floatLoop = null;
@@ -36,17 +38,31 @@ export const LandingScreen = ({
         heroEntrance.setValue(1);
         featureEntrance.setValue(1);
         footerEntrance.setValue(1);
+        sunGlow.setValue(1);
+        roadTravel.setValue(1);
         return;
       }
       Animated.sequence([Animated.parallel([Animated.timing(logoEntrance, {
         toValue: 1,
+        duration: 820,
+        easing: Easing.out(Easing.back(1.15)),
+        useNativeDriver: true
+      }), Animated.timing(sunGlow, {
+        toValue: 1,
         duration: 620,
+        delay: 150,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true
+      }), Animated.timing(roadTravel, {
+        toValue: 1,
+        duration: 760,
+        delay: 260,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true
       }), Animated.timing(heroEntrance, {
         toValue: 1,
         duration: 520,
-        delay: 180,
+        delay: 360,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true
       })]), Animated.parallel([Animated.timing(featureEntrance, {
@@ -94,13 +110,27 @@ export const LandingScreen = ({
       floatLoop?.stop();
       haloLoop?.stop();
     };
-  }, [featureEntrance, float, footerEntrance, haloPulse, heroEntrance, logoEntrance]);
+  }, [featureEntrance, float, footerEntrance, haloPulse, heroEntrance, logoEntrance, roadTravel, sunGlow]);
   const logoTranslateY = Animated.add(logoEntrance.interpolate({
     inputRange: [0, 1],
-    outputRange: [16, 0]
+    outputRange: [24, 0]
   }), float.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, -5]
+    outputRange: [0, -4]
+  }));
+  const logoRotateX = Animated.add(logoEntrance.interpolate({
+    inputRange: [0, 1],
+    outputRange: [18, 0]
+  }), float.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-1.2, 1.2]
+  }));
+  const logoRotateY = Animated.add(logoEntrance.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-16, 0]
+  }), float.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-1.8, 1.8]
   }));
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} bounces={false}>
       <View style={styles.hero}>
@@ -117,62 +147,78 @@ export const LandingScreen = ({
             })
           }]
         }]} />
-          <Animated.View pointerEvents="none" style={[styles.haloInner, {
-          opacity: logoEntrance,
+          <Animated.View pointerEvents="none" style={[styles.sunGlow, {
+          opacity: sunGlow.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 0.78]
+          }),
           transform: [{
-            scale: logoEntrance.interpolate({
+            scale: sunGlow.interpolate({
               inputRange: [0, 1],
-              outputRange: [0.72, 1]
+              outputRange: [0.45, 1]
             })
           }]
         }]} />
 
-          <Animated.View style={[styles.logoShell, {
+          <Animated.View pointerEvents="none" style={[styles.logoDepthShadow, {
+          opacity: logoEntrance.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 0.22]
+          }),
+          transform: [{
+            translateY: logoEntrance.interpolate({
+              inputRange: [0, 1],
+              outputRange: [30, 12]
+            })
+          }, {
+            scaleX: logoEntrance.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.62, 1]
+            })
+          }]
+        }]} />
+
+          <Animated.View style={[styles.logoStage, {
           opacity: logoEntrance,
           transform: [{
+            perspective: 900
+          }, {
             translateY: logoTranslateY
+          }, {
+            rotateX: logoRotateX.interpolate({
+              inputRange: [-20, 20],
+              outputRange: ['-20deg', '20deg']
+            })
+          }, {
+            rotateY: logoRotateY.interpolate({
+              inputRange: [-20, 20],
+              outputRange: ['-20deg', '20deg']
+            })
           }, {
             scale: logoEntrance.interpolate({
               inputRange: [0, 0.72, 1],
-              outputRange: [0.82, 1.04, 1]
+              outputRange: [0.72, 1.05, 1]
             })
           }]
         }]}>
             <Image source={require('../../../../assets/logo-mark.png')} style={styles.logo} resizeMode="contain" />
-          </Animated.View>
-
-          <Animated.View pointerEvents="none" style={[styles.travelAccent, styles.travelAccentCompass, {
-          opacity: logoEntrance,
-          transform: [{
-            translateX: logoEntrance.interpolate({
-              inputRange: [0, 1],
-              outputRange: [-12, 0]
-            })
-          }, {
-            translateY: float.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, 3]
-            })
-          }]
-        }]}>
-            <Ionicons name="compass-outline" size={17} color={colors.primary} />
-          </Animated.View>
-
-          <Animated.View pointerEvents="none" style={[styles.travelAccent, styles.travelAccentPin, {
-          opacity: logoEntrance,
-          transform: [{
-            translateX: logoEntrance.interpolate({
-              inputRange: [0, 1],
-              outputRange: [12, 0]
-            })
-          }, {
-            translateY: float.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, -3]
-            })
-          }]
-        }]}>
-            <Ionicons name="location" size={17} color={colors.accent} />
+            <Animated.View pointerEvents="none" style={[styles.roadTravel, {
+              opacity: roadTravel.interpolate({
+                inputRange: [0, 0.15, 0.75, 1],
+                outputRange: [0, 0.85, 0.45, 0]
+              }),
+              transform: [{
+                translateY: roadTravel.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [38, -38]
+                })
+              }, {
+                scaleX: roadTravel.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.45, 1]
+                })
+              }]
+            }]} />
           </Animated.View>
         </View>
 
@@ -250,62 +296,64 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   heroVisual: {
-    width: 184,
-    height: 154,
+    width: 208,
+    height: 190,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm
   },
   haloOuter: {
     position: 'absolute',
-    width: 142,
-    height: 142,
-    borderRadius: 71,
+    width: 166,
+    height: 166,
+    borderRadius: 83,
     borderWidth: 1,
     borderColor: '#CBE6D5',
     backgroundColor: colors.primarySofter
   },
-  haloInner: {
+  sunGlow: {
     position: 'absolute',
-    width: 116,
-    height: 116,
-    borderRadius: 58,
-    backgroundColor: colors.primarySoft
+    width: 74,
+    height: 74,
+    borderRadius: 37,
+    right: 26,
+    top: 14,
+    backgroundColor: colors.accentSoft,
+    shadowColor: colors.accent,
+    shadowOpacity: 0.22,
+    shadowRadius: 24,
+    shadowOffset: {
+      width: 0,
+      height: 8
+    },
+    elevation: 3
   },
-  logoShell: {
-    width: 102,
-    height: 102,
-    borderRadius: 32,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.border,
+  logoDepthShadow: {
+    position: 'absolute',
+    width: 112,
+    height: 24,
+    borderRadius: 999,
+    bottom: 18,
+    backgroundColor: colors.primaryDark
+  },
+  logoStage: {
+    width: 128,
+    height: 162,
     alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.floating
+    justifyContent: 'center'
   },
   logo: {
-    width: 82,
-    height: 82
+    width: 128,
+    height: 162
   },
-  travelAccent: {
+  roadTravel: {
     position: 'absolute',
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.card
-  },
-  travelAccentCompass: {
-    left: 8,
-    top: 28
-  },
-  travelAccentPin: {
-    right: 6,
-    bottom: 24
+    width: 22,
+    height: 74,
+    left: 53,
+    top: 72,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.34)'
   },
   heroCopy: {
     width: '100%',
