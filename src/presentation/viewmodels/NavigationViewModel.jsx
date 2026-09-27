@@ -14,6 +14,16 @@ const MAX_ROUTE_START_ACCURACY_M = 80;
 const BASE_OFF_ROUTE_M = 45;
 const OFF_ROUTE_CONFIRM_FIXES = 3;
 
+const SCENIC_POI_CATEGORIES = new Set([
+  'attraction',
+  'beach',
+  'island',
+  'landmark',
+  'museum',
+  'park',
+  'viewpoint',
+]);
+
 const spokenDistance = distanceKm => {
   if (distanceKm == null) return null;
   if (distanceKm >= 1) {
@@ -63,6 +73,7 @@ export class NavigationViewModel extends ViewModel {
       trailId: route.trailId ?? null,
       trailPreview: null,
       offlinePois: [],
+      scenicPois: [],
       routePois: [],
       mode: route.mode ?? 'walk',
       preference: normalizeRoutePreference(route.preference),
@@ -119,11 +130,15 @@ export class NavigationViewModel extends ViewModel {
       const offlinePois = (savedPack?.spots ?? []).filter(spot => (
         haversineKm(spot, this.state.target) > 0.08
       ));
+      const scenicPois = offlinePois.filter(spot => (
+        SCENIC_POI_CATEGORIES.has(String(spot.category ?? '').toLowerCase())
+      ));
       this.setState({
         graph,
         graphMeta: graph?.meta ?? null,
         trailPreview,
         offlinePois,
+        scenicPois,
         offlineBasemapUri: bundle?.basemapUri ?? null,
         error: !graph
           ? 'Offline road routing is not available for this destination yet.'
@@ -212,6 +227,7 @@ export class NavigationViewModel extends ViewModel {
       to: this.state.target,
       mode: this.state.mode,
       preference: this.state.preference,
+      routeAttractors: this.state.scenicPois,
       maxSnapDistanceKm: 1,
       targetLabel: this.state.target.label ?? this.state.destinationName,
     });
@@ -446,6 +462,7 @@ export class NavigationViewModel extends ViewModel {
         to: this.state.target,
         mode: this.state.mode,
         preference: this.state.preference,
+        routeAttractors: this.state.scenicPois,
         maxSnapDistanceKm: 1,
         targetLabel: this.state.target.label ?? this.state.destinationName,
       });

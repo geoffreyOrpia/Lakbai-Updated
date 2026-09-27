@@ -58,10 +58,10 @@ const preferenceGraph = {
     { id: 'end', lat: 7, lng: 125.02 },
   ],
   edges: [
-    { from: 'start', to: 'road', distanceKm: 1.2, walk: true, highway: 'residential', name: 'Local Road' },
-    { from: 'road', to: 'end', distanceKm: 1.2, walk: true, highway: 'residential', name: 'Local Road' },
-    { from: 'start', to: 'path', distanceKm: 1.3, walk: true, highway: 'path', surface: 'ground', name: 'Forest Path' },
-    { from: 'path', to: 'end', distanceKm: 1.3, walk: true, highway: 'path', surface: 'ground', name: 'Forest Path' },
+    { from: 'start', to: 'road', distanceKm: 1.2, walk: true, highway: 'residential', name: 'Local Road', osmId: 'road-way' },
+    { from: 'road', to: 'end', distanceKm: 1.2, walk: true, highway: 'residential', name: 'Local Road', osmId: 'road-way' },
+    { from: 'start', to: 'path', distanceKm: 1.3, walk: true, highway: 'path', surface: 'ground', name: 'Forest Path', osmId: 'scenic-way' },
+    { from: 'path', to: 'end', distanceKm: 1.3, walk: true, highway: 'path', surface: 'ground', name: 'Forest Path', osmId: 'scenic-way' },
   ],
 };
 
@@ -97,7 +97,7 @@ describe('offline routing core', () => {
     expect(route.edges).toHaveLength(2);
   });
 
-  test('supports direct, easy, and adventure walking preferences', () => {
+  test('supports direct, scenic, easy, and adventure walking preferences', () => {
     const common = {
       graph: preferenceGraph,
       from: { lat: 7, lng: 125 },
@@ -107,15 +107,38 @@ describe('offline routing core', () => {
       targetLabel: 'Preference test',
     };
     const direct = calculateOfflineRoute({ ...common, preference: 'direct' });
+    const scenic = calculateOfflineRoute({
+      ...common,
+      preference: 'scenic',
+      routeAttractors: [{ id: 'viewpoint', lat: 7.005, lng: 125.01 }],
+    });
     const easy = calculateOfflineRoute({ ...common, preference: 'easy' });
     const adventure = calculateOfflineRoute({ ...common, preference: 'adventure' });
 
     expect(direct.preference).toBe('direct');
     expect(direct.edges.every(edge => edge.highway === 'residential')).toBe(true);
+    expect(scenic.preference).toBe('scenic');
+    expect(scenic.scenicAnchorCount).toBe(1);
+    expect(scenic.edges.every(edge => edge.highway === 'path')).toBe(true);
     expect(easy.preference).toBe('easy');
     expect(easy.edges.every(edge => edge.highway === 'residential')).toBe(true);
     expect(adventure.preference).toBe('adventure');
     expect(adventure.edges.every(edge => edge.highway === 'path')).toBe(true);
+  });
+
+  test('scenic preference falls back to the direct route without nearby curated POIs', () => {
+    const result = calculateOfflineRoute({
+      graph: preferenceGraph,
+      from: { lat: 7, lng: 125 },
+      to: { lat: 7, lng: 125.02 },
+      mode: 'walk',
+      preference: 'scenic',
+      maxSnapDistanceKm: 0.2,
+    });
+
+    expect(result.preference).toBe('scenic');
+    expect(result.scenicAnchorCount).toBe(0);
+    expect(result.edges.every(edge => edge.highway === 'residential')).toBe(true);
   });
 
   test('drive mode excludes path-only edges', () => {

@@ -31,6 +31,12 @@ const routePreferences = Object.freeze([
     description: 'Shortest practical walking route in the local graph.',
   },
   {
+    id: 'scenic',
+    label: 'Scenic',
+    icon: 'camera-outline',
+    description: 'Prefer practical alternatives near curated offline parks, viewpoints, landmarks, beaches, attractions, or museums.',
+  },
+  {
     id: 'easy',
     label: 'Easy',
     icon: 'leaf-outline',
@@ -40,7 +46,7 @@ const routePreferences = Object.freeze([
     id: 'adventure',
     label: 'Adventure',
     icon: 'trail-sign-outline',
-    description: 'Prefer walkable paths and tracks when they provide a practical alternative.',
+    description: 'Prefer mapped walking paths and tracks when practical. Verified Trail Mode remains a separate source-reviewed experience.',
   },
 ]);
 
@@ -93,6 +99,10 @@ export const NavigationScreen = ({ viewModel }) => {
 
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
       {state.gpsError ? <InfoBanner tone="warn" text={state.gpsError} /> : null}
+      {state.route?.preference === 'scenic' && state.route.scenicAnchorCount === 0 ? <InfoBanner
+        tone="warn"
+        text="No curated scenic POI is close enough to this routing graph to change the route, so Scenic currently behaves like Direct."
+      /> : null}
       {state.rerouting ? <InfoBanner tone="info" text="You left the active route. LakBai is recalculating another offline route from your current position." /> : null}
       {viewModel.offRoute && state.tracking && !state.rerouting ? <InfoBanner
         tone="warn"

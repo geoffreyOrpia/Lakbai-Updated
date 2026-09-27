@@ -19,6 +19,17 @@ const routingIndexFor = graph => {
   return index;
 };
 
+const scenicOsmIdsFor = (index, attractors) => {
+  const scenicOsmIds = new Set();
+  for (const place of attractors ?? []) {
+    if (!Number.isFinite(place?.lat) || !Number.isFinite(place?.lng)) continue;
+    const snap = nearestGraphEdge(index, place, 'walk', 0.35);
+    const osmId = snap?.edge?.osmId;
+    if (osmId) scenicOsmIds.add(String(osmId));
+  }
+  return scenicOsmIds;
+};
+
 const samePhysicalEdge = (candidate, reference) => {
   if (!candidate || !reference) return false;
   if (candidate.osmId && reference.osmId) return candidate.osmId === reference.osmId;
@@ -188,6 +199,7 @@ export const calculateOfflineRoute = ({
   to,
   mode = 'walk',
   preference = 'direct',
+  routeAttractors = [],
   maxSnapDistanceKm = 1.5,
   targetLabel = 'destination',
 }) => {
@@ -195,6 +207,9 @@ export const calculateOfflineRoute = ({
     ? normalizeRoutePreference(preference)
     : 'direct';
   const index = routingIndexFor(graph);
+  const scenicOsmIds = normalizedPreference === 'scenic'
+    ? scenicOsmIdsFor(index, routeAttractors)
+    : new Set();
   const startSnap = nearestGraphEdge(index, from, mode, maxSnapDistanceKm);
   const endSnap = nearestGraphEdge(index, to, mode, maxSnapDistanceKm);
 
@@ -214,6 +229,7 @@ export const calculateOfflineRoute = ({
     snapped.endId,
     mode,
     normalizedPreference,
+    { scenicOsmIds },
   );
   if (!path) {
     return {
@@ -229,6 +245,7 @@ export const calculateOfflineRoute = ({
     ok: true,
     mode,
     preference: normalizedPreference,
+    scenicAnchorCount: scenicOsmIds.size,
     startSnap,
     endSnap,
     nodeIds: path.nodeIds,

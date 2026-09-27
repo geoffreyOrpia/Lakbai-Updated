@@ -2,6 +2,7 @@ const WALK_SPEED_KPH = 4.5;
 
 export const WALK_ROUTE_PREFERENCES = Object.freeze([
   'direct',
+  'scenic',
   'easy',
   'adventure',
 ]);
@@ -38,7 +39,12 @@ const ROUGH_SURFACES = new Set([
   'mud',
 ]);
 
-const walkPreferencePenalty = (edge, preference) => {
+const walkPreferencePenalty = (edge, preference, context) => {
+  if (preference === 'scenic') {
+    const scenicOsmIds = context?.scenicOsmIds;
+    if (!scenicOsmIds?.size) return 1;
+    return edge.osmId && scenicOsmIds.has(String(edge.osmId)) ? 1 : 1.25;
+  }
   if (preference === 'easy') {
     const highwayPenalty = EASY_HIGHWAY_PENALTY[edge.highway] ?? 1;
     const surfacePenalty = ROUGH_SURFACES.has(String(edge.surface ?? '').toLowerCase()) ? 1.7 : 1;
@@ -62,7 +68,7 @@ const DRIVE_SPEEDS_KPH = Object.freeze({
   living_street: 12,
 });
 
-export const routingProfile = (mode, preference = 'direct') => {
+export const routingProfile = (mode, preference = 'direct', context = {}) => {
   if (mode === 'drive') {
     return {
       mode: 'drive',
@@ -79,7 +85,7 @@ export const routingProfile = (mode, preference = 'direct') => {
     preference: normalizedPreference,
     edgeCost: edge => (
       edge.distanceKm / WALK_SPEED_KPH
-      * walkPreferencePenalty(edge, normalizedPreference)
+      * walkPreferencePenalty(edge, normalizedPreference, context)
     ),
     durationHours: edge => edge.distanceKm / WALK_SPEED_KPH,
     heuristicHours: distanceKm => distanceKm / WALK_SPEED_KPH,

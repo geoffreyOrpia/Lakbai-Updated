@@ -126,6 +126,7 @@ describe('NavigationViewModel', () => {
     expect(vm.state.offlineBasemapUri).toBe('file:///maps/davao-del-norte.pmtiles');
     expect(vm.state.trailPreview).toBe(verifiedTrail);
     expect(vm.state.offlinePois).toHaveLength(1);
+    expect(vm.state.scenicPois).toHaveLength(1);
     expect(vm.state.error).toBeNull();
     expect(routingDeps.routingGraphRepository.getForDestination).toHaveBeenCalledWith(
       'panabo',
