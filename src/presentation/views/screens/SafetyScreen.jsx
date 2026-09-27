@@ -40,6 +40,15 @@ export const SafetyScreen = ({
       });
     }
   };
+  const callContact = async contact => {
+    const result = await viewModel.callContact(contact);
+    if (!result.ok) {
+      showSnackbar({
+        message: result.message,
+        tone: 'error'
+      });
+    }
+  };
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <AppHeader />
 
@@ -94,8 +103,17 @@ export const SafetyScreen = ({
                     {contact.phone}
                     {contact.note ? ` · ${contact.note}` : ''}
                   </Text>
-                  <Text style={styles.contactSource}>From {contact.packName}</Text>
+                  <Text style={styles.contactSource}>{contact.verified ? `Verified · ${contact.sourceLabel}` : `From ${contact.packName}`}</Text>
                 </View>
+                {contact.verified ? <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Call ${contact.label} at ${contact.phone}`}
+                  onPress={() => void callContact(contact)}
+                  style={({ pressed }) => [styles.callButton, pressed && styles.pressed]}
+                >
+                    <Ionicons name="call" size={15} color={colors.onPrimary} />
+                    <Text style={styles.callButtonText}>Call</Text>
+                  </Pressable> : null}
               </View>)}
           </View> : <EmptyState icon="call-outline" title="No pack contacts yet" text="Save a destination pack to your library to include its local emergency numbers here." />}
       </View>
@@ -268,6 +286,22 @@ const styles = StyleSheet.create({
     color: colors.faint,
     fontSize: 9.8,
     fontWeight: '600'
+  },
+  callButton: {
+    minWidth: 64,
+    minHeight: 44,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xxs
+  },
+  callButtonText: {
+    color: colors.onPrimary,
+    fontSize: 10.5,
+    fontWeight: '900'
   },
   grid: {
     flexDirection: 'row',

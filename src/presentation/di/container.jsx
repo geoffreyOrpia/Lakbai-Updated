@@ -11,6 +11,7 @@ import { LocalPreferencesRepository } from "../../data/repositories/preferencesR
 import { LocalSafetyRepository } from "../../data/repositories/safetyRepository.jsx";
 import { ExpoLocationService } from "../../data/services/locationService.jsx";
 import { createOnlineResearchService } from "../../data/services/onlineResearchService.jsx";
+import { createPhoneService } from "../../data/services/phoneService.jsx";
 /**
  * Composition root (poor-man's DI). Singletons are created once at first use;
  * view model factories receive everything they need through their deps.
@@ -34,6 +35,7 @@ const buildContainer = () => {
   // Platform services
   const locationService = new ExpoLocationService();
   const onlineResearchService = createOnlineResearchService();
+  const phoneService = createPhoneService();
 
   // Use case dependency bundles
   const destinationDeps = {
@@ -47,7 +49,8 @@ const buildContainer = () => {
     itineraryRepository
   };
   const safetyDeps = {
-    safetyRepository
+    safetyRepository,
+    phoneService
   };
   const onlineResearchDeps = {
     onlineResearchService

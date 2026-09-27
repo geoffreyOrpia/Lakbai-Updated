@@ -1,6 +1,15 @@
 // Full destination content bundled with the application.
 // Trail geometry uses GeoJSON [lng, lat] positions.
 
+const NATIONAL_EMERGENCY_CONTACT = {
+  label: 'National Emergency Hotline',
+  phone: '911',
+  note: 'Use 911 for emergencies. Local agency numbers are withheld until they are reverified.',
+  verified: true,
+  verifiedAt: '2026-09-27',
+  sourceLabel: 'Department of the Interior and Local Government · Unified 911'
+};
+
 export const packs = [{
   id: 'samal',
   version: 5,
@@ -117,11 +126,7 @@ export const packs = [{
   },
   safety: {
     reminders: ['Confirm the last return ferry time before heading to southern coves.', 'Wear reef-safe sunscreen and footwear that handles coral rubble.', 'Tell your accommodation where your day route goes and when you expect to return.', 'Sea conditions change fast; agree on a cutoff time with boat operators.'],
-    emergencyContacts: [{
-      label: 'National Emergency Hotline',
-      phone: '911',
-      note: 'Use 911 for emergencies. Local agency numbers are withheld until they are reverified.'
-    }],
+    emergencyContacts: [NATIONAL_EMERGENCY_CONTACT],
     facilities: ['Peñaplata health center', 'Babak district hospital', 'Kaputian barangay station']
   }
 }, {
@@ -207,11 +212,7 @@ export const packs = [{
   },
   safety: {
     reminders: ['Do not swim directly after heavy rain; brown water means stronger undercurrents.', 'Watch children near the second falls; depths change quickly.', 'Leave before dusk; the trail has no lighting.'],
-    emergencyContacts: [{
-      label: 'National Emergency Hotline',
-      phone: '911',
-      note: 'Use 911 for emergencies. Local agency numbers are withheld until they are reverified.'
-    }],
+    emergencyContacts: [NATIONAL_EMERGENCY_CONTACT],
     facilities: ['Peñaplata health center', 'Falls entrance first-aid kit']
   }
 }, {
@@ -290,11 +291,7 @@ export const packs = [{
   },
   safety: {
     reminders: ['Follow your guide\'s distance markers at all times near the caves.', 'Do not touch guano, cave walls, or fallen pups.', 'Sanitize hands after the visit; wildlife areas carry zoonotic risk.'],
-    emergencyContacts: [{
-      label: 'National Emergency Hotline',
-      phone: '911',
-      note: 'Use 911 for emergencies. Local agency numbers are withheld until they are reverified.'
-    }],
+    emergencyContacts: [NATIONAL_EMERGENCY_CONTACT],
     facilities: ['Babak district hospital', 'Sanctuary first-aid station']
   }
 }, {
@@ -404,11 +401,7 @@ export const packs = [{
   },
   safety: {
     reminders: ['Keep bags zipped in market crowds.', 'Cross only at pedestrian lanes; traffic around the terminal is fast.', 'Save the terminal\'s last-bus time for your return leg.'],
-    emergencyContacts: [{
-      label: 'National Emergency Hotline',
-      phone: '911',
-      note: 'Use 911 for emergencies. Local agency numbers are withheld until they are reverified.'
-    }],
+    emergencyContacts: [NATIONAL_EMERGENCY_CONTACT],
     facilities: ['Tagum City Hospital', 'Davao Regional Medical Center (nearby)', 'Freedom Park police assistance desk']
   }
 }, {
@@ -487,11 +480,7 @@ export const packs = [{
   },
   safety: {
     reminders: ['Stay on the boardwalk; mangrove mud can trap footwear and legs.', 'Bring insect repellent, especially around dusk.', 'Mind loose planks after storms; report them to the caretaker.'],
-    emergencyContacts: [{
-      label: 'National Emergency Hotline',
-      phone: '911',
-      note: 'Use 911 for emergencies. Local agency numbers are withheld until they are reverified.'
-    }],
+    emergencyContacts: [NATIONAL_EMERGENCY_CONTACT],
     facilities: ['Panabo City Hospital', 'Barangay health station (coastal)']
   }
 }];

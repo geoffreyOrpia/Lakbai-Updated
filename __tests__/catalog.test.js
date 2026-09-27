@@ -13,7 +13,12 @@ describe('release catalog safety', () => {
   test('ships only the national emergency hotline until local numbers are reverified', () => {
     for (const pack of seedPacks) {
       expect(pack.safety.emergencyContacts).toEqual([
-        expect.objectContaining({ label: 'National Emergency Hotline', phone: '911' }),
+        expect.objectContaining({
+          label: 'National Emergency Hotline',
+          phone: '911',
+          verified: true,
+          sourceLabel: expect.stringContaining('Department of the Interior and Local Government'),
+        }),
       ]);
     }
   });

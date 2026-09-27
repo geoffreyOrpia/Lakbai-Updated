@@ -1,4 +1,5 @@
 import { listChecklist, listCompletedKeys, resetChecklist, setChecklistItemCompleted } from "../../domain/usecases/safety.jsx";
+import { callVerifiedEmergencyContact } from "../../domain/usecases/emergencyContacts.jsx";
 import { userMessage } from "../../core/errors/appError.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 /** Safety hub: preparation checklist plus offline emergency contacts from packs. */
@@ -67,6 +68,20 @@ export class SafetyViewModel extends ViewModel {
       });
     } catch (error) {
       throw new Error(userMessage(error, 'The checklist could not be reset.'));
+    }
+  };
+  callContact = async contact => {
+    try {
+      await callVerifiedEmergencyContact(this.deps, contact);
+      return {
+        ok: true,
+        message: `Opening ${contact.phone}…`
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        message: userMessage(error, 'The emergency number could not be opened on this device.')
+      };
     }
   };
 }
