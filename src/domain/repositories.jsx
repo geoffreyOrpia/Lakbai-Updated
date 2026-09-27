@@ -6,6 +6,7 @@ export const REPOSITORY_METHODS = Object.freeze({
     'getSavedPack',
     'listSavedMeta',
     'getSavedMeta',
+    'getOfflineBundleStatus',
     'savePack',
     'removePack',
   ]),

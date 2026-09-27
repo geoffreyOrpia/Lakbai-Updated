@@ -1,8 +1,9 @@
-/** SQLite-only repository for bundled destination packs and library state. */
+/** Repository for bundled content, SQLite library state, and durable offline files. */
 export class PackRepositoryImpl {
-  constructor(content, meta) {
+  constructor(content, meta, offlineStorage) {
     this.content = content;
     this.meta = meta;
+    this.offlineStorage = offlineStorage;
   }
   listManifests = () => {
     return this.content.listManifests();
@@ -12,7 +13,15 @@ export class PackRepositoryImpl {
   };
   getSavedPack = async id => {
     const saved = await this.meta.get(id);
-    return saved ? this.content.get(id) : null;
+    if (!saved) return null;
+    const pack = await this.content.get(id);
+    if (pack && this.offlineStorage) {
+      const status = await this.offlineStorage.getStatus(id);
+      if (!status) {
+        await this.offlineStorage.savePack(pack);
+      }
+    }
+    return pack;
   };
   listSavedMeta = async () => {
     return this.meta.list();
@@ -23,15 +32,27 @@ export class PackRepositoryImpl {
   savePack = async id => {
     const pack = await this.content.get(id);
     if (!pack) throw new Error('This destination pack is not bundled with the app yet.');
-    await this.meta.upsert({
-      packId: pack.id,
-      version: pack.version,
-      updatedAt: pack.updatedAt,
-      savedAt: Date.now()
-    });
+    if (this.offlineStorage) {
+      await this.offlineStorage.savePack(pack);
+    }
+    try {
+      await this.meta.upsert({
+        packId: pack.id,
+        version: pack.version,
+        updatedAt: pack.updatedAt,
+        savedAt: Date.now()
+      });
+    } catch (error) {
+      await this.offlineStorage?.removePack(pack.id);
+      throw error;
+    }
     return pack;
   };
   removePack = async id => {
     await this.meta.remove(id);
+    await this.offlineStorage?.removePack(id);
+  };
+  getOfflineBundleStatus = async id => {
+    return this.offlineStorage?.getStatus(id) ?? null;
   };
 }

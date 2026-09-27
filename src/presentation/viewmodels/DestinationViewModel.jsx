@@ -1,4 +1,4 @@
-import { loadPackForViewing, removePackFromLibrary, savePackToLibrary } from "../../domain/usecases/destinationPacks.jsx";
+import { loadOfflineBundleStatus, loadPackForViewing, removePackFromLibrary, savePackToLibrary } from "../../domain/usecases/destinationPacks.jsx";
 import { userMessage } from "../../core/errors/appError.jsx";
 import { openDirectionsToPlace } from "../../domain/usecases/directions.jsx";
 import { isFavoriteDestination, toggleDestinationFavorite } from "../../domain/usecases/favorites.jsx";
@@ -13,6 +13,7 @@ export class DestinationViewModel extends ViewModel {
       busy: false,
       directionsBusyId: null,
       saved: false,
+      offlineBundle: null,
       favorite: false,
       error: null
     });
@@ -37,10 +38,14 @@ export class DestinationViewModel extends ViewModel {
         loadPackForViewing(this.deps, this.destinationId),
         isFavoriteDestination(this.deps, this.destinationId),
       ]);
+      const offlineBundle = source === 'library'
+        ? await loadOfflineBundleStatus(this.deps, this.destinationId)
+        : null;
       this.setState({
         pack,
         source,
         saved: source === 'library',
+        offlineBundle,
         favorite,
         error: pack || source === 'bundled' ? null : 'This destination pack is not bundled with this version of LakbayLokal yet.'
       });
@@ -49,6 +54,7 @@ export class DestinationViewModel extends ViewModel {
         pack: null,
         source: 'none',
         saved: false,
+        offlineBundle: null,
         error: userMessage(error, 'This destination could not be loaded from local storage.')
       });
     } finally {
@@ -80,10 +86,12 @@ export class DestinationViewModel extends ViewModel {
     });
     try {
       const pack = await savePackToLibrary(this.deps, this.destinationId);
+      const offlineBundle = await loadOfflineBundleStatus(this.deps, this.destinationId);
       this.setState({
         pack,
         source: 'library',
-        saved: true
+        saved: true,
+        offlineBundle
       });
       return {
         ok: true,
@@ -107,7 +115,8 @@ export class DestinationViewModel extends ViewModel {
     try {
       await removePackFromLibrary(this.deps, this.destinationId);
       this.setState({
-        saved: false
+        saved: false,
+        offlineBundle: null
       });
       return {
         ok: true,

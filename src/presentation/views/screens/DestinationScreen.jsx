@@ -84,6 +84,7 @@ export const DestinationScreen = ({
         <Pill icon="time-outline" text={formatRelativeTime(pack.updatedAt)} />
         <Pill icon="archive-outline" text={formatSizeKb(pack.sizeKb)} />
         {state.saved ? <Pill icon="checkmark-circle" text="Offline ready" tone="primary" /> : null}
+        {state.offlineBundle?.mapUri ? <Pill icon="folder-open-outline" text="Local map file" /> : null}
       </View>
 
       <Pressable
@@ -108,7 +109,7 @@ export const DestinationScreen = ({
         </Text>
       </Pressable>
 
-      {!state.saved && destination.status === 'available' ? <InfoBanner tone="info" text="This guide and its photo are bundled with the app. Save it to your library to keep it in your personal collection and include its contacts in Safety." /> : null}
+      {!state.saved && destination.status === 'available' ? <InfoBanner tone="info" text="Save this pack to create durable local guide, map, route-plan, image, and photo-metadata files. The image source is already bundled with the app, and itineraries stay in local SQLite." /> : null}
 
       <InfoBanner tone="warn" text="Travel conditions, access rules, transport schedules, and local facilities can change. Confirm time-sensitive details with the destination or local authorities before traveling." />
 
@@ -138,8 +139,8 @@ export const DestinationScreen = ({
 
       {pack.spots?.length ? <View style={styles.section}>
           <SectionHeader eyebrow="MapLibre + OpenStreetMap" title="Destination map" />
-          <DestinationMap pack={pack} />
-          <InfoBanner tone="info" text="This planning map shows places from LakbayLokal’s local catalog. The OpenStreetMap base layer needs internet; unverified prototype trail geometry is not drawn here." />
+          <DestinationMap pack={pack} offlineMapUri={state.offlineBundle?.mapUri} />
+          <InfoBanner tone="info" text="Online mode uses OpenStreetMap as the live base layer. Saved packs also provide an offline MapLibre mode that reads only the local GeoJSON file and makes no tile request. Unverified prototype trail geometry is never drawn here." />
         </View> : null}
 
       <View style={styles.section}>

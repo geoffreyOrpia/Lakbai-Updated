@@ -1,5 +1,6 @@
 import { Camera, GeoJSONSource, Layer, Map } from '@maplibre/maplibre-react-native';
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { createDestinationMapData, destinationMapBounds } from "../../../core/maps/destinationMapData.jsx";
 import { colors, radius, spacing } from "../../../theme.jsx";
 
@@ -21,16 +22,42 @@ const OSM_STYLE = {
   }],
 };
 
-export const DestinationMap = ({ pack }) => {
+const OFFLINE_STYLE = {
+  version: 8,
+  sources: {},
+  layers: [{
+    id: 'offline-background',
+    type: 'background',
+    paint: {
+      'background-color': colors.surfaceSunken,
+    },
+  }],
+};
+
+export const DestinationMap = ({ pack, offlineMapUri = null }) => {
   const geojson = createDestinationMapData(pack);
   const bounds = destinationMapBounds(geojson);
+  const canUseOffline = Boolean(offlineMapUri);
+  const [mode, setMode] = useState(canUseOffline ? 'offline' : 'online');
+  useEffect(() => {
+    if (!canUseOffline && mode === 'offline') {
+      setMode('online');
+    }
+  }, [canUseOffline, mode]);
   if (!bounds) return null;
+
+  const offline = mode === 'offline' && canUseOffline;
+  const mapData = offline ? offlineMapUri : geojson;
   return <View style={styles.card}>
+      {canUseOffline ? <View style={styles.modeRow}>
+          <MapModeButton label="Offline pack" active={offline} onPress={() => setMode('offline')} />
+          <MapModeButton label="Online OSM" active={!offline} onPress={() => setMode('online')} />
+        </View> : null}
       <View style={styles.mapFrame}>
         <Map
           style={styles.map}
-          mapStyle={OSM_STYLE}
-          attribution
+          mapStyle={offline ? OFFLINE_STYLE : OSM_STYLE}
+          attribution={!offline}
           attributionPosition={{ bottom: 8, right: 8 }}
           logo={false}
           compass
@@ -45,7 +72,7 @@ export const DestinationMap = ({ pack }) => {
               left: 44,
             },
           }} />
-          <GeoJSONSource id="lakbaylokal-places" data={geojson}>
+          <GeoJSONSource id="lakbaylokal-places" data={mapData}>
             <Layer
               id="lakbaylokal-place-dots"
               type="circle"
@@ -60,9 +87,24 @@ export const DestinationMap = ({ pack }) => {
           </GeoJSONSource>
         </Map>
       </View>
-      <Text style={styles.caption}>Live base map: © OpenStreetMap contributors · LakbayLokal markers come from the bundled destination catalog.</Text>
+      <Text style={styles.caption}>
+        {offline
+          ? 'Offline map: MapLibre is reading the GeoJSON file saved in this pack. No OpenStreetMap tile request is made in this mode.'
+          : 'Live base map: © OpenStreetMap contributors · LakbayLokal markers come from the local destination catalog.'}
+      </Text>
     </View>;
 };
+
+const MapModeButton = ({ label, active, onPress }) => (
+  <Pressable
+    accessibilityRole="button"
+    accessibilityState={{ selected: active }}
+    onPress={onPress}
+    style={({ pressed }) => [styles.modeButton, active && styles.modeButtonActive, pressed && styles.pressed]}
+  >
+    <Text style={[styles.modeText, active && styles.modeTextActive]}>{label}</Text>
+  </Pressable>
+);
 
 const styles = StyleSheet.create({
   card: {
@@ -71,6 +113,32 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     backgroundColor: colors.white,
     overflow: 'hidden',
+  },
+  modeRow: {
+    padding: spacing.xs,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    backgroundColor: colors.surfaceMuted,
+  },
+  modeButton: {
+    flex: 1,
+    minHeight: 40,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modeButtonActive: {
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+  },
+  modeText: {
+    color: colors.muted,
+    fontSize: 10.5,
+    fontWeight: '800',
+  },
+  modeTextActive: {
+    color: colors.primary,
   },
   mapFrame: {
     height: 250,
@@ -85,5 +153,8 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 9.8,
     lineHeight: 14,
+  },
+  pressed: {
+    opacity: 0.78,
   },
 });

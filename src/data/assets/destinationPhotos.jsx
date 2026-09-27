@@ -7,3 +7,4 @@ const PHOTO_SOURCES = Object.freeze({
 });
 
 export const getDestinationPhotoSource = (key) => PHOTO_SOURCES[key] ?? null;
+export const getDestinationPhotoModule = (key) => PHOTO_SOURCES[key] ?? null;

@@ -14,6 +14,7 @@ import { LocalSafetyRepository } from "../../data/repositories/safetyRepository.
 import { ExpoLocationService } from "../../data/services/locationService.jsx";
 import { createOnlineResearchService } from "../../data/services/onlineResearchService.jsx";
 import { createPhoneService } from "../../data/services/phoneService.jsx";
+import { createOfflinePackStorage } from "../../data/services/offlinePackStorage.jsx";
 /**
  * Composition root (poor-man's DI). Singletons are created once at first use;
  * view model factories receive everything they need through their deps.
@@ -27,11 +28,12 @@ const buildContainer = () => {
   const preferencesDao = createPreferencesDao();
   const itineraryDao = createItineraryDao();
   const safetyDao = createSafetyDao();
+  const offlinePackStorage = createOfflinePackStorage();
 
   // Repositories
   const destinationRepository = new LocalDestinationRepository(destinationCacheDao);
   const favoriteRepository = new LocalFavoriteRepository(favoriteDao);
-  const packRepository = new PackRepositoryImpl(packContentDao, packMetaDao);
+  const packRepository = new PackRepositoryImpl(packContentDao, packMetaDao, offlinePackStorage);
   const preferencesRepository = new LocalPreferencesRepository(preferencesDao);
   const itineraryRepository = new LocalItineraryRepository(itineraryDao);
   const safetyRepository = new LocalSafetyRepository(safetyDao);

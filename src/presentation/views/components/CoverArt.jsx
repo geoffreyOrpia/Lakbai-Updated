@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ImageBackground, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getDestinationPhotoSource } from "../../assets/destinationPhotos.jsx";
+import { getDestinationPhotoSource } from "../../../data/assets/destinationPhotos.jsx";
 import { colors } from "../../../theme.jsx";
 const iconFor = themeIcon => {
   switch (themeIcon) {
