@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFeedback } from "../../../feedback/FeedbackProvider.jsx";
 import { BackAction } from "../components/Buttons.jsx";
 import { CoverArt } from "../components/CoverArt.jsx";
+import { DestinationMap } from "../components/DestinationMap.jsx";
 import { EmptyState } from "../components/EmptyState.jsx";
 import { InfoBanner } from "../components/InfoBanner.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
@@ -133,6 +134,12 @@ export const DestinationScreen = ({
             <Text style={styles.directionsButtonText}>{state.directionsBusyId === destination.id ? 'Opening Maps…' : 'Open directions'}</Text>
           </Pressable>
           <Text style={styles.connectionHint}>Requires internet. In Maps, choose “Your location” as the starting point.</Text>
+        </View> : null}
+
+      {pack.spots?.length ? <View style={styles.section}>
+          <SectionHeader eyebrow="MapLibre + OpenStreetMap" title="Destination map" />
+          <DestinationMap pack={pack} />
+          <InfoBanner tone="info" text="This planning map shows places from LakbayLokal’s local catalog. The OpenStreetMap base layer needs internet; unverified prototype trail geometry is not drawn here." />
         </View> : null}
 
       <View style={styles.section}>
