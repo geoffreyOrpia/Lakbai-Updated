@@ -4,6 +4,8 @@ import { seedDestinations, seedPacks } from "../seed/catalog.jsx";
 // Single SQLite connection for the whole app with versioned migrations.
 // PRAGMA user_version drives the migration ladder.
 
+const BUNDLED_CATALOG_VERSION = '2026-09-27.1';
+
 let databasePromise = null;
 export const getDatabase = () => {
   if (!databasePromise) {
@@ -24,6 +26,9 @@ const openDatabase = async () => {
   }
   if (currentVersion < 2) {
     await migrateToV2(db);
+  }
+  if (currentVersion < 3) {
+    await migrateToV3(db);
   }
   await seedBundledContent(db);
   return db;
@@ -108,11 +113,20 @@ const migrateToV2 = async db => {
     PRAGMA user_version = 2;
   `);
 };
+const migrateToV3 = async db => {
+  await db.execAsync(`
+    DROP TABLE IF EXISTS local_accounts;
+    PRAGMA user_version = 3;
+  `);
+};
+
 const seedBundledContent = async db => {
+  const catalogVersion = await db.getFirstAsync("SELECT value FROM app_meta WHERE key = 'bundled_catalog_version'");
+  if (catalogVersion?.value === BUNDLED_CATALOG_VERSION) return;
+
   await db.withTransactionAsync(async () => {
-    // These tables are regenerated from the packaged provincial catalog on
-    // every launch. Personal trips, settings, checklists, and library state
-    // remain untouched.
+    // Regenerate bundled catalog tables only when packaged content changes.
+    // Personal trips, settings, checklists, and library state remain untouched.
     await db.runAsync('DELETE FROM cached_destinations');
     await db.runAsync('DELETE FROM bundled_packs');
     for (const destination of seedDestinations) {
@@ -124,5 +138,6 @@ const seedBundledContent = async db => {
           (pack_id, payload_json, version, updated_at, size_kb)
          VALUES (?, ?, ?, ?, ?)`, pack.id, JSON.stringify(pack), pack.version, pack.updatedAt, pack.sizeKb);
     }
+    await db.runAsync(`INSERT OR REPLACE INTO app_meta (key, value) VALUES ('bundled_catalog_version', ?)`, BUNDLED_CATALOG_VERSION);
   });
 };

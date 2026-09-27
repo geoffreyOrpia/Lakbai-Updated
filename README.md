@@ -31,7 +31,7 @@ presentation/  →  domain/usecases/  →  domain/repositories
 - **Data:** repositories and DAOs store the catalog, packs, itineraries, preferences, library state, and safety checklist in SQLite.
 - **Bundled content:** Davao del Norte destination guides, licensed photos, spots, transport notes, and safety information ship with the app and seed SQLite automatically.
 
-The core mobile application makes no REST request and does not require a backend, login, registration, or internet connection. Existing account-scoped itineraries are migrated to the single device-local profile; legacy account rows are preserved but no longer used. When Wi-Fi or mobile data is available, optional research and directions actions open the device's secure browser without changing the offline SQLite data. LakbayLokal does not send the device's precise location; the traveler can choose **Your location** inside Maps under Maps' own permission controls.
+The core mobile application makes no REST request and does not require a backend, login, registration, or internet connection. Existing account-scoped itineraries are migrated to the single device-local profile; legacy account credentials are removed after migration because accounts are no longer used. When Wi-Fi or mobile data is available, optional research and directions actions open the device's secure browser without changing the offline SQLite data. LakbayLokal does not send the device's precise location; the traveler can choose **Your location** inside Maps under Maps' own permission controls.
 
 ## Running
 
