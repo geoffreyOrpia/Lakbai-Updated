@@ -35,7 +35,8 @@ export const boundsOf = points => {
 /**
  * Projects a position onto the trail polyline.
  * Returns the closest vertex index, distance to the trail in meters, and
- * cumulative progress (0..1) along the trail up to that projection.
+ * cumulative progress (0..1) along the trail up to the closest point on a
+ * segment. Local equirectangular projection is accurate enough at trail scale.
  */
 export const projectOntoTrail = (trail, position) => {
   const points = trailCoordinates(trail);
@@ -46,20 +47,57 @@ export const projectOntoTrail = (trail, position) => {
       progress: 0
     };
   }
-  let bestIndex = 0;
-  let bestDistance = Number.POSITIVE_INFINITY;
-  points.forEach((point, index) => {
-    const distance = haversineKm(position, point);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      bestIndex = index;
-    }
+  if (points.length === 1) {
+    return {
+      closestIndex: 0,
+      distanceToTrailM: haversineKm(position, points[0]) * 1000,
+      progress: 0
+    };
+  }
+
+  const metersPerDegreeLat = Math.PI * EARTH_RADIUS_KM * 1000 / 180;
+  const metersPerDegreeLng = metersPerDegreeLat * Math.cos(position.lat * Math.PI / 180);
+  const localPoint = point => ({
+    x: (point.lng - position.lng) * metersPerDegreeLng,
+    y: (point.lat - position.lat) * metersPerDegreeLat
   });
-  const cumulative = totalDistanceKm(points.slice(0, bestIndex + 1));
+
   const full = totalDistanceKm(points);
+  let cumulativeBeforeKm = 0;
+  let best = {
+    closestIndex: 0,
+    distanceToTrailM: Number.POSITIVE_INFINITY,
+    progress: 0
+  };
+
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const start = points[index];
+    const end = points[index + 1];
+    const a = localPoint(start);
+    const b = localPoint(end);
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const lengthSquared = dx * dx + dy * dy;
+    const t = lengthSquared > 0
+      ? Math.max(0, Math.min(1, -(a.x * dx + a.y * dy) / lengthSquared))
+      : 0;
+    const projectedX = a.x + t * dx;
+    const projectedY = a.y + t * dy;
+    const distanceM = Math.hypot(projectedX, projectedY);
+    const segmentKm = haversineKm(start, end);
+
+    if (distanceM < best.distanceToTrailM) {
+      const distanceAlongKm = cumulativeBeforeKm + segmentKm * t;
+      best = {
+        closestIndex: t < 0.5 ? index : index + 1,
+        distanceToTrailM: distanceM,
+        progress: full > 0 ? Math.min(1, distanceAlongKm / full) : 0
+      };
+    }
+    cumulativeBeforeKm += segmentKm;
+  }
+
   return {
-    closestIndex: bestIndex,
-    distanceToTrailM: bestDistance * 1000,
-    progress: full > 0 ? Math.min(1, cumulative / full) : 0
+    ...best
   };
 };

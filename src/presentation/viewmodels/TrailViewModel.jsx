@@ -112,9 +112,19 @@ export class TrailViewModel extends ViewModel {
   }
   applyFix = fix => {
     const trail = this.state.trail;
+    const accuracyM = fix.accuracy ?? null;
     if (!trail) {
       this.setState({
-        fix
+        fix,
+        accuracyM
+      });
+      return;
+    }
+    if (accuracyM == null || accuracyM > MAX_RELIABLE_ACCURACY_M) {
+      this.setState({
+        fix,
+        accuracyM,
+        gpsError: null
       });
       return;
     }
@@ -126,7 +136,7 @@ export class TrailViewModel extends ViewModel {
       remainingKm: Math.max(0, trail.distanceKm - traveledKm),
       progressPct: Math.round(projection.progress * 100),
       offTrailM: projection.distanceToTrailM,
-      accuracyM: fix.accuracy ?? null,
+      accuracyM,
       gpsError: null
     });
   };

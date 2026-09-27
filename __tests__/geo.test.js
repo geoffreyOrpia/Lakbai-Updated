@@ -43,12 +43,19 @@ describe('geo utilities', () => {
     });
   });
 
-  test('projects a fix onto the nearest saved waypoint and reports progress', () => {
+  test('projects a fix onto the closest trail segment and reports progress', () => {
     const projection = projectOntoTrail(trail, { lat: 7, lng: 125.0101 });
 
     expect(projection.closestIndex).toBe(1);
     expect(projection.distanceToTrailM).toBeLessThan(20);
     expect(projection.progress).toBeCloseTo(0.5, 1);
+  });
+
+  test('reports progress between vertices instead of snapping to a waypoint', () => {
+    const projection = projectOntoTrail(trail, { lat: 7, lng: 125.005 });
+
+    expect(projection.distanceToTrailM).toBeLessThan(1);
+    expect(projection.progress).toBeCloseTo(0.25, 2);
   });
 
   test('handles empty trail geometry safely', () => {

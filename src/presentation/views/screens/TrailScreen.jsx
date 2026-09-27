@@ -56,7 +56,7 @@ export const TrailScreen = ({
           </View>
         </View> : null}
 
-      {state.tracking && state.accuracyM != null ? <InfoBanner tone={viewModel.lowAccuracy ? "warn" : "info"} text={viewModel.lowAccuracy ? `GPS accuracy is about ${Math.round(state.accuracyM)} m. Trail progress and off-route warnings may be unreliable until accuracy improves.` : `GPS accuracy is about ${Math.round(state.accuracyM)} m.`} /> : null}
+      {state.tracking && state.accuracyM != null ? <InfoBanner tone={viewModel.lowAccuracy ? "warn" : "info"} text={viewModel.lowAccuracy ? `GPS accuracy is about ${Math.round(state.accuracyM)} m. Trail progress and off-route warnings are paused until accuracy improves.` : `GPS accuracy is about ${Math.round(state.accuracyM)} m.`} /> : null}
 
       {viewModel.offTrail && state.tracking ? <InfoBanner tone="warn" text={`You are about ${Math.round(state.offTrailM ?? 0)} m from the saved trail line. Check your surroundings.`} /> : null}
 
