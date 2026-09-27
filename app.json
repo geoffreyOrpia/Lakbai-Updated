@@ -23,6 +23,12 @@
       "expo-font",
       "expo-sqlite",
       [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow LakbayLokal to use your location to find nearby saved places and support offline trail guidance."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#F6F2EA",

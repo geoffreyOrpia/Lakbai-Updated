@@ -58,6 +58,19 @@ export const HomeScreen = ({
         <Ionicons name="chevron-forward" size={18} color={colors.primary} />
       </Pressable>
 
+      <Pressable accessibilityRole="button" accessibilityLabel="Find nearby saved places" style={({
+      pressed
+    }) => [styles.nearby, shadows.card, pressed && styles.pressed]} onPress={() => viewModel.openNearby()}>
+        <View style={styles.nearbyIcon}>
+          <Ionicons name="location" size={21} color={colors.accent} />
+        </View>
+        <View style={styles.readinessCopy}>
+          <Text style={styles.nearbyTitle}>Nearby Places</Text>
+          <Text style={styles.readinessText}>Use GPS to rank attractions from your saved destination packs—even without internet.</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={colors.accent} />
+      </Pressable>
+
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
 
       <View style={styles.section}>
@@ -142,6 +155,30 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     alignItems: 'center',
     justifyContent: 'center'
+  },
+  nearby: {
+    minHeight: 74,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm
+  },
+  nearbyIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: radius.md,
+    backgroundColor: colors.accentSoft,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  nearbyTitle: {
+    color: colors.text,
+    fontSize: 13.5,
+    fontWeight: '800'
   },
   readinessCopy: {
     flex: 1

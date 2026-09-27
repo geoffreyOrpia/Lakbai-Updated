@@ -51,4 +51,7 @@ export class HomeViewModel extends ViewModel {
   openDestination = destinationId => {
     this.nav.onOpenDestination(destinationId);
   };
+  openNearby = () => {
+    this.nav.onOpenNearby();
+  };
 }

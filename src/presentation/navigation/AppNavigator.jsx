@@ -5,6 +5,7 @@ import { getContainer } from "../di/container.jsx";
 import { useViewModel } from "../viewmodel/useViewModel.jsx";
 import { DestinationViewModel } from "../viewmodels/DestinationViewModel.jsx";
 import { LibraryViewModel } from "../viewmodels/LibraryViewModel.jsx";
+import { NearbyViewModel } from "../viewmodels/NearbyViewModel.jsx";
 import { ExploreViewModel } from "../viewmodels/ExploreViewModel.jsx";
 import { HomeViewModel } from "../viewmodels/HomeViewModel.jsx";
 import { OnboardingViewModel } from "../viewmodels/OnboardingViewModel.jsx";
@@ -14,6 +15,7 @@ import { TrailViewModel } from "../viewmodels/TrailViewModel.jsx";
 import { TripsViewModel } from "../viewmodels/TripsViewModel.jsx";
 import { DestinationScreen } from "../views/screens/DestinationScreen.jsx";
 import { LibraryScreen } from "../views/screens/LibraryScreen.jsx";
+import { NearbyScreen } from "../views/screens/NearbyScreen.jsx";
 import { ExploreScreen } from "../views/screens/ExploreScreen.jsx";
 import { HomeScreen } from "../views/screens/HomeScreen.jsx";
 import { LandingScreen } from "../views/screens/LandingScreen.jsx";
@@ -72,6 +74,15 @@ export const AppNavigator = () => {
   if (topRoute?.name === 'trail') {
     return <TrailFlow destinationId={topRoute.destinationId} trailId={topRoute.trailId} onBack={pop} />;
   }
+  if (topRoute?.name === 'nearby') {
+    return <NearbyFlow onOpenDestination={destinationId => push({
+      name: 'destination',
+      destinationId
+    })} onOpenLibrary={() => {
+      setStack([]);
+      setTab('library');
+    }} onBack={pop} />;
+  }
   return <View style={styles.screen}>
       <View style={styles.content}>
         {tab === 'home' ? <HomeTab onOpenExplore={query => {
@@ -80,6 +91,8 @@ export const AppNavigator = () => {
       }} onOpenLibrary={() => setTab('library')} onOpenDestination={destinationId => push({
         name: 'destination',
         destinationId
+      })} onOpenNearby={() => push({
+        name: 'nearby'
       })} /> : null}
         {tab === 'explore' ? <ExploreTab initialQuery={exploreQuery} onOpenDestination={destinationId => push({
         name: 'destination',
@@ -133,15 +146,30 @@ const TrailFlow = ({
 const HomeTab = ({
   onOpenExplore,
   onOpenLibrary,
-  onOpenDestination
+  onOpenDestination,
+  onOpenNearby
 }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new HomeViewModel(container.destinationDeps, {
     onOpenExplore,
     onOpenLibrary,
-    onOpenDestination
+    onOpenDestination,
+    onOpenNearby
   }));
   return <HomeScreen viewModel={viewModel} />;
+};
+const NearbyFlow = ({
+  onOpenDestination,
+  onOpenLibrary,
+  onBack
+}) => {
+  const container = getContainer();
+  const viewModel = useViewModel(() => new NearbyViewModel(container.destinationDeps, container.locationService, {
+    onOpenDestination,
+    onOpenLibrary,
+    onBack
+  }));
+  return <NearbyScreen viewModel={viewModel} />;
 };
 const ExploreTab = ({
   initialQuery,
