@@ -1,4 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFeedback } from "../../../feedback/FeedbackProvider.jsx";
 import { BackAction, PrimaryButton } from "../components/Buttons.jsx";
@@ -165,9 +167,9 @@ const CreateTrip = ({
         <LabeledInput label="Trip name" value={form.title} onChangeText={value => viewModel.setFormField({
         title: value
       })} placeholder="Samal weekend trip" />
-        <LabeledInput label="Travel date" value={form.travelDate} onChangeText={value => viewModel.setFormField({
+        <DateField value={form.travelDate} onChange={value => viewModel.setFormField({
         travelDate: value
-      })} placeholder="YYYY-MM-DD" />
+      })} />
         <LabeledInput label="Trip notes" value={form.notes} onChangeText={value => viewModel.setFormField({
         notes: value
       })} placeholder="Meet-up point, reminders, budget notes…" multiline />
@@ -260,6 +262,32 @@ const SectionBadge = ({
         <Text style={styles.formSectionTitle}>{title}</Text>
         <Text style={styles.formSectionText}>{text}</Text>
       </View>
+    </View>;
+};
+const DateField = ({
+  value,
+  onChange
+}) => {
+  const [open, setOpen] = useState(false);
+  const selectedDate = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T12:00:00`) : new Date();
+  const chooseDate = (event, date) => {
+    setOpen(false);
+    if (event.type !== 'set' || !date) return;
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    onChange(`${year}-${month}-${day}`);
+  };
+  return <View style={styles.fieldGroup}>
+      <Text style={styles.fieldLabel}>Travel date</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel="Choose travel date" onPress={() => setOpen(true)} style={({
+      pressed
+    }) => [styles.dateButton, pressed && styles.pressed]}>
+        <Ionicons name="calendar-outline" size={18} color={colors.primary} />
+        <Text style={[styles.dateText, !value && styles.datePlaceholder]}>{value ? formatDate(value) : 'Choose a date'}</Text>
+        <Ionicons name="chevron-down" size={16} color={colors.muted} />
+      </Pressable>
+      {open ? <DateTimePicker value={selectedDate} mode="date" display="default" onChange={chooseDate} /> : null}
     </View>;
 };
 const LabeledInput = ({
@@ -648,6 +676,27 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 11,
     fontWeight: '800'
+  },
+  dateButton: {
+    minHeight: 46,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.white,
+    paddingHorizontal: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm
+  },
+  dateText: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '700'
+  },
+  datePlaceholder: {
+    color: colors.faint,
+    fontWeight: '500'
   },
   input: {
     minHeight: 46,

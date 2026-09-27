@@ -171,7 +171,11 @@ export class TripsViewModel extends ViewModel {
       stops
     } = this.state.form;
     if (title.trim().length < 2) return 'Enter a trip name.';
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(travelDate.trim())) return 'Use YYYY-MM-DD for the travel date.';
+    const normalizedDate = travelDate.trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedDate)) return 'Choose a valid travel date.';
+    const [year, month, day] = normalizedDate.split('-').map(Number);
+    const parsedDate = new Date(year, month - 1, day);
+    if (parsedDate.getFullYear() !== year || parsedDate.getMonth() !== month - 1 || parsedDate.getDate() !== day) return 'Choose a valid travel date.';
     if (stops.length === 0) return 'Add at least one destination to the itinerary.';
     return null;
   };
