@@ -25,6 +25,16 @@ describe('release catalog safety', () => {
     }
   });
 
+  test('marks every destination with source-review status or an explicit prototype label', () => {
+    for (const pack of seedPacks) {
+      expect(['partial', 'prototype']).toContain(pack.destination.verification.status);
+      expect(pack.destination.verification.reviewedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      if (pack.destination.status === 'available') {
+        expect(pack.destination.verification.sources.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
   test('ships only the national emergency hotline until local numbers are reverified', () => {
     for (const pack of seedPacks) {
       expect(pack.safety.emergencyContacts).toEqual([

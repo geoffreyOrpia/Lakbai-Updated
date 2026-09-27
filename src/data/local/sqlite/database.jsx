@@ -4,7 +4,7 @@ import { seedDestinations, seedPacks } from "../seed/catalog.jsx";
 // Single SQLite connection for the whole app with versioned migrations.
 // PRAGMA user_version drives the migration ladder.
 
-const BUNDLED_CATALOG_VERSION = '2026-09-27.4';
+const BUNDLED_CATALOG_VERSION = '2026-09-28.1';
 
 let databasePromise = null;
 export const getDatabase = () => {

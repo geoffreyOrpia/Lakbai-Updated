@@ -1,5 +1,6 @@
 import { destinations } from "./destinations.jsx";
 import { packs } from "./packs.jsx";
+import { verificationForDestination } from "./contentVerification.jsx";
 const REGION_PROVINCE = 'Davao del Norte';
 const sizeInKb = value => Math.max(1, Math.round(JSON.stringify(value).length / 1024));
 const regionDestinations = destinations.filter(destination => destination.province === REGION_PROVINCE);
@@ -36,6 +37,7 @@ export const seedDestinations = regionDestinations.map(destination => {
   const pack = packById.get(destination.id);
   return {
     ...destination,
+    verification: verificationForDestination(destination.id),
     version: pack?.version ?? 0,
     sizeKb: pack ? sizeInKb(pack) : null,
     spotsCount: pack?.spots.length ?? null,

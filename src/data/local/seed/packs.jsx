@@ -12,8 +12,8 @@ const NATIONAL_EMERGENCY_CONTACT = {
 
 export const packs = [{
   id: 'samal',
-  version: 5,
-  updatedAt: '2026-09-27T08:00:00.000Z',
+  version: 6,
+  updatedAt: '2026-09-28T08:00:00.000Z',
   trails: [{
     id: 'samal-kaputian-coastal',
     name: 'Kaputian Coastal Trail',
@@ -131,8 +131,8 @@ export const packs = [{
   }
 }, {
   id: 'hagimit-falls',
-  version: 3,
-  updatedAt: '2026-09-27T08:00:00.000Z',
+  version: 4,
+  updatedAt: '2026-09-28T08:00:00.000Z',
   trails: [{
     id: 'hagimit-nature-trail',
     name: 'Hagimit Falls Nature Trail',
@@ -217,8 +217,8 @@ export const packs = [{
   }
 }, {
   id: 'monfort-bat-sanctuary',
-  version: 2,
-  updatedAt: '2026-09-27T08:00:00.000Z',
+  version: 3,
+  updatedAt: '2026-09-28T08:00:00.000Z',
   trails: [{
     id: 'monfort-sanctuary-path',
     name: 'Sanctuary Wildlife Path',
@@ -296,8 +296,8 @@ export const packs = [{
   }
 }, {
   id: 'tagum',
-  version: 3,
-  updatedAt: '2026-09-27T08:00:00.000Z',
+  version: 4,
+  updatedAt: '2026-09-28T08:00:00.000Z',
   trails: [{
     id: 'tagum-heritage-walk',
     name: 'Tagum Heritage Walk',
@@ -406,8 +406,8 @@ export const packs = [{
   }
 }, {
   id: 'panabo',
-  version: 2,
-  updatedAt: '2026-09-27T08:00:00.000Z',
+  version: 3,
+  updatedAt: '2026-09-28T08:00:00.000Z',
   trails: [{
     id: 'panabo-mangrove-boardwalk',
     name: 'Mangrove Boardwalk Trail',

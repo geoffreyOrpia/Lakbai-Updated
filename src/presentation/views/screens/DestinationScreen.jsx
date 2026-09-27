@@ -114,6 +114,33 @@ export const DestinationScreen = ({
 
       <InfoBanner tone="warn" text="Travel conditions, access rules, transport schedules, and local facilities can change. Confirm time-sensitive details with the destination or local authorities before traveling." />
 
+      {destination.verification ? <View style={[styles.verificationCard, shadows.soft]}>
+          <View style={styles.verificationHeading}>
+            <Ionicons
+              name={destination.verification.status === 'partial' ? "shield-checkmark-outline" : "flask-outline"}
+              size={18}
+              color={destination.verification.status === 'partial' ? colors.primary : colors.accentDark}
+            />
+            <View style={styles.verificationCopy}>
+              <Text style={styles.verificationEyebrow}>CONTENT STATUS</Text>
+              <Text style={styles.verificationTitle}>
+                {destination.verification.status === 'partial' ? 'Core facts source-reviewed' : 'Prototype content'}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.verificationText}>{destination.verification.summary}</Text>
+          {destination.verification.sources?.length ? <View style={styles.verificationSources}>
+              {destination.verification.sources.map(source => <View key={source.url} style={styles.verificationSource}>
+                  <Ionicons name="document-text-outline" size={14} color={colors.primary} />
+                  <View style={styles.verificationSourceCopy}>
+                    <Text style={styles.verificationSourceLabel}>{source.label}</Text>
+                    <Text style={styles.verificationSourceScope}>{source.scope}</Text>
+                  </View>
+                </View>)}
+            </View> : null}
+          <Text style={styles.verificationReviewed}>Reviewed {destination.verification.reviewedAt}</Text>
+        </View> : null}
+
       {destination.navigation ? <View style={[styles.locationCard, shadows.card]}>
           <View style={styles.locationHeading}>
             <View style={styles.locationIcon}>
@@ -449,6 +476,70 @@ const styles = StyleSheet.create({
   },
   ctaTextRemove: {
     color: colors.danger
+  },
+  verificationCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    backgroundColor: colors.white,
+    padding: spacing.md,
+    gap: spacing.sm
+  },
+  verificationHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm
+  },
+  verificationCopy: {
+    flex: 1
+  },
+  verificationEyebrow: {
+    color: colors.primary,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.8
+  },
+  verificationTitle: {
+    marginTop: 2,
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '900'
+  },
+  verificationText: {
+    color: colors.textSecondary,
+    fontSize: 11.2,
+    lineHeight: 16
+  },
+  verificationSources: {
+    gap: spacing.xs
+  },
+  verificationSource: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+    paddingTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.border
+  },
+  verificationSourceCopy: {
+    flex: 1
+  },
+  verificationSourceLabel: {
+    color: colors.text,
+    fontSize: 10.8,
+    lineHeight: 15,
+    fontWeight: '800'
+  },
+  verificationSourceScope: {
+    marginTop: 1,
+    color: colors.muted,
+    fontSize: 9.8,
+    lineHeight: 14
+  },
+  verificationReviewed: {
+    color: colors.faint,
+    fontSize: 9.5,
+    fontWeight: '700'
   },
   locationCard: {
     borderRadius: radius.lg,
