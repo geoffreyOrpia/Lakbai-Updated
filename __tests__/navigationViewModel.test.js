@@ -99,6 +99,8 @@ const createVm = ({
     target: { label: 'Panabo Mangrove Park', lat: 7.272383, lng: 125.680829 },
     trailId: 'panabo-mangrove-boardwalk',
     mode: 'walk',
+    coverage: 'Central/coastal Panabo pilot',
+    previewStart: { lat: 7.2999, lng: 125.6807 },
   };
   return {
     vm: new NavigationViewModel(routingDeps, destinationDeps, locationService, route, nav),
@@ -265,7 +267,7 @@ describe('NavigationViewModel', () => {
     await vm.startFromGps();
 
     expect(vm.state.route).toBeNull();
-    expect(vm.state.error).toContain('outside the current Panabo offline-routing pilot');
+    expect(vm.state.error).toContain('outside the current Central/coastal Panabo pilot');
   });
 
   test('rejects an initial GPS fix that is too inaccurate for routing', async () => {
@@ -287,5 +289,16 @@ describe('NavigationViewModel', () => {
 
     expect(vm.state.error).toContain('Save or update this destination pack');
     expect(vm.state.offlineBasemapUri).toBeNull();
+  });
+
+  test('previews from destination-provided routing coverage coordinates', async () => {
+    const { vm } = createVm();
+    await vm.load();
+
+    vm.previewRoute();
+
+    expect(vm.state.preview).toBe(true);
+    expect(vm.state.fix).toEqual({ lat: 7.2999, lng: 125.6807 });
+    expect(vm.state.route?.ok).toBe(true);
   });
 });

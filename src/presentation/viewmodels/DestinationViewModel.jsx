@@ -159,6 +159,8 @@ export class DestinationViewModel extends ViewModel {
       destinationName: destination.name,
       target: navigation.target,
       mode: navigation.mode ?? 'walk',
+      coverage: navigation.coverage ?? null,
+      previewStart: navigation.previewStart ?? null,
       trailId: verifiedTrail?.id ?? null,
     });
   };

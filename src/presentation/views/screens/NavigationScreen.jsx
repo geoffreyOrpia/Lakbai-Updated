@@ -58,7 +58,7 @@ export const NavigationScreen = ({ viewModel }) => {
 
   if (state.loading) {
     return <View style={styles.center}>
-        <LoadingState title="Loading offline routing" text="Opening the saved basemap and Panabo routing graph." />
+        <LoadingState title="Loading offline routing" text="Opening the saved basemap and local routing graph." />
       </View>;
   }
 
@@ -80,14 +80,14 @@ export const NavigationScreen = ({ viewModel }) => {
           <Text style={styles.eyebrow}>LAKBAI OFFLINE NAVIGATION</Text>
           <Text style={styles.title}>{state.destinationName}</Text>
           <Text style={styles.subtitle}>
-            Walking pilot · Panabo City · {preferenceLabel(state.preference)}
+            Walking · {state.coverage ?? 'Local offline coverage'} · {preferenceLabel(state.preference)}
           </Text>
         </View>
       </View>
 
       <InfoBanner
         tone="info"
-        text="LakBai calculates this route on-device from a bundled OpenStreetMap road graph and renders it over the saved PMTiles map. No Google Maps or routing server is required."
+        text="LakBai calculates this route on-device from the saved local road graph and renders it over the saved PMTiles map. No Google Maps or routing server is required."
       />
 
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
@@ -190,7 +190,7 @@ export const NavigationScreen = ({ viewModel }) => {
 
           {state.preview ? <InfoBanner
             tone="warn"
-            text="Preview mode starts from a fixed Panabo city-center point for demonstration only. Clear the preview and use your GPS before real navigation."
+            text="Preview mode starts from a fixed point inside this routing coverage for demonstration only. Clear the preview and use your GPS before real navigation."
           /> : null}
 
           {!state.preview && !state.arrived ? <View style={[styles.guidanceCard, shadows.card]}>
@@ -261,9 +261,13 @@ export const NavigationScreen = ({ viewModel }) => {
             </View> : null}
 
           <View style={[styles.sourceCard, shadows.soft]}>
-            <SectionHeader eyebrow="Routing coverage" title="Panabo pilot graph" />
+            <SectionHeader
+              eyebrow="Routing coverage"
+              title={state.graphMeta?.name ?? state.coverage ?? 'Local routing graph'}
+            />
             <Text style={styles.sourceText}>
-              Source: HOT OSM Philippines Roads · OpenStreetMap contributors · ODbL 1.0.
+              Source: {state.graphMeta?.sourceDataset ?? state.graphMeta?.source ?? 'Saved routing data'}
+              {state.graphMeta?.license ? ` · ${state.graphMeta.license}` : ''}.
             </Text>
             <Text style={styles.sourceText}>
               Current graph: {state.graphMeta?.bounds?.join(', ')}. Real signs, closures, private access, and official traffic rules always take precedence.
@@ -278,7 +282,7 @@ export const NavigationScreen = ({ viewModel }) => {
         </> : <View style={[styles.actionCard, shadows.card]}>
           <Text style={styles.actionTitle}>Calculate an offline walking route</Text>
           <Text style={styles.actionText}>
-            LakBai uses your foreground GPS position and the local Panabo road/path graph. No route request is sent to Google or another routing server.
+            LakBai uses your foreground GPS position and the saved local road/path graph. No route request is sent to Google or another routing server.
           </Text>
           <View style={styles.preferenceBlock}>
             <Text style={styles.preferenceEyebrow}>HOW DO YOU WANT TO EXPLORE?</Text>
@@ -321,13 +325,15 @@ export const NavigationScreen = ({ viewModel }) => {
             disabled={state.calculating || !state.graph || !state.offlineBasemapUri}
             onPress={() => void viewModel.startFromGps()}
           />
-          <SecondaryButton
-            label="Preview Panabo pilot route"
-            icon="map-outline"
-            disabled={state.calculating || !state.graph || !state.offlineBasemapUri}
-            onPress={() => viewModel.previewPilot()}
-          />
-          <Text style={styles.previewHint}>Preview uses a fixed Panabo city-center point and is clearly separated from live GPS navigation.</Text>
+          {state.previewStart ? <>
+              <SecondaryButton
+                label="Preview offline route"
+                icon="map-outline"
+                disabled={state.calculating || !state.graph || !state.offlineBasemapUri}
+                onPress={() => viewModel.previewRoute()}
+              />
+              <Text style={styles.previewHint}>Preview uses a fixed point inside this routing coverage and is clearly separated from live GPS navigation.</Text>
+            </> : null}
         </View>}
     </ScrollView>;
 };

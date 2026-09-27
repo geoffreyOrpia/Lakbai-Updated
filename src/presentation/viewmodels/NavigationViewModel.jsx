@@ -9,11 +9,6 @@ import { normalizeRoutePreference } from "../../core/routing/routingProfiles.jsx
 import { calculateOfflineRoute } from "../../domain/usecases/offlineNavigation.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 
-const PANABO_PREVIEW_START = Object.freeze({
-  lat: 7.2999,
-  lng: 125.6807,
-});
-
 const MAX_NAVIGATION_ACCURACY_M = 60;
 const MAX_ROUTE_START_ACCURACY_M = 80;
 const BASE_OFF_ROUTE_M = 45;
@@ -71,6 +66,8 @@ export class NavigationViewModel extends ViewModel {
       routePois: [],
       mode: route.mode ?? 'walk',
       preference: normalizeRoutePreference(route.preference),
+      coverage: route.coverage ?? null,
+      previewStart: route.previewStart ?? null,
       offlineBasemapUri: null,
       fix: null,
       accuracyM: null,
@@ -200,11 +197,11 @@ export class NavigationViewModel extends ViewModel {
     }
   };
 
-  previewPilot = () => {
-    if (!this.state.graph || !this.state.offlineBasemapUri) return;
+  previewRoute = () => {
+    if (!this.state.graph || !this.state.offlineBasemapUri || !this.state.previewStart) return;
     this.stopLocationWatch();
     this.setState({ calculating: true, tracking: false, error: null, gpsError: null });
-    this.calculateFrom(PANABO_PREVIEW_START, true);
+    this.calculateFrom(this.state.previewStart, true);
     this.setState({ calculating: false });
   };
 
@@ -231,7 +228,7 @@ export class NavigationViewModel extends ViewModel {
         nextManeuver: null,
         distanceToNextManeuverKm: null,
         error: result.reason === 'outside-coverage'
-          ? 'Your position is outside the current Panabo offline-routing pilot. The pilot currently covers central/coastal Panabo around the mangrove park.'
+          ? `Your position is outside the current ${this.state.coverage ?? 'offline-routing coverage'}.`
           : 'No connected offline route could be found from this position.',
       });
       return null;

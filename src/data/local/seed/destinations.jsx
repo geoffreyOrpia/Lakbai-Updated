@@ -132,6 +132,10 @@ export const destinations = [{
     graphId: 'panabo-routing-pilot',
     mode: 'walk',
     coverage: 'Central/coastal Panabo pilot',
+    previewStart: {
+      lat: 7.2999,
+      lng: 125.6807
+    },
     target: {
       label: 'Panabo Mangrove Park',
       lat: 7.272383,
