@@ -310,16 +310,17 @@ const TripDetails = ({
   const {
     showSnackbar,
     showHud,
-    hideHud
+    hideHud,
+    showConfirm
   } = useFeedback();
   const readiness = viewModel.tripReadiness(trip);
   const confirmDelete = () => {
-    showSnackbar({
-      message: `Delete ${trip.title}? This removes the saved itinerary from this device.`,
-      tone: 'error',
-      actionLabel: 'Delete',
-      duration: 6000,
-      onAction: () => {
+    showConfirm({
+      title: 'Delete itinerary?',
+      message: `${trip.title} will be permanently removed from this device.`,
+      confirmLabel: 'Delete',
+      tone: 'danger',
+      onConfirm: () => {
         showHud('Deleting itinerary…');
         void viewModel.deleteSelected().then(ok => {
           hideHud();

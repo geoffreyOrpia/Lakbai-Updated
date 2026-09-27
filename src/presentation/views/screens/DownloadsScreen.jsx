@@ -11,15 +11,29 @@ export const DownloadsScreen = ({
 }) => {
   const state = viewModel.state;
   const {
-    showSnackbar
+    showSnackbar,
+    showConfirm
   } = useFeedback();
   const downloaded = viewModel.downloaded;
   const available = viewModel.available;
-  const runAction = async (destinationName, packId, isDownloaded) => {
+  const performAction = async (packId, isDownloaded) => {
     const result = isDownloaded ? await viewModel.remove(packId) : await viewModel.download(packId);
     showSnackbar({
       message: result.message,
       tone: result.ok ? 'success' : 'error'
+    });
+  };
+  const runAction = (destinationName, packId, isDownloaded) => {
+    if (!isDownloaded) {
+      void performAction(packId, false);
+      return;
+    }
+    showConfirm({
+      title: 'Remove from library?',
+      message: `${destinationName} will no longer appear in your saved library. The bundled app content remains available.`,
+      confirmLabel: 'Remove',
+      tone: 'danger',
+      onConfirm: () => void performAction(packId, true)
     });
   };
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>

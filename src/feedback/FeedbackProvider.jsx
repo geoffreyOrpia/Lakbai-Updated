@@ -9,6 +9,7 @@ export const FeedbackProvider = ({
   const [toast, setToast] = useState(null);
   const [snackbar, setSnackbar] = useState(null);
   const [hudMessage, setHudMessage] = useState(null);
+  const [confirmation, setConfirmation] = useState(null);
   const toastTimer = useRef(null);
   const snackbarTimer = useRef(null);
   const clearTimer = timer => {
@@ -43,6 +44,19 @@ export const FeedbackProvider = ({
   const hideHud = useCallback(() => {
     setHudMessage(null);
   }, []);
+  const dismissConfirm = useCallback(() => {
+    setConfirmation(null);
+  }, []);
+  const showConfirm = useCallback(options => {
+    setConfirmation({
+      title: options.title ?? 'Confirm action',
+      message: options.message ?? '',
+      confirmLabel: options.confirmLabel ?? 'Confirm',
+      cancelLabel: options.cancelLabel ?? 'Cancel',
+      tone: options.tone ?? 'danger',
+      onConfirm: options.onConfirm
+    });
+  }, []);
   useEffect(() => () => {
     clearTimer(toastTimer);
     clearTimer(snackbarTimer);
@@ -52,8 +66,10 @@ export const FeedbackProvider = ({
     showSnackbar,
     dismissSnackbar,
     showHud,
-    hideHud
-  }), [dismissSnackbar, hideHud, showHud, showSnackbar, showToast]);
+    hideHud,
+    showConfirm,
+    dismissConfirm
+  }), [dismissConfirm, dismissSnackbar, hideHud, showConfirm, showHud, showSnackbar, showToast]);
   return <FeedbackContext.Provider value={value}>
       <View style={styles.root}>
         {children}
@@ -96,6 +112,30 @@ export const FeedbackProvider = ({
               </View>
             </View> : null}
         </View>
+
+        <Modal transparent visible={Boolean(confirmation)} animationType="fade" statusBarTranslucent onRequestClose={dismissConfirm}>
+          <View style={styles.confirmBackdrop}>
+            <View style={[styles.confirmCard, shadows.floating]} accessibilityRole="alert">
+              <View style={styles.confirmIcon}>
+                <Ionicons name={confirmation?.tone === 'danger' ? 'warning-outline' : 'help-circle-outline'} size={22} color={confirmation?.tone === 'danger' ? colors.danger : colors.primary} />
+              </View>
+              <Text style={styles.confirmTitle}>{confirmation?.title}</Text>
+              <Text style={styles.confirmMessage}>{confirmation?.message}</Text>
+              <View style={styles.confirmActions}>
+                <Pressable accessibilityRole="button" onPress={dismissConfirm} style={({ pressed }) => [styles.confirmCancel, pressed && styles.pressed]}>
+                  <Text style={styles.confirmCancelText}>{confirmation?.cancelLabel}</Text>
+                </Pressable>
+                <Pressable accessibilityRole="button" onPress={() => {
+                  const action = confirmation?.onConfirm;
+                  dismissConfirm();
+                  action?.();
+                }} style={({ pressed }) => [styles.confirmAction, confirmation?.tone === 'danger' && styles.confirmActionDanger, pressed && styles.pressed]}>
+                  <Text style={styles.confirmActionText}>{confirmation?.confirmLabel}</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         <Modal transparent visible={Boolean(hudMessage)} animationType="fade" statusBarTranslucent onRequestClose={() => undefined}>
           <View style={styles.hudBackdrop}>
@@ -214,6 +254,79 @@ const styles = StyleSheet.create({
   },
   snackbarActionTextDanger: {
     color: colors.danger
+  },
+  confirmBackdrop: {
+    flex: 1,
+    backgroundColor: colors.overlay,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xl
+  },
+  confirmCard: {
+    width: '100%',
+    maxWidth: 380,
+    borderRadius: radius.xl,
+    backgroundColor: colors.white,
+    padding: spacing.lg,
+    alignItems: 'center',
+    gap: spacing.sm
+  },
+  confirmIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: radius.pill,
+    backgroundColor: colors.dangerSoft,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  confirmTitle: {
+    color: colors.text,
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: '900',
+    textAlign: 'center'
+  },
+  confirmMessage: {
+    color: colors.muted,
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: 'center'
+  },
+  confirmActions: {
+    width: '100%',
+    marginTop: spacing.xs,
+    flexDirection: 'row',
+    gap: spacing.sm
+  },
+  confirmCancel: {
+    flex: 1,
+    minHeight: 44,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  confirmCancelText: {
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: '800'
+  },
+  confirmAction: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  confirmActionDanger: {
+    backgroundColor: colors.danger
+  },
+  confirmActionText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: '900'
   },
   hudBackdrop: {
     flex: 1,

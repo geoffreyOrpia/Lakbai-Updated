@@ -13,14 +13,28 @@ export const DestinationScreen = ({
 }) => {
   const state = viewModel.state;
   const {
-    showSnackbar
+    showSnackbar,
+    showConfirm
   } = useFeedback();
   const pack = state.pack;
-  const runLibraryAction = async () => {
+  const performLibraryAction = async () => {
     const result = state.downloaded ? await viewModel.remove() : await viewModel.download();
     showSnackbar({
       message: result.message,
       tone: result.ok ? 'success' : 'error'
+    });
+  };
+  const runLibraryAction = () => {
+    if (!state.downloaded) {
+      void performLibraryAction();
+      return;
+    }
+    showConfirm({
+      title: 'Remove from library?',
+      message: 'This destination will no longer appear in your saved library. The bundled app content remains available.',
+      confirmLabel: 'Remove',
+      tone: 'danger',
+      onConfirm: () => void performLibraryAction()
     });
   };
   if (state.loading) {
