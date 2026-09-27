@@ -129,7 +129,7 @@ export const DestinationScreen = ({
       {pack.trails.length ? <View style={styles.section}>
           <SectionHeader eyebrow="Offline trails" title="Saved trails" />
           <View style={styles.list}>
-            {pack.trails.map(trail => <Pressable key={trail.id} onPress={() => viewModel.openTrail(trail.id)} style={({
+            {pack.trails.map(trail => <Pressable key={trail.id} accessibilityRole="button" accessibilityLabel={`Open ${trail.name} trail navigator`} onPress={() => viewModel.openTrail(trail.id)} style={({
           pressed
         }) => [[styles.card, shadows.card], pressed && styles.pressed]}>
                 <TrailMiniMap trail={trail} height={130} />

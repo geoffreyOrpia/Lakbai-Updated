@@ -27,7 +27,7 @@ export const HomeScreen = ({
 
       <SearchField value={searchQuery} onChangeText={setSearchQuery} placeholder="Search destination packs" onSubmit={value => viewModel.openExplore(value)} />
 
-      <Pressable style={({
+      <Pressable accessibilityRole="button" accessibilityLabel="Open local library" style={({
       pressed
     }) => [styles.readiness, shadows.card, pressed && styles.pressed]} onPress={() => viewModel.openDownloads()}>
         <View style={styles.readinessIcon}>

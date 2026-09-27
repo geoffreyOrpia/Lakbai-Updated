@@ -45,7 +45,7 @@ const TripList = ({
         <TripStat value={String(offlineStops)} label="Offline ready" />
       </View>
 
-      <Pressable style={({
+      <Pressable accessibilityRole="button" accessibilityLabel="Create a new itinerary" style={({
       pressed
     }) => [styles.createTripButton, shadows.card, pressed && styles.pressed]} onPress={() => viewModel.openCreate()}>
         <View style={styles.createTripIcon}>
@@ -89,7 +89,7 @@ const TripCard = ({
   readiness,
   onPress
 }) => {
-  return <Pressable onPress={onPress} style={({
+  return <Pressable accessibilityRole="button" accessibilityLabel={`Open itinerary ${trip.title}, ${formatDate(trip.travelDate)}`} onPress={onPress} style={({
     pressed
   }) => [styles.tripCard, shadows.card, pressed && styles.pressed]}>
       <View style={styles.tripCardAccent} />
@@ -191,7 +191,9 @@ const CreateTrip = ({
                     {item.downloaded ? ' · offline ready' : ''}
                   </Text>
                 </View>
-                <Pressable disabled={added} onPress={() => viewModel.addStop(item.destination.id, item.destination.name, item.destination.municipality)} style={({
+                <Pressable accessibilityRole="button" accessibilityLabel={added ? `${item.destination.name} already added` : `Add ${item.destination.name} to itinerary`} accessibilityState={{
+                  disabled: added
+                }} disabled={added} onPress={() => viewModel.addStop(item.destination.id, item.destination.name, item.destination.municipality)} style={({
               pressed
             }) => [styles.smallAction, added && styles.smallActionSelected, pressed && !added && styles.pressed]}>
                   <Text style={[styles.smallActionText, added && styles.smallActionTextSelected]}>{added ? 'Added' : 'Add'}</Text>
@@ -217,17 +219,21 @@ const CreateTrip = ({
                     <Text style={styles.destinationMeta}>{stop.municipality}</Text>
                   </View>
                   <View style={styles.orderActions}>
-                    <Pressable disabled={index === 0} onPress={() => viewModel.moveStop(index, -1)} style={({
+                    <Pressable accessibilityRole="button" accessibilityLabel={`Move ${stop.destinationName} earlier`} accessibilityState={{
+                      disabled: index === 0
+                    }} disabled={index === 0} onPress={() => viewModel.moveStop(index, -1)} style={({
                 pressed
               }) => [styles.iconAction, index === 0 && styles.disabled, pressed && styles.pressed]}>
                       <Ionicons name="arrow-up" size={17} color={colors.primary} />
                     </Pressable>
-                    <Pressable disabled={index === form.stops.length - 1} onPress={() => viewModel.moveStop(index, 1)} style={({
+                    <Pressable accessibilityRole="button" accessibilityLabel={`Move ${stop.destinationName} later`} accessibilityState={{
+                      disabled: index === form.stops.length - 1
+                    }} disabled={index === form.stops.length - 1} onPress={() => viewModel.moveStop(index, 1)} style={({
                 pressed
               }) => [styles.iconAction, index === form.stops.length - 1 && styles.disabled, pressed && styles.pressed]}>
                       <Ionicons name="arrow-down" size={17} color={colors.primary} />
                     </Pressable>
-                    <Pressable onPress={() => viewModel.removeStop(index)} style={({
+                    <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${stop.destinationName} from itinerary`} onPress={() => viewModel.removeStop(index)} style={({
                 pressed
               }) => [styles.iconAction, pressed && styles.pressed]}>
                       <Ionicons name="trash-outline" size={17} color={colors.danger} />
@@ -300,7 +306,7 @@ const LabeledInput = ({
 }) => {
   return <View style={styles.fieldGroup}>
       <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.faint} multiline={multiline} style={[styles.input, multiline && styles.multilineInput, compact && styles.compactInput]} />
+      <TextInput accessibilityLabel={label} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.faint} multiline={multiline} style={[styles.input, multiline && styles.multilineInput, compact && styles.compactInput]} />
     </View>;
 };
 const TripDetails = ({
@@ -384,7 +390,7 @@ const TripDetails = ({
         </View>
       </View>
 
-      <Pressable style={({
+      <Pressable accessibilityRole="button" accessibilityLabel={`Delete itinerary ${trip.title}`} style={({
       pressed
     }) => [styles.deleteButton, pressed && styles.pressed]} onPress={confirmDelete}>
         <Ionicons name="trash-outline" size={18} color={colors.danger} />
@@ -756,7 +762,7 @@ const styles = StyleSheet.create({
   },
   smallAction: {
     minWidth: 58,
-    minHeight: 40,
+    minHeight: 44,
     paddingHorizontal: spacing.sm,
     borderWidth: 1.5,
     borderColor: colors.primary,
@@ -810,8 +816,8 @@ const styles = StyleSheet.create({
     gap: spacing.xxs
   },
   iconAction: {
-    width: 36,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: radius.md,
     backgroundColor: colors.primarySofter,
     alignItems: 'center',

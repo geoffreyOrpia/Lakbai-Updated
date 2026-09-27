@@ -94,7 +94,7 @@ export const FeedbackProvider = ({
                   <Ionicons name={toneIcon(snackbar.tone)} size={18} color={toneForeground(snackbar.tone)} />
                 </View>
                 <Text style={styles.snackbarText}>{snackbar.message}</Text>
-                {snackbar.actionLabel ? <Pressable hitSlop={8} onPress={() => {
+                {snackbar.actionLabel ? <Pressable accessibilityRole="button" accessibilityLabel={snackbar.actionLabel} hitSlop={8} onPress={() => {
               const action = snackbar.onAction;
               dismissSnackbar();
               action?.();
@@ -104,7 +104,7 @@ export const FeedbackProvider = ({
                     <Text style={[styles.snackbarActionText, snackbar.tone === 'error' && styles.snackbarActionTextDanger]}>
                       {snackbar.actionLabel}
                     </Text>
-                  </Pressable> : <Pressable hitSlop={8} onPress={dismissSnackbar} style={({
+                  </Pressable> : <Pressable accessibilityRole="button" accessibilityLabel="Dismiss message" hitSlop={8} onPress={dismissSnackbar} style={({
               pressed
             }) => pressed && styles.pressed}>
                     <Ionicons name="close" size={18} color={colors.muted} />

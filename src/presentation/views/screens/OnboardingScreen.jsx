@@ -24,7 +24,9 @@ export const OnboardingScreen = ({
           <View style={styles.interestGrid}>
             {INTEREST_OPTIONS.map(interest => {
           const selected = state.interests.includes(interest);
-          return <Pressable key={interest} onPress={() => viewModel.toggleInterest(interest)} style={({
+          return <Pressable key={interest} accessibilityRole="checkbox" accessibilityState={{
+            checked: selected
+          }} accessibilityLabel={interest} onPress={() => viewModel.toggleInterest(interest)} style={({
             pressed
           }) => [styles.interestChip, selected && styles.interestChipSelected, pressed && styles.pressed]}>
                   <Ionicons name={selected ? 'checkmark' : 'ellipse-outline'} size={13} color={selected ? colors.onPrimary : colors.faint} />
@@ -40,7 +42,9 @@ export const OnboardingScreen = ({
           <View style={styles.paceList}>
             {PACE_OPTIONS.map(option => {
           const selected = state.pace === option.key;
-          return <Pressable key={option.key} onPress={() => viewModel.setPace(option.key)} style={({
+          return <Pressable key={option.key} accessibilityRole="radio" accessibilityState={{
+            selected
+          }} accessibilityLabel={`${option.label}. ${option.text}`} onPress={() => viewModel.setPace(option.key)} style={({
             pressed
           }) => [styles.paceRow, selected && styles.paceRowSelected, pressed && styles.pressed]}>
                   <View style={[styles.paceRadio, selected && styles.paceRadioSelected]}>

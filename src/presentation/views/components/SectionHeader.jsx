@@ -11,7 +11,7 @@ export const SectionHeader = ({
         {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
         <Text style={styles.title}>{title}</Text>
       </View>
-      {actionLabel && onAction ? <Pressable onPress={onAction} hitSlop={8} style={({
+      {actionLabel && onAction ? <Pressable accessibilityRole="button" accessibilityLabel={actionLabel} onPress={onAction} hitSlop={8} style={({
       pressed
     }) => pressed && styles.pressed}>
           <Text style={styles.action}>{actionLabel}</Text>

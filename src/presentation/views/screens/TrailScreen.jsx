@@ -108,7 +108,7 @@ const Stat = ({
 const StartButton = ({
   onPress
 }) => {
-  return <Pressable onPress={onPress} style={({
+  return <Pressable accessibilityRole="button" accessibilityLabel="Start trail navigation" onPress={onPress} style={({
     pressed
   }) => [styles.startButton, shadows.card, pressed && styles.pressed]}>
       <Ionicons name="navigate" size={19} color={colors.onPrimary} />
@@ -118,7 +118,7 @@ const StartButton = ({
 const StopButton = ({
   onPress
 }) => {
-  return <Pressable onPress={onPress} style={({
+  return <Pressable accessibilityRole="button" accessibilityLabel="Stop trail tracking" onPress={onPress} style={({
     pressed
   }) => [styles.stopButton, shadows.card, pressed && styles.pressed]}>
       <Ionicons name="stop-circle-outline" size={19} color={colors.text} />

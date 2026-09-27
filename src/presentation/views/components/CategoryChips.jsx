@@ -8,7 +8,9 @@ export const CategoryChips = ({
   return <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.content}>
       {options.map(option => {
       const active = selected === option.key;
-      return <Pressable key={option.key} onPress={() => onSelect(option.key)} style={({
+      return <Pressable key={option.key} accessibilityRole="button" accessibilityState={{
+        selected: active
+      }} accessibilityLabel={`Filter by ${option.label}`} onPress={() => onSelect(option.key)} style={({
         pressed
       }) => [styles.chip, active && styles.chipActive, pressed && styles.pressed]}>
             <Text style={[styles.label, active && styles.labelActive]}>{option.label}</Text>
@@ -22,7 +24,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2
   },
   chip: {
-    minHeight: 36,
+    minHeight: 44,
     paddingHorizontal: 14,
     borderRadius: 999,
     borderWidth: 1,
