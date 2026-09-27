@@ -312,6 +312,15 @@ export class NavigationViewModel extends ViewModel {
     this.setState({ preference: normalizeRoutePreference(preference) });
   };
 
+  setMode = mode => {
+    if (this.state.tracking || this.state.calculating) return;
+    if (mode !== 'walk' && mode !== 'drive') return;
+    this.setState({
+      mode,
+      preference: mode === 'walk' ? this.state.preference : 'direct',
+    });
+  };
+
   stopSpeech = () => {
     void this.routingDeps.speechService?.stop?.();
   };

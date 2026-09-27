@@ -80,7 +80,8 @@ export const NavigationScreen = ({ viewModel }) => {
           <Text style={styles.eyebrow}>LAKBAI OFFLINE NAVIGATION</Text>
           <Text style={styles.title}>{state.destinationName}</Text>
           <Text style={styles.subtitle}>
-            Walking · {state.coverage ?? 'Local offline coverage'} · {preferenceLabel(state.preference)}
+            {state.mode === 'drive' ? 'Driving' : 'Walking'} · {state.coverage ?? 'Local offline coverage'}
+            {state.mode === 'walk' ? ' · ' + preferenceLabel(state.preference) : ''}
           </Text>
         </View>
       </View>
@@ -172,7 +173,7 @@ export const NavigationScreen = ({ viewModel }) => {
 
           <View style={styles.summaryRow}>
             <Summary
-              icon="walk-outline"
+              icon={state.mode === 'drive' ? 'car-outline' : 'walk-outline'}
               value={formatKm(shownDistanceKm ?? 0)}
               label={state.tracking || state.arrived ? 'Remaining' : 'Route'}
             />
@@ -280,45 +281,66 @@ export const NavigationScreen = ({ viewModel }) => {
             onPress={() => viewModel.clearRoute()}
           />
         </> : <View style={[styles.actionCard, shadows.card]}>
-          <Text style={styles.actionTitle}>Calculate an offline walking route</Text>
+          <Text style={styles.actionTitle}>
+            Calculate an offline {state.mode === 'drive' ? 'driving' : 'walking'} route
+          </Text>
           <Text style={styles.actionText}>
             LakBai uses your foreground GPS position and the saved local road/path graph. No route request is sent to Google or another routing server.
           </Text>
-          <View style={styles.preferenceBlock}>
-            <Text style={styles.preferenceEyebrow}>HOW DO YOU WANT TO EXPLORE?</Text>
-            <View style={styles.preferenceRow}>
-              {routePreferences.map(option => {
-                const selected = state.preference === option.id;
-                return <Pressable
-                  key={option.id}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: selected }}
-                  accessibilityLabel={option.label + ' route'}
-                  onPress={() => viewModel.setPreference(option.id)}
-                  style={({ pressed }) => [
-                    styles.preferenceOption,
-                    selected && styles.preferenceOptionSelected,
-                    pressed && styles.preferenceOptionPressed,
-                  ]}
-                >
-                  <Ionicons
-                    name={option.icon}
-                    size={19}
-                    color={selected ? colors.onPrimary : colors.primary}
-                  />
-                  <Text style={[
-                    styles.preferenceOptionText,
-                    selected && styles.preferenceOptionTextSelected,
-                  ]}>
-                    {option.label}
-                  </Text>
-                </Pressable>;
-              })}
+          <View style={styles.modeBlock}>
+            <Text style={styles.preferenceEyebrow}>TRAVEL MODE</Text>
+            <View style={styles.modeRow}>
+              <ModeOption
+                icon="walk-outline"
+                label="Walk"
+                selected={state.mode === 'walk'}
+                onPress={() => viewModel.setMode('walk')}
+              />
+              <ModeOption
+                icon="car-outline"
+                label="Drive"
+                selected={state.mode === 'drive'}
+                onPress={() => viewModel.setMode('drive')}
+              />
             </View>
-            <Text style={styles.preferenceDescription}>
-              {preferenceDescription(state.preference)}
-            </Text>
           </View>
+          {state.mode === 'walk' ? <View style={styles.preferenceBlock}>
+              <Text style={styles.preferenceEyebrow}>HOW DO YOU WANT TO EXPLORE?</Text>
+              <View style={styles.preferenceRow}>
+                {routePreferences.map(option => {
+                  const selected = state.preference === option.id;
+                  return <Pressable
+                    key={option.id}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected }}
+                    accessibilityLabel={option.label + ' route'}
+                    onPress={() => viewModel.setPreference(option.id)}
+                    style={({ pressed }) => [
+                      styles.preferenceOption,
+                      selected && styles.preferenceOptionSelected,
+                      pressed && styles.preferenceOptionPressed,
+                    ]}
+                  >
+                    <Ionicons
+                      name={option.icon}
+                      size={19}
+                      color={selected ? colors.onPrimary : colors.primary}
+                    />
+                    <Text style={[
+                      styles.preferenceOptionText,
+                      selected && styles.preferenceOptionTextSelected,
+                    ]}>
+                      {option.label}
+                    </Text>
+                  </Pressable>;
+                })}
+              </View>
+              <Text style={styles.preferenceDescription}>
+                {preferenceDescription(state.preference)}
+              </Text>
+            </View> : <Text style={styles.drivePilotNote}>
+              Driving mode uses the offline graph’s prototype motor-road access and road-class speed estimates. Always follow posted traffic rules, closures, and private-access signs.
+            </Text>}
           <PrimaryButton
             label={state.calculating ? 'Calculating…' : 'Route from my GPS'}
             icon="navigate-outline"
@@ -352,6 +374,29 @@ const JourneyStep = ({ icon, label, detail }) => (
     <Text style={styles.journeyStepLabel}>{label}</Text>
     <Text style={styles.journeyStepDetail} numberOfLines={1}>{detail}</Text>
   </View>
+);
+
+const ModeOption = ({ icon, label, selected, onPress }) => (
+  <Pressable
+    accessibilityRole="radio"
+    accessibilityState={{ checked: selected }}
+    accessibilityLabel={label + ' navigation'}
+    onPress={onPress}
+    style={({ pressed }) => [
+      styles.modeOption,
+      selected && styles.modeOptionSelected,
+      pressed && styles.preferenceOptionPressed,
+    ]}
+  >
+    <Ionicons
+      name={icon}
+      size={20}
+      color={selected ? colors.onPrimary : colors.primary}
+    />
+    <Text style={[styles.modeOptionText, selected && styles.modeOptionTextSelected]}>
+      {label}
+    </Text>
+  </Pressable>
 );
 
 const styles = StyleSheet.create({
@@ -422,6 +467,37 @@ const styles = StyleSheet.create({
   preferenceBlock: {
     gap: spacing.xs,
   },
+  modeBlock: {
+    gap: spacing.xs,
+  },
+  modeRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  modeOption: {
+    flex: 1,
+    minHeight: 52,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.white,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
+  modeOptionSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
+  },
+  modeOptionText: {
+    color: colors.text,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  modeOptionTextSelected: {
+    color: colors.onPrimary,
+  },
   preferenceEyebrow: {
     color: colors.muted,
     fontSize: 9,
@@ -461,6 +537,11 @@ const styles = StyleSheet.create({
     color: colors.onPrimary,
   },
   preferenceDescription: {
+    color: colors.textSecondary,
+    fontSize: 10,
+    lineHeight: 15,
+  },
+  drivePilotNote: {
     color: colors.textSecondary,
     fontSize: 10,
     lineHeight: 15,

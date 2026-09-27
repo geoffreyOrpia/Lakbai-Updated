@@ -162,6 +162,21 @@ describe('NavigationViewModel', () => {
     expect(vm.state.route.preference).toBe('adventure');
   });
 
+  test('can calculate a driving route and resets walking preferences', async () => {
+    const { vm } = createVm();
+    await vm.load();
+
+    vm.setPreference('adventure');
+    vm.setMode('drive');
+    await vm.startFromGps();
+
+    expect(vm.state.mode).toBe('drive');
+    expect(vm.state.preference).toBe('direct');
+    expect(vm.state.route.mode).toBe('drive');
+    expect(vm.state.route.preference).toBe('direct');
+    expect(vm.state.route.durationMin).toBeLessThan(10);
+  });
+
   test('starts foreground GPS tracking and updates route progress', async () => {
     const setup = createVm();
     const { vm, locationService, emitFix } = setup;

@@ -25,4 +25,21 @@ describe('Panabo routing pilot asset', () => {
     expect(route.startSnap.distanceKm).toBeLessThan(0.05);
     expect(route.endSnap.distanceKm).toBeLessThan(0.01);
   });
+
+  test('ships a connected driving graph to the Panabo mangrove park area', () => {
+    const route = calculateOfflineRoute({
+      graph: panaboGraph,
+      from: { lat: 7.2999, lng: 125.6807 },
+      to: { lat: 7.272383, lng: 125.680829 },
+      mode: 'drive',
+      maxSnapDistanceKm: 1,
+    });
+
+    expect(route.ok).toBe(true);
+    expect(route.mode).toBe('drive');
+    expect(route.distanceKm).toBeGreaterThan(3);
+    expect(route.distanceKm).toBeLessThan(6);
+    expect(route.durationMin).toBeLessThan(20);
+    expect(route.endSnap.distanceKm).toBeLessThan(0.2);
+  });
 });
