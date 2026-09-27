@@ -56,6 +56,8 @@ export const TrailScreen = ({
           </View>
         </View> : null}
 
+      {state.tracking && state.accuracyM != null ? <InfoBanner tone={viewModel.lowAccuracy ? "warn" : "info"} text={viewModel.lowAccuracy ? `GPS accuracy is about ${Math.round(state.accuracyM)} m. Trail progress and off-route warnings may be unreliable until accuracy improves.` : `GPS accuracy is about ${Math.round(state.accuracyM)} m.`} /> : null}
+
       {viewModel.offTrail && state.tracking ? <InfoBanner tone="warn" text={`You are about ${Math.round(state.offTrailM ?? 0)} m from the saved trail line. Check your surroundings.`} /> : null}
 
       {state.permission === 'denied' ? <InfoBanner tone="danger" text="Location permission was declined. Enable it in system settings to follow the trail with GPS." /> : null}
@@ -85,7 +87,7 @@ export const TrailScreen = ({
       <View style={styles.trailNote}>
         <Ionicons name="navigate-outline" size={17} color={colors.primary} />
         <Text style={styles.trailNoteText}>
-          GPS positioning works offline. The trail line and waypoints come from the pack saved in your local library.
+          GPS positioning works offline, but phone location can drift or become inaccurate. Use the trail line as a planning aid, stay aware of signs and surroundings, and do not rely on LakbayLokal as an emergency navigation device.
         </Text>
       </View>
     </ScrollView>;

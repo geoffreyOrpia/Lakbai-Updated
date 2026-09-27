@@ -1,6 +1,7 @@
 import { projectOntoTrail } from "../../core/utils/geo.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 const OFF_TRAIL_WARNING_M = 120;
+const MAX_RELIABLE_ACCURACY_M = 50;
 
 /** GPS trail navigation over a downloaded pack; works fully offline. */
 export class TrailViewModel extends ViewModel {
@@ -20,6 +21,7 @@ export class TrailViewModel extends ViewModel {
       remainingKm: 0,
       progressPct: 0,
       offTrailM: null,
+      accuracyM: null,
       gpsError: null
     });
     this.deps = deps;
@@ -74,7 +76,13 @@ export class TrailViewModel extends ViewModel {
       gpsError: null
     });
     const initialFix = await this.location.getCurrentFix();
-    if (initialFix) this.applyFix(initialFix);
+    if (initialFix) {
+      this.applyFix(initialFix);
+    } else {
+      this.setState({
+        gpsError: 'Waiting for a reliable GPS fix. Move to an open area if this persists.'
+      });
+    }
     try {
       this.unwatch = await this.location.watchFix(fix => this.applyFix(fix), message => this.setState({
         gpsError: message || 'Location updates are unavailable right now.'
@@ -96,8 +104,11 @@ export class TrailViewModel extends ViewModel {
   back = () => {
     this.nav.onBack();
   };
+  get lowAccuracy() {
+    return (this.state.accuracyM ?? Number.POSITIVE_INFINITY) > MAX_RELIABLE_ACCURACY_M;
+  }
   get offTrail() {
-    return (this.state.offTrailM ?? 0) > OFF_TRAIL_WARNING_M;
+    return !this.lowAccuracy && (this.state.offTrailM ?? 0) > OFF_TRAIL_WARNING_M;
   }
   applyFix = fix => {
     const trail = this.state.trail;
@@ -114,7 +125,9 @@ export class TrailViewModel extends ViewModel {
       traveledKm,
       remainingKm: Math.max(0, trail.distanceKm - traveledKm),
       progressPct: Math.round(projection.progress * 100),
-      offTrailM: projection.distanceToTrailM
+      offTrailM: projection.distanceToTrailM,
+      accuracyM: fix.accuracy ?? null,
+      gpsError: null
     });
   };
 }
