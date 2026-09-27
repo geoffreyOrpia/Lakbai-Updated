@@ -135,6 +135,11 @@ export const NavigationScreen = ({ viewModel }) => {
                 icon="stop-circle-outline"
                 onPress={() => viewModel.stopNavigation()}
               />}
+              <SecondaryButton
+                label={state.voiceGuidance ? 'Mute voice guidance' : 'Enable voice guidance'}
+                icon={state.voiceGuidance ? 'volume-high-outline' : 'volume-mute-outline'}
+                onPress={() => viewModel.toggleVoiceGuidance()}
+              />
             </View> : null}
 
           {state.arrived ? <View style={[styles.arrivalCard, shadows.card]}>

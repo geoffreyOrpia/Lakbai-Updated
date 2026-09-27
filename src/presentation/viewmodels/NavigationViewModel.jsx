@@ -17,9 +17,40 @@ const MAX_ROUTE_START_ACCURACY_M = 80;
 const BASE_OFF_ROUTE_M = 45;
 const OFF_ROUTE_CONFIRM_FIXES = 3;
 
+const spokenDistance = distanceKm => {
+  if (distanceKm == null) return null;
+  if (distanceKm >= 1) {
+    const rounded = Math.round(distanceKm * 10) / 10;
+    return `${rounded} kilometer${rounded === 1 ? '' : 's'}`;
+  }
+  const meters = distanceKm * 1000;
+  const rounded = meters >= 100
+    ? Math.max(10, Math.round(meters / 10) * 10)
+    : Math.max(5, Math.round(meters / 5) * 5);
+  return `${rounded} meters`;
+};
+
+const guidanceStage = distanceKm => {
+  if (distanceKm == null) return 'preview';
+  const meters = distanceKm * 1000;
+  if (meters <= 25) return 'now';
+  if (meters <= 120) return 'near';
+  return 'preview';
+};
+
+const spokenGuidance = (maneuver, distanceKm, stage) => {
+  if (!maneuver?.instruction) return null;
+  if (maneuver.kind === 'arrive' && stage === 'now') return maneuver.instruction;
+  if (stage === 'now') return maneuver.instruction;
+  const distance = spokenDistance(distanceKm);
+  return distance ? `In ${distance}. ${maneuver.instruction}` : maneuver.instruction;
+};
+
 export class NavigationViewModel extends ViewModel {
   unwatch = null;
   offRouteSamples = 0;
+  spokenManeuverId = null;
+  spokenStage = null;
 
   constructor(routingDeps, destinationDeps, locationService, route, nav) {
     super({
@@ -46,6 +77,7 @@ export class NavigationViewModel extends ViewModel {
       offRouteM: null,
       nextManeuver: null,
       distanceToNextManeuverKm: null,
+      voiceGuidance: true,
       rerouteCount: 0,
       arrived: false,
       gpsError: null,
@@ -63,6 +95,7 @@ export class NavigationViewModel extends ViewModel {
 
   onDispose = () => {
     this.stopLocationWatch();
+    this.stopSpeech();
   };
 
   load = async () => {
@@ -241,6 +274,7 @@ export class NavigationViewModel extends ViewModel {
 
   stopNavigation = () => {
     this.stopLocationWatch();
+    this.stopSpeech();
     this.offRouteSamples = 0;
     this.setState({
       tracking: false,
@@ -252,6 +286,54 @@ export class NavigationViewModel extends ViewModel {
   stopLocationWatch = () => {
     this.unwatch?.();
     this.unwatch = null;
+  };
+
+  stopSpeech = () => {
+    void this.routingDeps.speechService?.stop?.();
+  };
+
+  resetSpokenGuidance = () => {
+    this.spokenManeuverId = null;
+    this.spokenStage = null;
+  };
+
+  announceGuidance = (maneuver, distanceKm, force = false) => {
+    if (
+      !this.state.voiceGuidance
+      || !this.state.tracking
+      || !maneuver
+      || !this.routingDeps.speechService?.speak
+    ) return;
+
+    const stage = guidanceStage(distanceKm);
+    if (
+      !force
+      && this.spokenManeuverId === maneuver.id
+      && this.spokenStage === stage
+    ) return;
+
+    const text = spokenGuidance(maneuver, distanceKm, stage);
+    if (!text) return;
+    this.spokenManeuverId = maneuver.id;
+    this.spokenStage = stage;
+    void this.routingDeps.speechService.speak(text);
+  };
+
+  toggleVoiceGuidance = () => {
+    const voiceGuidance = !this.state.voiceGuidance;
+    this.setState({ voiceGuidance });
+    this.resetSpokenGuidance();
+    if (!voiceGuidance) {
+      this.stopSpeech();
+      return;
+    }
+    if (this.state.tracking) {
+      this.announceGuidance(
+        this.state.nextManeuver,
+        this.state.distanceToNextManeuverKm,
+        true,
+      );
+    }
   };
 
   applyFix = fix => {
@@ -299,6 +381,10 @@ export class NavigationViewModel extends ViewModel {
       gpsError: null,
     });
 
+    if (this.state.tracking) {
+      this.announceGuidance(next.maneuver, next.distanceKm);
+    }
+
     if (arrived) {
       this.stopLocationWatch();
       this.setState({ tracking: false, rerouting: false });
@@ -335,6 +421,7 @@ export class NavigationViewModel extends ViewModel {
         return;
       }
 
+      this.resetSpokenGuidance();
       this.setState(previous => ({
         route: result,
         rerouteCount: previous.rerouteCount + 1,
@@ -353,6 +440,8 @@ export class NavigationViewModel extends ViewModel {
 
   clearRoute = () => {
     this.stopLocationWatch();
+    this.stopSpeech();
+    this.resetSpokenGuidance();
     this.offRouteSamples = 0;
     this.setState({
       fix: null,
@@ -376,11 +465,13 @@ export class NavigationViewModel extends ViewModel {
   openTrail = () => {
     if (!this.state.trailId || !this.nav.onOpenTrail) return;
     this.stopLocationWatch();
+    this.stopSpeech();
     this.nav.onOpenTrail(this.state.trailId);
   };
 
   back = () => {
     this.stopLocationWatch();
+    this.stopSpeech();
     this.nav.onBack();
   };
 }

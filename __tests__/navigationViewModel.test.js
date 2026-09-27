@@ -27,6 +27,10 @@ const createVm = ({
     routingGraphRepository: {
       getForDestination: jest.fn().mockResolvedValue(graphValue),
     },
+    speechService: {
+      speak: jest.fn().mockResolvedValue(true),
+      stop: jest.fn().mockResolvedValue(),
+    },
   };
   const destinationDeps = {
     packRepository: {
@@ -61,6 +65,7 @@ const createVm = ({
   return {
     vm: new NavigationViewModel(routingDeps, destinationDeps, locationService, route, nav),
     routingDeps,
+    speechService: routingDeps.speechService,
     destinationDeps,
     locationService,
     nav,
@@ -113,6 +118,39 @@ describe('NavigationViewModel', () => {
     expect(vm.state.remainingKm).toBeLessThan(vm.state.route.distanceKm);
     expect(vm.state.nextManeuver).toBeTruthy();
     expect(vm.state.gpsError).toBeNull();
+  });
+
+  test('speaks staged maneuver guidance without repeating every GPS fix', async () => {
+    const { vm, speechService, emitFix } = createVm();
+    await vm.load();
+    await vm.startFromGps();
+
+    await vm.startNavigation();
+
+    expect(speechService.speak).toHaveBeenCalledTimes(1);
+    expect(speechService.speak.mock.calls[0][0]).toContain('In ');
+
+    emitFix({ lat: 7.2999, lng: 125.6801, accuracy: 6 });
+    emitFix({ lat: 7.2998, lng: 125.6801, accuracy: 6 });
+    expect(speechService.speak).toHaveBeenCalledTimes(1);
+  });
+
+  test('can mute and restore spoken navigation guidance', async () => {
+    const { vm, speechService } = createVm();
+    await vm.load();
+    await vm.startFromGps();
+    await vm.startNavigation();
+    const spokenBeforeMute = speechService.speak.mock.calls.length;
+
+    vm.toggleVoiceGuidance();
+    expect(vm.state.voiceGuidance).toBe(false);
+    expect(speechService.stop).toHaveBeenCalled();
+    vm.applyFix({ lat: 7.285, lng: 125.6805, accuracy: 6 });
+    expect(speechService.speak).toHaveBeenCalledTimes(spokenBeforeMute);
+
+    vm.toggleVoiceGuidance();
+    expect(vm.state.voiceGuidance).toBe(true);
+    expect(speechService.speak.mock.calls.length).toBeGreaterThan(spokenBeforeMute);
   });
 
   test('pauses navigation progress when live GPS accuracy is poor', async () => {

@@ -16,6 +16,7 @@ import { ExpoLocationService } from "../../data/services/locationService.jsx";
 import { createOnlineResearchService } from "../../data/services/onlineResearchService.jsx";
 import { createPhoneService } from "../../data/services/phoneService.jsx";
 import { createOfflinePackStorage } from "../../data/services/offlinePackStorage.jsx";
+import { createSpeechService } from "../../data/services/speechService.jsx";
 /**
  * Composition root (poor-man's DI). Singletons are created once at first use;
  * view model factories receive everything they need through their deps.
@@ -44,6 +45,7 @@ const buildContainer = () => {
   const locationService = new ExpoLocationService();
   const onlineResearchService = createOnlineResearchService();
   const phoneService = createPhoneService();
+  const speechService = createSpeechService();
 
   // Use case dependency bundles
   const destinationDeps = {
@@ -68,7 +70,8 @@ const buildContainer = () => {
     onlineResearchService
   };
   const routingDeps = {
-    routingGraphRepository
+    routingGraphRepository,
+    speechService
   };
   return {
     destinationDeps,
