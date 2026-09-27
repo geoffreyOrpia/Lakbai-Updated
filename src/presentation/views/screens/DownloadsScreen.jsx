@@ -6,7 +6,6 @@ import { DestinationCard } from "../components/DestinationCard.jsx";
 import { InfoBanner } from "../components/InfoBanner.jsx";
 import { SectionHeader } from "../components/SectionHeader.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
-import { formatSizeKb } from "../../../core/utils/format.jsx";
 export const DownloadsScreen = ({
   viewModel
 }) => {
@@ -16,7 +15,6 @@ export const DownloadsScreen = ({
   } = useFeedback();
   const downloaded = viewModel.downloaded;
   const available = viewModel.available;
-  const usedMb = downloaded.reduce((total, item) => total + (item.destination.sizeKb ?? 0) / 1024, 0);
   const runAction = async (destinationName, packId, isDownloaded) => {
     const result = isDownloaded ? await viewModel.remove(packId) : await viewModel.download(packId);
     showSnackbar({
@@ -39,8 +37,7 @@ export const DownloadsScreen = ({
         <View style={styles.summaryCopy}>
           <Text style={styles.summaryTitle}>Offline library</Text>
           <Text style={styles.summaryText}>
-            {downloaded.length} {downloaded.length === 1 ? 'pack' : 'packs'} saved
-            {usedMb > 0 ? ` · ${usedMb.toFixed(1)} MB used` : ''}
+            {downloaded.length} {downloaded.length === 1 ? 'pack' : 'packs'} saved to your library
           </Text>
         </View>
         <View style={styles.readyPill}>
@@ -68,8 +65,7 @@ export const DownloadsScreen = ({
       <View style={styles.note}>
         <Ionicons name="information-circle-outline" size={17} color={colors.muted} />
         <Text style={styles.noteText}>
-          Every pack is bundled with LakbayLokal. Saving one adds it to your library and enables its trails, guides, and safety notes without internet.
-          {downloaded.length ? ` Library size: about ${formatSizeKb(Math.round(usedMb * 1024))}.` : ''}
+          Every pack is already bundled with LakbayLokal. Saving one bookmarks it in your local library and enables its verified offline features; it does not download another copy or free app storage when removed.
         </Text>
       </View>
     </ScrollView>;

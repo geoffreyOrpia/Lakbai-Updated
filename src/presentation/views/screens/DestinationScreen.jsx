@@ -65,9 +65,9 @@ export const DestinationScreen = ({
       <Pressable accessibilityRole="button" disabled={state.busy} onPress={() => void runLibraryAction()} style={({
       pressed
     }) => [styles.cta, state.downloaded && styles.ctaRemove, state.busy && styles.ctaDisabled, pressed && !state.busy && styles.pressed]}>
-        <Ionicons name={state.busy ? 'hourglass-outline' : state.downloaded ? 'trash-outline' : 'download-outline'} size={18} color={state.downloaded ? colors.danger : colors.onPrimary} />
+        <Ionicons name={state.busy ? 'hourglass-outline' : state.downloaded ? 'trash-outline' : 'bookmark-outline'} size={18} color={state.downloaded ? colors.danger : colors.onPrimary} />
         <Text style={[styles.ctaText, state.downloaded && styles.ctaTextRemove]}>
-          {state.busy ? 'Working…' : state.downloaded ? 'Remove pack from device' : destination.status === 'available' ? 'Save pack to local library' : 'Pack coming soon'}
+          {state.busy ? 'Working…' : state.downloaded ? 'Remove from library' : destination.status === 'available' ? 'Save pack to local library' : 'Pack coming soon'}
         </Text>
       </Pressable>
 

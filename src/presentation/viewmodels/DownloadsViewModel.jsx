@@ -1,7 +1,7 @@
 import { downloadPack, listDestinationsWithState, removePack } from "../../domain/usecases/destinationPacks.jsx";
 import { userMessage } from "../../core/errors/appError.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
-/** Offline library management: downloaded packs, available packs, storage summary. */
+/** Offline library management for bundled packs saved to the user's library. */
 export class DownloadsViewModel extends ViewModel {
   constructor(deps) {
     super({
@@ -83,7 +83,7 @@ export class DownloadsViewModel extends ViewModel {
       });
       return {
         ok: true,
-        message: `${item?.destination.name ?? 'Pack'} removed from this device.`
+        message: `${item?.destination.name ?? 'Pack'} removed from your library.`
       };
     } catch (error) {
       return {

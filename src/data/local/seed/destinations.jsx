@@ -166,7 +166,7 @@ export const destinations = [{
   category: 'adventure',
   status: 'coming-soon',
   summary: 'Compact trail references and offline-ready local destination information.',
-  description: 'The San Isidro trail pack is being curated with local guides. It will collect trail references, ridge viewpoints, and offline travel notes in one downloadable pack.',
+  description: 'The San Isidro trail pack is being curated with local guides. It will collect trail references, ridge viewpoints, and offline travel notes in one locally saved pack.',
   highlights: [],
   coverTheme: {
     from: '#173F2B',

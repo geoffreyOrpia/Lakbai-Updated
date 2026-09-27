@@ -113,7 +113,7 @@ export const packs = [{
   transport: {
     gettingThere: ['From Davao City, take the Sasa ferry terminal barge or the Sta. Ana wharf fastcraft to Samal.', 'Barges carry vehicles; fastcraft are passengers only and cross more frequently.', 'Habal-habal (motorcycle taxi) stands at Peñaplata market and Babak junction cover most barangay roads.'],
     gettingAround: ['Single-cab multicabs and tricycles connect Peñaplata, Babak, and Kaputian on rough schedules.', 'For beaches and falls, hiring a habal-habal for a half-day circuit is the most practical option.', 'Roads are paved but narrow in sections; travel times grow quickly after rain.'],
-    localTips: ['Signal is strong near the plaza but drops on coves and forested barangay roads.', 'Carry small bills; sari-sari stores and habal-habal drivers rarely keep change for large notes.', 'Download this pack before leaving Davao City so ferry-wait time stays productive.']
+    localTips: ['Signal is strong near the plaza but drops on coves and forested barangay roads.', 'Carry small bills; sari-sari stores and habal-habal drivers rarely keep change for large notes.', 'Save this pack to your library before leaving Davao City so it is easy to find during the trip.']
   },
   safety: {
     reminders: ['Confirm the last return ferry time before heading to southern coves.', 'Wear reef-safe sunscreen and footwear that handles coral rubble.', 'Tell your accommodation where your day route goes and when you expect to return.', 'Sea conditions change fast; agree on a cutoff time with boat operators.'],
