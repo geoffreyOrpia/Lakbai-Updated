@@ -1,4 +1,4 @@
-import { loadOfflineBundleStatus, loadPackForViewing, removePackFromLibrary, savePackToLibrary } from "../../domain/usecases/destinationPacks.jsx";
+import { loadOfflineBundleStatus, loadPackForViewing, loadPackLibraryState, removePackFromLibrary, savePackToLibrary } from "../../domain/usecases/destinationPacks.jsx";
 import { userMessage } from "../../core/errors/appError.jsx";
 import { openDirectionsToPlace } from "../../domain/usecases/directions.jsx";
 import { isFavoriteDestination, toggleDestinationFavorite } from "../../domain/usecases/favorites.jsx";
@@ -13,6 +13,8 @@ export class DestinationViewModel extends ViewModel {
       busy: false,
       directionsBusyId: null,
       saved: false,
+      savedVersion: null,
+      updateAvailable: false,
       offlineBundle: null,
       favorite: false,
       error: null
@@ -34,17 +36,20 @@ export class DestinationViewModel extends ViewModel {
       const [{
         pack,
         source
-      }, favorite] = await Promise.all([
+      }, favorite, libraryState] = await Promise.all([
         loadPackForViewing(this.deps, this.destinationId),
         isFavoriteDestination(this.deps, this.destinationId),
+        loadPackLibraryState(this.deps, this.destinationId),
       ]);
-      const offlineBundle = source === 'library'
+      const offlineBundle = libraryState.saved
         ? await loadOfflineBundleStatus(this.deps, this.destinationId)
         : null;
       this.setState({
         pack,
         source,
-        saved: source === 'library',
+        saved: libraryState.saved,
+        savedVersion: libraryState.savedVersion,
+        updateAvailable: libraryState.updateAvailable,
         offlineBundle,
         favorite,
         error: pack || source === 'bundled' ? null : 'This destination pack is not bundled with this version of LakbayLokal yet.'
@@ -54,6 +59,8 @@ export class DestinationViewModel extends ViewModel {
         pack: null,
         source: 'none',
         saved: false,
+        savedVersion: null,
+        updateAvailable: false,
         offlineBundle: null,
         error: userMessage(error, 'This destination could not be loaded from local storage.')
       });
@@ -80,7 +87,7 @@ export class DestinationViewModel extends ViewModel {
       };
     }
   };
-  saveToLibrary = async () => {
+  saveToLibrary = async (updating = false) => {
     this.setState({
       busy: true
     });
@@ -91,11 +98,15 @@ export class DestinationViewModel extends ViewModel {
         pack,
         source: 'library',
         saved: true,
+        savedVersion: pack.version,
+        updateAvailable: false,
         offlineBundle
       });
       return {
         ok: true,
-        message: `${pack.destination.name} is ready for offline use.`
+        message: updating
+          ? `${pack.destination.name} offline files updated.`
+          : `${pack.destination.name} is ready for offline use.`
       };
     } catch (error) {
       return {
@@ -116,6 +127,8 @@ export class DestinationViewModel extends ViewModel {
       await removePackFromLibrary(this.deps, this.destinationId);
       this.setState({
         saved: false,
+        savedVersion: null,
+        updateAvailable: false,
         offlineBundle: null
       });
       return {
@@ -135,6 +148,24 @@ export class DestinationViewModel extends ViewModel {
   };
   openTrail = trailId => {
     this.nav.onOpenTrail(trailId);
+  };
+  planRoute = route => {
+    const destination = this.state.pack?.destination;
+    if (!destination || !route || !this.nav.onPlanRoute) return;
+    this.nav.onPlanRoute({
+      destinationId: destination.id,
+      destinationName: destination.name,
+      municipality: destination.municipality,
+      routeId: route.id,
+      routeName: route.name,
+      description: route.description,
+      planningOnly: true,
+      stops: (route.stops ?? []).map(stop => ({
+        id: stop.id,
+        name: stop.name,
+        note: stop.note,
+      })),
+    });
   };
   openDirections = async (place) => {
     const destination = this.state.pack?.destination;

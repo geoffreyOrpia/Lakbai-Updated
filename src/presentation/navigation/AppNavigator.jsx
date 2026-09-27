@@ -35,6 +35,7 @@ export const AppNavigator = () => {
   const [tab, setTab] = useState('home');
   const [stack, setStack] = useState([]);
   const [exploreQuery, setExploreQuery] = useState('');
+  const [tripDraft, setTripDraft] = useState(null);
   const push = route => setStack(current => [...current, route]);
   const pop = () => setStack(current => current.slice(0, -1));
   useEffect(() => {
@@ -69,7 +70,11 @@ export const AppNavigator = () => {
       name: 'trail',
       destinationId: topRoute.destinationId,
       trailId
-    })} onBack={pop} />;
+    })} onPlanRoute={draft => {
+      setTripDraft(draft);
+      setStack([]);
+      setTab('trips');
+    }} onBack={pop} />;
   }
   if (topRoute?.name === 'trail') {
     return <TrailFlow destinationId={topRoute.destinationId} trailId={topRoute.trailId} onBack={pop} />;
@@ -98,10 +103,14 @@ export const AppNavigator = () => {
         name: 'destination',
         destinationId
       })} /> : null}
-        {tab === 'trips' ? <TripsTab onOpenDestination={destinationId => push({
-        name: 'destination',
-        destinationId
-      })} /> : null}
+        {tab === 'trips' ? <TripsTab
+          initialRouteDraft={tripDraft}
+          onDraftConsumed={() => setTripDraft(null)}
+          onOpenDestination={destinationId => push({
+            name: 'destination',
+            destinationId
+          })}
+        /> : null}
         {tab === 'library' ? <LibraryTab onOpenDestination={destinationId => push({
         name: 'destination',
         destinationId
@@ -123,11 +132,13 @@ const OnboardingFlow = ({
 const DestinationFlow = ({
   destinationId,
   onOpenTrail,
+  onPlanRoute,
   onBack
 }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new DestinationViewModel(container.destinationDeps, destinationId, {
     onOpenTrail,
+    onPlanRoute,
     onBack
   }, container.directionsDeps));
   return <DestinationScreen viewModel={viewModel} />;
@@ -190,12 +201,18 @@ const LibraryTab = ({
   return <LibraryScreen viewModel={viewModel} onOpenDestination={onOpenDestination} />;
 };
 const TripsTab = ({
-  onOpenDestination
+  onOpenDestination,
+  initialRouteDraft,
+  onDraftConsumed
 }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new TripsViewModel(container.tripsDeps, container.destinationDeps, {
-    onOpenDestination
+    onOpenDestination,
+    initialRouteDraft
   }));
+  useEffect(() => {
+    if (initialRouteDraft) onDraftConsumed?.();
+  }, [initialRouteDraft, onDraftConsumed]);
   return <TripsScreen viewModel={viewModel} />;
 };
 const SafetyTab = () => {

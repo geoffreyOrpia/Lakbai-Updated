@@ -31,7 +31,7 @@ presentation/  →  domain/usecases/  →  domain/repositories
 - **Data:** repositories and DAOs store the catalog, packs, itineraries, preferences, library state, and safety checklist in SQLite.
 - **Bundled content:** Davao del Norte destination guides, licensed photos, spots, transport notes, and safety information ship with the app and seed SQLite automatically.
 
-The core mobile application makes no REST request and does not require a backend, login, registration, or internet connection. Existing account-scoped itineraries are migrated to the single device-local profile; legacy account credentials are removed after migration because accounts are no longer used. When Wi-Fi or mobile data is available, optional research and directions actions open the device's secure browser without changing the offline SQLite data. LakbayLokal does not send the device's precise location; the traveler can choose **Your location** inside Maps under Maps' own permission controls.
+LakbayLokal does not require an application backend, login, registration, or internet connection for its saved travel data. Existing account-scoped itineraries are migrated to the single device-local profile; legacy account credentials are removed after migration because accounts are no longer used. When connected, the destination map can request OpenStreetMap standard tiles and optional research/directions actions open the device's secure browser. Offline mode instead uses bundled/saved map files and SQLite data. Nearby Places uses the device's foreground GPS fix locally; LakbayLokal does not upload that position.
 
 ## Running
 
@@ -43,13 +43,15 @@ npx expo start       # press a (Android) or i (iOS)
 ## Features
 
 - **Device-only setup** — animated tourism landing and a short preference setup with no account gate.
-- **Explore** — a Davao del Norte-only catalog with search, categories, bundled destination images, and offline place information.
+- **Explore** — a Davao del Norte-only catalog with search, categories, bundled destination images, inline Favorites, and save/update controls.
 - **Optional online research** — search the live web for a place or activity within Davao del Norte through the device's secure browser; no app backend or account is required.
-- **Destination routes** — open a destination or point of interest in Google Maps when connected, then choose **Your location** as the starting point.
-- **Local library** — save built-in packs to a personal SQLite library and materialize their guide, places, municipality map context, routes, and bundled image files into durable app document storage without an internet download.
+- **Destination maps** — MapLibre uses OpenStreetMap standard tiles while connected and a bundled Davao del Norte PMTiles basemap plus saved GeoJSON offline; visible status and fallback handling keep local context on map failures.
+- **Destination routes** — open a destination or point of interest in Google Maps when connected, and send planning-only suggested routes directly into an editable Trips draft without exposing unverified GPS geometry.
+- **Local Library** — save built-in packs into durable app document storage, safely refresh versioned packs through staging/backup replacement, remove pack files, and see the measured local storage footprint.
+- **Nearby Places** — rank saved POIs and a clearly labeled approximate destination-area center using the foreground GPS fix entirely on-device, with GPS-accuracy feedback.
 - **Verified-route policy** — prototype trail geometry is hidden from release builds until every waypoint is checked against an authoritative local or mapping source.
-- **Trips** — personal itineraries with a multi-stop builder, reordering, and per-trip offline-readiness scoring.
-- **Local Library** — saved-pack summary and library management. Saving a pack materializes durable guide, place GeoJSON, municipality-context GeoJSON, route-plan, image, and photo-metadata files under app document storage.
+- **Trips** — personal itineraries with a multi-stop builder, reordering, route-draft import, and per-trip offline-readiness scoring.
+- **Content provenance** — available destination packs expose source-review status and source scope; coming-soon content is explicitly labeled prototype.
 - **Safety** — a persisted checklist plus emergency contacts aggregated from saved packs.
 
 ## Version 1 technology rules

@@ -93,12 +93,24 @@ describe('PackRepositoryImpl durable offline files', () => {
     expect(offlineStorage.removePack).toHaveBeenCalledWith('tagum');
   });
 
-  test('rolls back local files if SQLite save fails', async () => {
+  test('rolls back local files if the first SQLite save fails', async () => {
     const { repository, meta, offlineStorage } = createRepository();
     meta.upsert.mockRejectedValue(new Error('sqlite failure'));
 
     await expect(repository.savePack('tagum')).rejects.toThrow('sqlite failure');
 
     expect(offlineStorage.removePack).toHaveBeenCalledWith('tagum');
+  });
+
+  test('keeps refreshed files if update metadata fails so the update can be retried', async () => {
+    const { repository, meta, offlineStorage } = createRepository({
+      savedMeta: { packId: 'tagum', version: 3 },
+    });
+    meta.upsert.mockRejectedValue(new Error('sqlite failure'));
+
+    await expect(repository.savePack('tagum')).rejects.toThrow('sqlite failure');
+
+    expect(offlineStorage.savePack).toHaveBeenCalledWith(pack);
+    expect(offlineStorage.removePack).not.toHaveBeenCalled();
   });
 });

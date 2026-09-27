@@ -8,6 +8,7 @@ import { EmptyState } from "../components/EmptyState.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { SectionHeader } from "../components/SectionHeader.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
+import { formatSizeKb } from "../../../core/utils/format.jsx";
 export const LibraryScreen = ({
   viewModel,
   onOpenDestination
@@ -32,24 +33,39 @@ export const LibraryScreen = ({
         <EmptyState icon="alert-circle-outline" title="Library could not load" text={state.error} actionLabel="Try again" onAction={() => void viewModel.load()} />
       </ScrollView>;
   }
-  const performAction = async (packId, isSaved) => {
-    const result = isSaved ? await viewModel.removeFromLibrary(packId) : await viewModel.save(packId);
+  const performAction = async (packId, action) => {
+    const result = action === 'update'
+      ? await viewModel.update(packId)
+      : action === 'remove'
+      ? await viewModel.removeFromLibrary(packId)
+      : await viewModel.save(packId);
     showSnackbar({
       message: result.message,
       tone: result.ok ? 'success' : 'error'
     });
   };
-  const runAction = (destinationName, packId, isSaved) => {
-    if (!isSaved) {
-      void performAction(packId, false);
+  const runAction = (item) => {
+    if (item.updateAvailable) {
+      void performAction(item.destination.id, 'update');
+      return;
+    }
+    if (!item.saved) {
+      void performAction(item.destination.id, 'save');
       return;
     }
     showConfirm({
       title: 'Remove from library?',
-      message: `${destinationName} will no longer appear in your saved library. The bundled app content remains available.`,
+      message: `${item.destination.name} will no longer appear in your saved library. Its saved pack files will be removed; the content bundled inside the app remains.`,
       confirmLabel: 'Remove',
       tone: 'danger',
-      onConfirm: () => void performAction(packId, true)
+      onConfirm: () => void performAction(item.destination.id, 'remove')
+    });
+  };
+  const toggleFavorite = async packId => {
+    const result = await viewModel.toggleFavorite(packId);
+    showSnackbar({
+      message: result.message,
+      tone: result.ok ? 'success' : 'error'
     });
   };
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -67,7 +83,7 @@ export const LibraryScreen = ({
         <View style={styles.summaryCopy}>
           <Text style={styles.summaryTitle}>Offline library</Text>
           <Text style={styles.summaryText}>
-            {saved.length} {saved.length === 1 ? 'pack' : 'packs'} saved to your library
+            {saved.length} {saved.length === 1 ? 'pack' : 'packs'} · {formatSizeKb(viewModel.totalOfflineSizeBytes / 1024)} local files
           </Text>
         </View>
         <View style={styles.readyPill}>
@@ -86,28 +102,50 @@ export const LibraryScreen = ({
             item={item}
             showCover={false}
             onPress={() => onOpenDestination?.(item.destination.id)}
-          />) : <Text style={styles.emptyText}>No favorites yet. Open a destination and tap “Add to Favorites.”</Text>}
+            onFavorite={() => void toggleFavorite(item.destination.id)}
+            favoriteDisabled={state.busyId !== null}
+          />) : <Text style={styles.emptyText}>No favorites yet. Use the heart on Explore or a destination guide.</Text>}
         </View>
       </View>
 
       <View style={styles.section}>
         <SectionHeader eyebrow="On this device" title="Saved packs" />
         <View style={styles.list}>
-          {saved.length ? saved.map(item => <DestinationCard key={item.destination.id} item={item} showCover={false} onPress={() => onOpenDestination?.(item.destination.id)} actionLabel={state.busyId === item.destination.id ? 'Removing…' : 'Remove'} actionDisabled={state.busyId !== null} onAction={() => void runAction(item.destination.name, item.destination.id, true)} />) : <Text style={styles.emptyText}>No destination packs are currently saved on this device.</Text>}
+          {saved.length ? saved.map(item => <DestinationCard
+            key={item.destination.id}
+            item={item}
+            showCover={false}
+            onPress={() => onOpenDestination?.(item.destination.id)}
+            actionLabel={state.busyId === item.destination.id ? 'Working…' : item.updateAvailable ? 'Update' : 'Remove'}
+            actionDisabled={state.busyId !== null}
+            onAction={() => void runAction(item)}
+            onFavorite={() => void toggleFavorite(item.destination.id)}
+            favoriteDisabled={state.busyId !== null}
+          />) : <Text style={styles.emptyText}>No destination packs are currently saved on this device.</Text>}
         </View>
       </View>
 
       <View style={styles.section}>
         <SectionHeader eyebrow="Built into the app" title="Available to save" />
         <View style={styles.list}>
-          {available.length ? available.map(item => <DestinationCard key={item.destination.id} item={item} showCover={false} onPress={() => onOpenDestination?.(item.destination.id)} actionLabel={state.busyId === item.destination.id ? 'Saving…' : 'Save'} actionDisabled={state.busyId !== null} onAction={() => void runAction(item.destination.name, item.destination.id, false)} />) : <Text style={styles.emptyText}>All currently available packs are saved offline.</Text>}
+          {available.length ? available.map(item => <DestinationCard
+            key={item.destination.id}
+            item={item}
+            showCover={false}
+            onPress={() => onOpenDestination?.(item.destination.id)}
+            actionLabel={state.busyId === item.destination.id ? 'Saving…' : 'Save'}
+            actionDisabled={state.busyId !== null}
+            onAction={() => void runAction(item)}
+            onFavorite={() => void toggleFavorite(item.destination.id)}
+            favoriteDisabled={state.busyId !== null}
+          />) : <Text style={styles.emptyText}>All currently available packs are saved offline.</Text>}
         </View>
       </View>
 
       <View style={styles.note}>
         <Ionicons name="information-circle-outline" size={17} color={colors.muted} />
         <Text style={styles.noteText}>
-          Every pack is already bundled with LakbayLokal. Saving one bookmarks it in your local library and enables its verified offline features; it does not download another copy or free app storage when removed.
+          Saving a pack creates durable guide, map, route, and image files in app storage. The shared Davao del Norte basemap is stored once and reused by every saved pack; removing a pack deletes that pack’s materialized files.
         </Text>
       </View>
     </ScrollView>;

@@ -41,6 +41,10 @@ export const NearbyScreen = ({ viewModel }) => {
       /> : null}
 
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
+      {state.fix?.accuracy != null && state.fix.accuracy > 100 ? <InfoBanner
+        tone="warn"
+        text={`Current GPS accuracy is about ${Math.round(state.fix.accuracy)} m, so nearby ordering is approximate. Move to an open area and refresh for a better fix.`}
+      /> : null}
 
       {state.fix ? <View style={[styles.gpsCard, shadows.soft]}>
           <View style={styles.gpsIcon}>
@@ -66,10 +70,15 @@ export const NearbyScreen = ({ viewModel }) => {
             style={({ pressed }) => [styles.placeCard, shadows.card, pressed && styles.pressed]}
           >
               <View style={styles.placeIcon}>
-                <Ionicons name={iconForCategory(place.spot.category)} size={18} color={colors.primary} />
+                <Ionicons name={iconForCategory(place.category, place.kind)} size={18} color={colors.primary} />
               </View>
               <View style={styles.placeCopy}>
-                <Text style={styles.placeName}>{place.spot.name}</Text>
+                <View style={styles.placeTitleRow}>
+                  <Text style={styles.placeName}>{place.spot.name}</Text>
+                  {place.kind === 'destination' ? <View style={styles.areaPill}>
+                      <Text style={styles.areaPillText}>AREA CENTER</Text>
+                    </View> : null}
+                </View>
                 <Text style={styles.placeMeta}>{place.destinationName}{place.municipality ? ` · ${place.municipality}` : ''}</Text>
                 <Text style={styles.placeDescription} numberOfLines={2}>{place.spot.description}</Text>
               </View>
@@ -85,13 +94,16 @@ export const NearbyScreen = ({ viewModel }) => {
     </ScrollView>;
 };
 
-const iconForCategory = category => {
-  if (category === 'park') return 'leaf-outline';
+const iconForCategory = (category, kind) => {
+  if (kind === 'destination') return 'map-outline';
+  if (['park', 'nature'].includes(category)) return 'leaf-outline';
+  if (['beach', 'island'].includes(category)) return 'water-outline';
+  if (category === 'viewpoint') return 'telescope-outline';
   if (category === 'market') return 'basket-outline';
-  if (category === 'museum') return 'library-outline';
+  if (['museum', 'landmark'].includes(category)) return 'library-outline';
   if (category === 'transport') return 'bus-outline';
   if (category === 'facility') return 'medical-outline';
-  if (category === 'town') return 'storefront-outline';
+  if (['town', 'city'].includes(category)) return 'storefront-outline';
   return 'location-outline';
 };
 
@@ -194,10 +206,29 @@ const styles = StyleSheet.create({
   placeCopy: {
     flex: 1,
   },
+  placeTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
   placeName: {
+    flexShrink: 1,
     color: colors.text,
     fontSize: 13.5,
     fontWeight: '900',
+  },
+  areaPill: {
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primarySofter,
+  },
+  areaPillText: {
+    color: colors.primary,
+    fontSize: 8.5,
+    fontWeight: '900',
+    letterSpacing: 0.3,
   },
   placeMeta: {
     marginTop: 2,

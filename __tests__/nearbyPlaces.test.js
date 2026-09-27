@@ -29,8 +29,13 @@ const samal = {
 describe('Nearby Places', () => {
   test('ranks saved pack places by offline GPS distance', () => {
     const places = rankNearbyPlaces([samal], { lat: 7, lng: 125 });
-    expect(places.map(place => place.spot.id)).toEqual(['near', 'far']);
-    expect(places[0].distanceKm).toBeLessThan(places[1].distanceKm);
+    expect(places.map(place => place.spot.id)).toEqual(expect.arrayContaining(['destination-area', 'near', 'far']));
+    expect(places.find(place => place.spot.id === 'near').distanceKm)
+      .toBeLessThan(places.find(place => place.spot.id === 'far').distanceKm);
+    expect(places.find(place => place.kind === 'destination')).toEqual(expect.objectContaining({
+      destinationId: 'samal',
+      category: 'destination',
+    }));
   });
 
   test('loads only packs represented by local Library metadata', async () => {
@@ -43,7 +48,8 @@ describe('Nearby Places', () => {
 
     expect(packRepository.getSavedPack).toHaveBeenCalledTimes(1);
     expect(packRepository.getSavedPack).toHaveBeenCalledWith('samal');
-    expect(places).toHaveLength(2);
+    expect(places).toHaveLength(3);
+    expect(places.some(place => place.kind === 'destination')).toBe(true);
   });
 
   test('ignores places without coordinates', () => {

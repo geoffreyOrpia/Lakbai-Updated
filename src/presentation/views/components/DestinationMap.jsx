@@ -48,6 +48,9 @@ export const DestinationMap = ({
   const contextBounds = offlineContextMapBounds(contextGeojson);
   const canUseOffline = Boolean(offlineMapUri);
   const [mode, setMode] = useState(canUseOffline ? 'offline' : 'online');
+  const [mapFailed, setMapFailed] = useState(false);
+  const [basemapFailed, setBasemapFailed] = useState(false);
+
   useEffect(() => {
     if (!canUseOffline && mode === 'offline') {
       setMode('online');
@@ -56,18 +59,55 @@ export const DestinationMap = ({
   if (!bounds) return null;
 
   const offline = mode === 'offline' && canUseOffline;
-  const detailedOffline = offline && Boolean(offlineBasemapUri);
-  const hasOfflineContext = offline && Boolean(offlineContextUri);
+  const detailedOffline = offline && Boolean(offlineBasemapUri) && !basemapFailed;
+  const hasContext = Boolean(contextGeojson.features?.length);
+  const hasSavedContext = offline && Boolean(offlineContextUri);
   const offlineStyle = detailedOffline
     ? createOfflineBasemapStyle(offlineBasemapUri)
     : OFFLINE_STYLE;
   const mapData = offline ? offlineMapUri : geojson;
-  const activeBounds = hasOfflineContext ? (contextBounds ?? bounds) : bounds;
+  const contextData = hasSavedContext ? offlineContextUri : contextGeojson;
+  const activeBounds = hasSavedContext ? (contextBounds ?? bounds) : bounds;
+
+  const chooseOffline = () => {
+    setMapFailed(false);
+    setBasemapFailed(false);
+    setMode('offline');
+  };
+  const chooseOnline = () => {
+    setMapFailed(false);
+    setMode('online');
+  };
+  const handleMapFailure = () => {
+    if (detailedOffline) {
+      setBasemapFailed(true);
+      setMapFailed(false);
+      return;
+    }
+    if (!offline && canUseOffline) {
+      setMapFailed(false);
+      setMode('offline');
+      return;
+    }
+    setMapFailed(true);
+  };
+
+  const statusLabel = offline
+    ? detailedOffline
+      ? 'OFFLINE · LOCAL VECTOR MAP'
+      : 'OFFLINE · SAVED MAP CONTEXT'
+    : 'ONLINE · OPENSTREETMAP';
+
   return <View style={styles.card}>
       {canUseOffline ? <View style={styles.modeRow}>
-          <MapModeButton label="Offline pack" active={offline} onPress={() => setMode('offline')} />
-          <MapModeButton label="Online OSM" active={!offline} onPress={() => setMode('online')} />
+          <MapModeButton label="Offline pack" active={offline} onPress={chooseOffline} />
+          <MapModeButton label="Online OSM" active={!offline} onPress={chooseOnline} />
         </View> : null}
+      <View style={styles.statusRow}>
+        <View style={[styles.statusDot, offline ? styles.statusDotOffline : styles.statusDotOnline]} />
+        <Text style={styles.statusText}>{statusLabel}</Text>
+        {basemapFailed ? <Text style={styles.statusHint}>Detailed map fallback active</Text> : null}
+      </View>
       <View style={styles.mapFrame}>
         <Map
           key={offline ? (detailedOffline ? 'offline-detailed' : 'offline-context') : 'online'}
@@ -78,6 +118,8 @@ export const DestinationMap = ({
           logo={false}
           compass
           compassPosition={{ top: 8, right: 8 }}
+          onDidFinishLoadingMap={() => setMapFailed(false)}
+          onDidFailLoadingMap={handleMapFailure}
         >
           <Camera initialViewState={{
             bounds: activeBounds,
@@ -88,14 +130,14 @@ export const DestinationMap = ({
               left: 44,
             },
           }} />
-          {hasOfflineContext ? <GeoJSONSource id="lakbaylokal-context" data={offlineContextUri}>
+          {hasContext ? <GeoJSONSource id="lakbaylokal-context" data={contextData}>
               <Layer
                 id="lakbaylokal-context-fill"
                 type="fill"
                 source="lakbaylokal-context"
                 paint={{
                   'fill-color': colors.primarySofter,
-                  'fill-opacity': detailedOffline ? 0.12 : 0.78,
+                  'fill-opacity': offline ? (detailedOffline ? 0.12 : 0.78) : 0.08,
                 }}
               />
               <Layer
@@ -104,7 +146,7 @@ export const DestinationMap = ({
                 source="lakbaylokal-context"
                 paint={{
                   'line-color': colors.primary,
-                  'line-opacity': detailedOffline ? 0.45 : 0.72,
+                  'line-opacity': offline ? (detailedOffline ? 0.45 : 0.72) : 0.28,
                   'line-width': 1.6,
                 }}
               />
@@ -123,15 +165,21 @@ export const DestinationMap = ({
             />
           </GeoJSONSource>
         </Map>
+        {mapFailed ? <View style={styles.failureOverlay} pointerEvents="none">
+            <Text style={styles.failureTitle}>Base map unavailable</Text>
+            <Text style={styles.failureText}>
+              {canUseOffline
+                ? 'LakbayLokal switched to local map data. Your saved places remain available.'
+                : 'Local destination markers and municipality context remain available. Save this pack before travel for the full offline map.'}
+            </Text>
+          </View> : null}
       </View>
       <Text style={styles.caption}>
         {detailedOffline
           ? 'Detailed offline map: local vector roads, water, land, buildings, municipality context, and saved places. No network tiles are requested.'
-          : hasOfflineContext
-          ? 'Offline regional context: the municipality boundary and saved places are loaded from local GeoJSON files. No network tiles are requested.'
           : offline
-          ? 'Offline fallback: saved places are loaded from the pack without network tiles.'
-          : 'Live base map: © OpenStreetMap contributors · LakbayLokal markers come from the local destination catalog.'}
+          ? 'Offline fallback: municipality context and saved places are local. No network tiles are requested.'
+          : 'Live base map: © OpenStreetMap contributors · local municipality context and LakbayLokal markers remain layered above it.'}
       </Text>
     </View>;
 };
@@ -181,12 +229,68 @@ const styles = StyleSheet.create({
   modeTextActive: {
     color: colors.primary,
   },
+  statusRow: {
+    minHeight: 30,
+    paddingHorizontal: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.white,
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  statusDotOffline: {
+    backgroundColor: colors.primary,
+  },
+  statusDotOnline: {
+    backgroundColor: colors.accent,
+  },
+  statusText: {
+    color: colors.textSecondary,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.4,
+  },
+  statusHint: {
+    marginLeft: 'auto',
+    color: colors.muted,
+    fontSize: 8.8,
+    fontWeight: '700',
+  },
   mapFrame: {
     height: 250,
     backgroundColor: colors.surfaceMuted,
+    position: 'relative',
   },
   map: {
     flex: 1,
+  },
+  failureOverlay: {
+    position: 'absolute',
+    left: spacing.sm,
+    right: spacing.sm,
+    bottom: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: 'rgba(255,255,255,0.94)',
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  failureTitle: {
+    color: colors.text,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  failureText: {
+    marginTop: 2,
+    color: colors.muted,
+    fontSize: 9.8,
+    lineHeight: 14,
   },
   caption: {
     paddingHorizontal: spacing.sm,

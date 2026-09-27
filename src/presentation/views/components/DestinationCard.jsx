@@ -10,7 +10,9 @@ export const DestinationCard = ({
   onAction,
   actionDisabled = false,
   busy = false,
-  showCover = true
+  showCover = true,
+  onFavorite,
+  favoriteDisabled = false
 }) => {
   const {
     destination,
@@ -19,6 +21,7 @@ export const DestinationCard = ({
     updateAvailable
   } = item;
   const available = destination.status === 'available';
+  const removing = saved && !updateAvailable;
   return <Pressable accessibilityRole={onPress ? "button" : undefined} accessibilityLabel={onPress ? `Open ${destination.name}` : undefined} onPress={onPress} disabled={!onPress} style={({
     pressed
   }) => [styles.card, pressed && onPress && styles.pressed]}>
@@ -34,7 +37,20 @@ export const DestinationCard = ({
               {destination.area}
             </Text>
           </View>
-          {favorite ? <Ionicons accessibilityLabel="Favorite destination" name="heart" size={16} color={colors.danger} /> : null}
+          {onFavorite ? <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: favorite }}
+              accessibilityLabel={favorite ? `Remove ${destination.name} from Favorites` : `Add ${destination.name} to Favorites`}
+              disabled={favoriteDisabled}
+              hitSlop={8}
+              onPress={event => {
+                event.stopPropagation?.();
+                onFavorite();
+              }}
+              style={({ pressed }) => [styles.favoriteAction, favoriteDisabled && styles.actionButtonDisabled, pressed && styles.actionButtonPressed]}
+            >
+              <Ionicons name={favorite ? "heart" : "heart-outline"} size={18} color={favorite ? colors.danger : colors.primary} />
+            </Pressable> : favorite ? <Ionicons accessibilityLabel="Favorite destination" name="heart" size={16} color={colors.danger} /> : null}
           {onPress ? <Ionicons name="chevron-forward" size={16} color={colors.faint} /> : null}
         </View>
 
@@ -57,9 +73,9 @@ export const DestinationCard = ({
 
           {actionLabel && onAction ? <Pressable accessibilityRole="button" disabled={actionDisabled} onPress={onAction} style={({
           pressed
-        }) => [styles.actionButton, saved && styles.actionButtonRemove, actionDisabled && styles.actionButtonDisabled, pressed && !actionDisabled && styles.actionButtonPressed]}>
-              <Ionicons name={busy ? 'hourglass-outline' : saved ? 'trash-outline' : 'bookmark-outline'} size={13} color={saved ? colors.danger : colors.onPrimary} />
-              <Text style={[styles.actionText, saved && styles.actionTextRemove]}>{actionLabel}</Text>
+        }) => [styles.actionButton, removing && styles.actionButtonRemove, actionDisabled && styles.actionButtonDisabled, pressed && !actionDisabled && styles.actionButtonPressed]}>
+              <Ionicons name={busy ? 'hourglass-outline' : updateAvailable ? 'refresh-outline' : removing ? 'trash-outline' : 'bookmark-outline'} size={13} color={removing ? colors.danger : colors.onPrimary} />
+              <Text style={[styles.actionText, removing && styles.actionTextRemove]}>{actionLabel}</Text>
             </Pressable> : null}
         </View>
       </View>
@@ -107,6 +123,14 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontWeight: '800',
     letterSpacing: -0.2
+  },
+  favoriteAction: {
+    width: 40,
+    height: 40,
+    marginVertical: -10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.pill
   },
   area: {
     marginTop: 2,

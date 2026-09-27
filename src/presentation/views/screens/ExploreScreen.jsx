@@ -55,10 +55,21 @@ export const ExploreScreen = ({
         <EmptyState icon="alert-circle-outline" title="Explore could not load" text={state.error} actionLabel="Try again" onAction={() => void viewModel.load()} />
       </ScrollView>;
   }
-  const runAction = async (destinationName, packId, saved) => {
-    const result = saved ? await viewModel.removeFromLibrary(packId) : await viewModel.save(packId);
+  const runAction = async (destinationName, item) => {
+    const result = item.updateAvailable
+      ? await viewModel.update(item.destination.id)
+      : item.saved
+      ? await viewModel.removeFromLibrary(item.destination.id)
+      : await viewModel.save(item.destination.id);
     showSnackbar({
       message: result.ok ? result.message.replace('Pack removed', `${destinationName} removed`) : result.message,
+      tone: result.ok ? 'success' : 'error'
+    });
+  };
+  const toggleFavorite = async packId => {
+    const result = await viewModel.toggleFavorite(packId);
+    showSnackbar({
+      message: result.message,
       tone: result.ok ? 'success' : 'error'
     });
   };
@@ -117,7 +128,24 @@ export const ExploreScreen = ({
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
 
       <View style={styles.list}>
-        {results.map(item => <DestinationCard key={item.destination.id} item={item} onPress={onOpenDestination ? () => onOpenDestination(item.destination.id) : undefined} actionLabel={item.destination.status === 'available' ? state.busyId === item.destination.id ? 'Saving…' : item.saved ? 'Remove' : item.updateAvailable ? 'Update' : 'Save' : undefined} actionDisabled={state.busyId !== null} onAction={item.destination.status === 'available' ? () => void runAction(item.destination.name, item.destination.id, item.saved) : undefined} />)}
+        {results.map(item => <DestinationCard
+          key={item.destination.id}
+          item={item}
+          onPress={onOpenDestination ? () => onOpenDestination(item.destination.id) : undefined}
+          actionLabel={item.destination.status === 'available'
+            ? state.busyId === item.destination.id
+              ? 'Working…'
+              : item.updateAvailable
+              ? 'Update'
+              : item.saved
+              ? 'Remove'
+              : 'Save'
+            : undefined}
+          actionDisabled={state.busyId !== null}
+          onAction={item.destination.status === 'available' ? () => void runAction(item.destination.name, item) : undefined}
+          onFavorite={() => void toggleFavorite(item.destination.id)}
+          favoriteDisabled={state.busyId !== null}
+        />)}
       </View>
 
       {!results.length && !state.loading ? <EmptyState icon="compass-outline" title="No packs found" text="Try another destination name or category." /> : null}

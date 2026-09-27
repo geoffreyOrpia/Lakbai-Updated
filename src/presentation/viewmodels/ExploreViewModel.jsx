@@ -1,6 +1,7 @@
 import { listDestinationsWithState, removePackFromLibrary, savePackToLibrary } from "../../domain/usecases/destinationPacks.jsx";
 import { userMessage } from "../../core/errors/appError.jsx";
 import { searchTourismWeb } from "../../domain/usecases/onlineResearch.jsx";
+import { toggleDestinationFavorite } from "../../domain/usecases/favorites.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 /** Explore catalog with search, categories, and pack download actions. */
 export class ExploreViewModel extends ViewModel {
@@ -108,6 +109,49 @@ export class ExploreViewModel extends ViewModel {
       this.setState({
         busyId: null
       });
+    }
+  };
+  update = async packId => {
+    this.setState({
+      busyId: packId
+    });
+    try {
+      const pack = await savePackToLibrary(this.deps, packId);
+      this.patchItem(packId, {
+        saved: true,
+        savedVersion: pack.version,
+        updateAvailable: false
+      });
+      return {
+        ok: true,
+        message: `${pack.destination.name} offline files updated.`
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        message: userMessage(error, 'The saved destination pack could not be updated.')
+      };
+    } finally {
+      this.setState({
+        busyId: null
+      });
+    }
+  };
+  toggleFavorite = async packId => {
+    const item = this.state.items.find(entry => entry.destination.id === packId);
+    if (!item) return { ok: false, message: 'Destination not found.' };
+    try {
+      const favorite = await toggleDestinationFavorite(this.deps, packId, item.favorite);
+      this.patchItem(packId, { favorite });
+      return {
+        ok: true,
+        message: favorite ? 'Added to Favorites.' : 'Removed from Favorites.'
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        message: userMessage(error, 'Favorite could not be updated.')
+      };
     }
   };
   removeFromLibrary = async packId => {

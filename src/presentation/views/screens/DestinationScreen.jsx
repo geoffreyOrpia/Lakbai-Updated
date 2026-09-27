@@ -21,14 +21,18 @@ export const DestinationScreen = ({
   } = useFeedback();
   const pack = state.pack;
   const performLibraryAction = async () => {
-    const result = state.saved ? await viewModel.removeFromLibrary() : await viewModel.saveToLibrary();
+    const result = state.updateAvailable
+      ? await viewModel.saveToLibrary(true)
+      : state.saved
+      ? await viewModel.removeFromLibrary()
+      : await viewModel.saveToLibrary();
     showSnackbar({
       message: result.message,
       tone: result.ok ? 'success' : 'error'
     });
   };
   const runLibraryAction = () => {
-    if (!state.saved) {
+    if (!state.saved || state.updateAvailable) {
       void performLibraryAction();
       return;
     }
@@ -103,13 +107,26 @@ export const DestinationScreen = ({
 
       <Pressable accessibilityRole="button" disabled={state.busy} onPress={() => void runLibraryAction()} style={({
       pressed
-    }) => [styles.cta, state.saved && styles.ctaRemove, state.busy && styles.ctaDisabled, pressed && !state.busy && styles.pressed]}>
-        <Ionicons name={state.busy ? 'hourglass-outline' : state.saved ? 'trash-outline' : 'bookmark-outline'} size={18} color={state.saved ? colors.danger : colors.onPrimary} />
-        <Text style={[styles.ctaText, state.saved && styles.ctaTextRemove]}>
-          {state.busy ? 'Working…' : state.saved ? 'Remove from library' : destination.status === 'available' ? 'Save pack to local library' : 'Pack coming soon'}
+    }) => [styles.cta, state.saved && !state.updateAvailable && styles.ctaRemove, state.busy && styles.ctaDisabled, pressed && !state.busy && styles.pressed]}>
+        <Ionicons
+          name={state.busy ? 'hourglass-outline' : state.updateAvailable ? 'refresh-outline' : state.saved ? 'trash-outline' : 'bookmark-outline'}
+          size={18}
+          color={state.saved && !state.updateAvailable ? colors.danger : colors.onPrimary}
+        />
+        <Text style={[styles.ctaText, state.saved && !state.updateAvailable && styles.ctaTextRemove]}>
+          {state.busy
+            ? 'Working…'
+            : state.updateAvailable
+            ? 'Update saved pack'
+            : state.saved
+            ? 'Remove from library'
+            : destination.status === 'available'
+            ? 'Save pack to local library'
+            : 'Pack coming soon'}
         </Text>
       </Pressable>
 
+      {state.updateAvailable ? <InfoBanner tone="info" text={`A newer bundled version is available. Updating replaces this pack's saved files while keeping your Favorites, itineraries, and other personal data.`} /> : null}
       {!state.saved && destination.status === 'available' ? <InfoBanner tone="info" text="Save this pack to create durable local guide, map, route-plan, image, and photo-metadata files. The image source is already bundled with the app, and itineraries stay in local SQLite." /> : null}
 
       <InfoBanner tone="warn" text="Travel conditions, access rules, transport schedules, and local facilities can change. Confirm time-sensitive details with the destination or local authorities before traveling." />
@@ -176,10 +193,10 @@ export const DestinationScreen = ({
           <InfoBanner
             tone="info"
             text={state.offlineBundle?.basemapUri
-              ? "Offline mode uses local vector geography, the saved municipality boundary, and this pack's places. Online mode uses OpenStreetMap's live standard tiles. Unverified prototype trail geometry is never drawn here."
+              ? "Offline mode uses the bundled Davao del Norte vector basemap, saved municipality boundary, and this pack’s places. If the detailed local map cannot load, MapLibre falls back to the saved context. Online mode uses OpenStreetMap live tiles."
               : state.offlineBundle?.contextMapUri
-              ? "Offline mode uses the saved municipality boundary and this pack's places, so geographic context remains visible without internet. A prepared regional PMTiles archive can add detailed roads, water, land, and buildings."
-              : "Save this destination pack to enable its local map files. Online mode uses OpenStreetMap's live standard tiles."}
+              ? "Offline mode uses the saved municipality boundary and this pack’s places without network tiles. Online mode uses OpenStreetMap live tiles and automatically falls back to local map data when possible."
+              : "Online mode uses OpenStreetMap live tiles with bundled municipality context underneath. Save this destination pack before travel to enable the full offline map."}
           />
         </View> : null}
 
@@ -228,6 +245,15 @@ export const DestinationScreen = ({
                       </View>
                     </View>)}
                 </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Plan ${route.name} in Trips`}
+                  onPress={() => viewModel.planRoute(route)}
+                  style={({ pressed }) => [styles.planRouteButton, pressed && styles.pressed]}
+                >
+                  <Ionicons name="calendar-outline" size={15} color={colors.onPrimary} />
+                  <Text style={styles.planRouteButtonText}>Plan this route in Trips</Text>
+                </Pressable>
               </View>)}
           </View>
         </View> : null}
@@ -677,6 +703,20 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 11.2,
     lineHeight: 16
+  },
+  planRouteButton: {
+    minHeight: 40,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs
+  },
+  planRouteButtonText: {
+    color: colors.onPrimary,
+    fontSize: 11.5,
+    fontWeight: '900'
   },
   routeStops: {
     borderTopWidth: 1,

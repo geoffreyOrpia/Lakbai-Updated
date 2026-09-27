@@ -4,19 +4,43 @@ import { userMessage } from "../../core/errors/appError.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 const LOCAL_OWNER_KEY = 'local-device';
 
+const emptyTripForm = () => ({
+  title: '',
+  travelDate: '',
+  notes: '',
+  stops: []
+});
+
+export const routeDraftToTripForm = draft => {
+  if (!draft?.destinationId || !draft?.routeName) return null;
+  const routeStops = (draft.stops ?? []).map(stop => stop.name).filter(Boolean);
+  return {
+    title: `${draft.destinationName}: ${draft.routeName}`,
+    travelDate: '',
+    notes: [
+      'Imported from a LakbayLokal suggested tourist route.',
+      'Planning only — this route is not verified GPS navigation.',
+      routeStops.length ? `Suggested order: ${routeStops.join(' → ')}` : '',
+    ].filter(Boolean).join('\n'),
+    stops: [{
+      destinationId: draft.destinationId,
+      destinationName: draft.destinationName,
+      municipality: draft.municipality ?? '',
+      plannedTime: '',
+      note: routeStops.length ? `${draft.routeName}: ${routeStops.join(' → ')}` : draft.routeName,
+    }],
+  };
+};
+
 /** Personal itineraries stored locally for this device. */
 export class TripsViewModel extends ViewModel {
   constructor(tripsDeps, destinationDeps, nav = {}) {
+    const routeForm = routeDraftToTripForm(nav.initialRouteDraft);
     super({
-      mode: 'list',
+      mode: routeForm ? 'create' : 'list',
       trips: [],
       selected: null,
-      form: {
-        title: '',
-        travelDate: '',
-        notes: '',
-        stops: []
-      },
+      form: routeForm ?? emptyTripForm(),
       savedPackIds: [],
       destinations: [],
       loading: true,
@@ -79,12 +103,7 @@ export class TripsViewModel extends ViewModel {
     this.setState({
       mode: 'create',
       selected: null,
-      form: {
-        title: '',
-        travelDate: '',
-        notes: '',
-        stops: []
-      },
+      form: emptyTripForm(),
       error: null
     });
   };

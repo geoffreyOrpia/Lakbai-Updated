@@ -32,6 +32,7 @@ export class PackRepositoryImpl {
   savePack = async id => {
     const pack = await this.content.get(id);
     if (!pack) throw new Error('This destination pack is not bundled with the app yet.');
+    const previousMeta = await this.meta.get(id);
     if (this.offlineStorage) {
       await this.offlineStorage.savePack(pack);
     }
@@ -43,7 +44,11 @@ export class PackRepositoryImpl {
         savedAt: Date.now()
       });
     } catch (error) {
-      await this.offlineStorage?.removePack(pack.id);
+      // A failed first save should leave no orphaned files. During an update,
+      // keep the refreshed files so the older SQLite marker can be retried safely.
+      if (!previousMeta) {
+        await this.offlineStorage?.removePack(pack.id);
+      }
       throw error;
     }
     return pack;

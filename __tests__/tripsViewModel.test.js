@@ -1,4 +1,4 @@
-import { TripsViewModel } from '../src/presentation/viewmodels/TripsViewModel.jsx';
+import { routeDraftToTripForm, TripsViewModel } from '../src/presentation/viewmodels/TripsViewModel.jsx';
 
 const existingTrip = {
   id: 'trip-existing',
@@ -41,6 +41,26 @@ const createViewModel = () => {
 };
 
 describe('TripsViewModel itinerary editing', () => {
+  test('converts a suggested route into an editable planning-only trip draft', () => {
+    const form = routeDraftToTripForm({
+      destinationId: 'tagum',
+      destinationName: 'Tagum City',
+      municipality: 'Tagum',
+      routeName: 'Heritage Walk',
+      stops: [{ name: 'Cathedral' }, { name: 'City Hall' }],
+    });
+
+    expect(form.title).toBe('Tagum City: Heritage Walk');
+    expect(form.travelDate).toBe('');
+    expect(form.notes).toContain('Planning only');
+    expect(form.notes).toContain('Cathedral → City Hall');
+    expect(form.stops).toEqual([
+      expect.objectContaining({
+        destinationId: 'tagum',
+        note: expect.stringContaining('Cathedral → City Hall'),
+      }),
+    ]);
+  });
   test('loads an existing itinerary into the shared editor', () => {
     const { viewModel } = createViewModel();
 

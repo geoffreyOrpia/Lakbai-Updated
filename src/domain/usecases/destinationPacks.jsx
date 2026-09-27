@@ -48,6 +48,18 @@ export const removePackFromLibrary = async (deps, packId) => {
 export const loadOfflineBundleStatus = async (deps, packId) => {
   return deps.packRepository.getOfflineBundleStatus?.(packId) ?? null;
 };
+export const loadPackLibraryState = async (deps, packId) => {
+  const [meta, manifests] = await Promise.all([
+    deps.packRepository.getSavedMeta(packId),
+    deps.packRepository.listManifests(),
+  ]);
+  const bundled = manifests.find(manifest => manifest.id === packId);
+  return {
+    saved: Boolean(meta),
+    savedVersion: meta?.version ?? null,
+    updateAvailable: Boolean(meta && bundled?.version != null && bundled.version > meta.version),
+  };
+};
 /** Pack for the destination screen: saved library copy or bundled offline preview. */
 export const loadPackForViewing = async (deps, packId) => {
   const saved = await deps.packRepository.getSavedPack(packId);
