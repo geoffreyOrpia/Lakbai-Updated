@@ -1,9 +1,25 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Camera, GeoJSONSource, Layer, Map, UserLocation } from '@maplibre/maplibre-react-native';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { createOfflineBasemapStyle } from "../../../core/maps/offlineBasemapStyle.jsx";
 import { routeBounds } from "../../../core/routing/graph.jsx";
+import { formatDurationMinutes, formatKm } from "../../../core/utils/format.jsx";
 import { colors, radius, shadows, spacing } from "../../../theme.jsx";
+
+const maneuverIcon = kind => {
+  if (kind === 'left' || kind === 'sharp-left' || kind === 'slight-left') return 'return-up-back-outline';
+  if (kind === 'right' || kind === 'sharp-right' || kind === 'slight-right') return 'return-up-forward-outline';
+  if (kind === 'uturn') return 'refresh-outline';
+  if (kind === 'arrive') return 'flag-outline';
+  return 'arrow-up-outline';
+};
+
+const formatAhead = distanceKm => {
+  if (distanceKm == null) return 'Follow route';
+  if (distanceKm < 1) return `${Math.max(1, Math.round(distanceKm * 1000))} m`;
+  return formatKm(distanceKm);
+};
 
 const pointFeature = (id, coordinates, role) => ({
   type: 'Feature',
@@ -20,6 +36,12 @@ export const NavigationMap = ({
   target,
   offlineBasemapUri,
   liveGps = false,
+  nextManeuver = null,
+  distanceToNextManeuverKm = null,
+  remainingKm = null,
+  remainingMin = null,
+  rerouting = false,
+  voiceGuidance = true,
 }) => {
   const [following, setFollowing] = useState(liveGps);
   const [basemapFailed, setBasemapFailed] = useState(false);
@@ -44,7 +66,7 @@ export const NavigationMap = ({
   }), [geometry.coordinates, target.lat, target.lng]);
 
   return <View style={[styles.card, shadows.card]}>
-      <View style={styles.mapFrame}>
+      <View style={[styles.mapFrame, liveGps && styles.mapFrameLive]}>
         <Map
           key={detailedOffline ? 'nav-local-map' : 'nav-route-only'}
           style={styles.map}
@@ -114,7 +136,39 @@ export const NavigationMap = ({
           {liveGps ? <UserLocation animated accuracy heading minDisplacement={3} /> : null}
         </Map>
 
-        <View pointerEvents="none" style={styles.statusBadge}>
+        {liveGps ? <View pointerEvents="none" style={[styles.navigationHud, shadows.card]}>
+            <View style={styles.navigationHudIcon}>
+              <Ionicons
+                name={rerouting ? 'sync-outline' : maneuverIcon(nextManeuver?.kind)}
+                size={27}
+                color={colors.onPrimary}
+              />
+            </View>
+            <View style={styles.navigationHudCopy}>
+              <View style={styles.navigationHudTopline}>
+                <Text style={styles.navigationHudDistance}>
+                  {rerouting ? 'Rerouting…' : formatAhead(distanceToNextManeuverKm)}
+                </Text>
+                <Ionicons
+                  name={voiceGuidance ? 'volume-high-outline' : 'volume-mute-outline'}
+                  size={16}
+                  color={voiceGuidance ? colors.primary : colors.muted}
+                />
+              </View>
+              <Text style={styles.navigationHudInstruction} numberOfLines={2}>
+                {rerouting
+                  ? 'Finding another offline route'
+                  : nextManeuver?.instruction ?? 'Follow the mapped route'}
+              </Text>
+              <Text style={styles.navigationHudMeta}>
+                {remainingKm != null ? formatKm(remainingKm) : '—'} remaining
+                {' · '}
+                {remainingMin != null ? formatDurationMinutes(remainingMin) : '—'}
+              </Text>
+            </View>
+          </View> : null}
+
+        <View pointerEvents="none" style={[styles.statusBadge, liveGps && styles.statusBadgeLive]}>
           <View style={styles.statusDot} />
           <Text style={styles.statusText}>{detailedOffline ? 'OFFLINE ROUTE · LOCAL MAP' : 'OFFLINE ROUTE · LINE ONLY'}</Text>
         </View>
@@ -162,7 +216,61 @@ const styles = StyleSheet.create({
     position: 'relative',
     backgroundColor: colors.surfaceMuted,
   },
+  mapFrameLive: {
+    height: 500,
+  },
   map: { flex: 1 },
+  navigationHud: {
+    position: 'absolute',
+    top: spacing.sm,
+    left: spacing.sm,
+    right: spacing.sm,
+    minHeight: 92,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    backgroundColor: 'rgba(255,255,255,0.97)',
+    padding: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  navigationHudIcon: {
+    width: 54,
+    height: 54,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navigationHudCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  navigationHudTopline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.xs,
+  },
+  navigationHudDistance: {
+    color: colors.accentDark,
+    fontSize: 17,
+    fontWeight: '900',
+  },
+  navigationHudInstruction: {
+    marginTop: 1,
+    color: colors.text,
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '900',
+  },
+  navigationHudMeta: {
+    marginTop: 3,
+    color: colors.muted,
+    fontSize: 10,
+    fontWeight: '800',
+  },
   statusBadge: {
     position: 'absolute',
     top: spacing.sm,
@@ -176,6 +284,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+  },
+  statusBadgeLive: {
+    top: undefined,
+    bottom: spacing.sm,
   },
   statusDot: {
     width: 7,

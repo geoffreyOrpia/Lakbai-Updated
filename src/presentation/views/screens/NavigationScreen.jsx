@@ -72,6 +72,12 @@ export const NavigationScreen = ({ viewModel }) => {
             target={state.target}
             offlineBasemapUri={state.offlineBasemapUri}
             liveGps={state.tracking}
+            nextManeuver={state.nextManeuver}
+            distanceToNextManeuverKm={state.distanceToNextManeuverKm}
+            remainingKm={state.remainingKm}
+            remainingMin={state.remainingMin}
+            rerouting={state.rerouting}
+            voiceGuidance={state.voiceGuidance}
           />
 
           <View style={styles.summaryRow}>
