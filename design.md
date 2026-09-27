@@ -8,7 +8,7 @@ Design priorities, in order:
 
 1. **Scannability** — users should understand a screen within seconds.
 2. **Compactness** — show useful information without oversized cards or excessive spacing.
-3. **Offline confidence** — download state, saved content, GPS readiness, and safety information must be easy to identify.
+3. **Offline confidence** — local-library state, saved content, GPS readiness, and safety information must be easy to identify.
 4. **Consistency** — reuse the same spacing, card, typography, icon, and status patterns across all screens.
 5. **Calm visual hierarchy** — use color selectively; do not make every element compete for attention.
 
@@ -235,7 +235,7 @@ Order:
 
 ### Trips
 
-Purpose: let registered users build personal itineraries from curated LakbayLokal destinations while keeping the plan available offline.
+Purpose: let users build personal itineraries from curated LakbayLokal destinations while keeping the plan available offline.
 
 Order:
 
@@ -245,7 +245,7 @@ Order:
 4. Curated destination selection
 5. Reorderable itinerary stops with optional time and notes
 
-Guest users may open Trips but must sign in or create an account before creating or managing itineraries. Personal itineraries do not publish new destination information.
+Trips require no account. Itineraries are stored only in the device's SQLite database and do not publish destination information.
 
 ### Safety
 
@@ -268,7 +268,7 @@ Do not use alarmist visual language unless a real emergency state exists.
 - Do not hide critical actions behind gestures.
 - Search/filter results should update immediately.
 - Offline state must remain visible but not intrusive.
-- Downloaded content should always be distinguishable from online-only content.
+- Packs saved to the local library should remain distinguishable from bundled previews.
 - Use explicit labels rather than ambiguous map/navigation icons alone.
 
 ---
@@ -288,7 +288,7 @@ Do not use alarmist visual language unless a real emergency state exists.
 For all future LakbayLokal UI work:
 
 - Follow this file before creating a new screen/component.
-- Reuse tokens from `src/theme.ts`; do not hardcode brand colors repeatedly.
+- Reuse tokens from `src/theme.jsx`; do not hardcode brand colors repeatedly.
 - Reuse existing components before creating variants.
 - Keep new cards compact and purpose-driven.
 - Do not introduce a new color, radius, font family, or spacing scale without updating this document first.
