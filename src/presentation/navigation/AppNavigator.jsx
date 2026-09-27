@@ -55,7 +55,7 @@ export const AppNavigator = () => {
   if (session.state.phase === 'restoring') {
     return <View style={styles.splash}>
         <ActivityIndicator size="small" color={colors.primary} />
-        <Text style={styles.splashText}>Preparing LakbayLokal…</Text>
+        <Text style={styles.splashText}>Preparing LakBai…</Text>
       </View>;
   }
   if (session.state.phase === 'landing') {

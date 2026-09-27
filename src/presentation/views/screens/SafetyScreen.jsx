@@ -154,7 +154,7 @@ export const SafetyScreen = ({
       <View style={styles.guidance}>
         <Ionicons name="compass-outline" size={18} color={colors.accent} />
         <Text style={styles.guidanceText}>
-          LakbayLokal supports preparation and navigation but does not replace local guides, official advisories, or emergency services.
+          LakBai supports preparation and navigation but does not replace local guides, official advisories, or emergency services.
         </Text>
       </View>
     </ScrollView>;

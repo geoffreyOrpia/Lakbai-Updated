@@ -1,4 +1,4 @@
-// LakbayLokal design tokens - "Modern Local Adventure" on a white canvas.
+// LakBai design tokens - "Modern Local Adventure" on a white canvas.
 // White-first surfaces, forest green primary, warm orange accent.
 
 export const colors = {

@@ -15,7 +15,7 @@ export const OnboardingScreen = ({
         </View>
         <Text style={styles.eyebrow}>TRAVEL SETUP · {state.step + 1}/2</Text>
         <Text style={styles.title}>{STEP_TITLES[state.step]}</Text>
-        <Text style={styles.subtitle}>Personalize LakbayLokal so recommendations and preparation fit how you travel.</Text>
+        <Text style={styles.subtitle}>Personalize LakBai so recommendations and preparation fit how you travel.</Text>
       </View>
 
       {state.step === 0 ? <View style={[styles.card, shadows.card]}>

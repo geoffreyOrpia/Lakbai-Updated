@@ -56,7 +56,7 @@ export class NearbyViewModel extends ViewModel {
           places: [],
           savedPackCount: savedMeta.length,
           fix: null,
-          error: 'LakbayLokal could not get a current GPS position. Move to an open area and try again.',
+          error: 'LakBai could not get a current GPS position. Move to an open area and try again.',
         });
         return;
       }

@@ -1,8 +1,8 @@
-# LakbayLokal Design System
+# LakBai Design System
 
 ## 1. Product Design Direction
 
-LakbayLokal uses a **compact, clean, offline-first travel interface**. The UI should feel local and adventurous without becoming decorative or visually noisy.
+LakBai uses a **compact, clean, offline-first travel interface**. The UI should feel local and adventurous without becoming decorative or visually noisy.
 
 Design priorities, in order:
 
@@ -18,8 +18,8 @@ The app should never look like a generic social network, e-commerce app, or Goog
 
 ## 2. Brand
 
-**Name:** LakbayLokal  
-**Tagline:** Go Beyond, Go Lokal.
+**Name:** LakBai
+**Tagline:** Go Beyond. Go Local.
 
 ### Core Colors
 
@@ -235,7 +235,7 @@ Order:
 
 ### Trips
 
-Purpose: let users build personal itineraries from curated LakbayLokal destinations while keeping the plan available offline.
+Purpose: let users build personal itineraries from curated LakBai destinations while keeping the plan available offline.
 
 Order:
 
@@ -285,7 +285,7 @@ Do not use alarmist visual language unless a real emergency state exists.
 
 ## 11. Front-End Guardrails
 
-For all future LakbayLokal UI work:
+For all future LakBai UI work:
 
 - Follow this file before creating a new screen/component.
 - Reuse tokens from `src/theme.jsx`; do not hardcode brand colors repeatedly.

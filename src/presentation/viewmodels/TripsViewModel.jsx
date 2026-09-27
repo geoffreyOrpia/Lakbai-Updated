@@ -18,7 +18,7 @@ export const routeDraftToTripForm = draft => {
     title: `${draft.destinationName}: ${draft.routeName}`,
     travelDate: '',
     notes: [
-      'Imported from a LakbayLokal suggested tourist route.',
+      'Imported from a LakBai suggested tourist route.',
       'Planning only — this route is not verified GPS navigation.',
       routeStops.length ? `Suggested order: ${routeStops.join(' → ')}` : '',
     ].filter(Boolean).join('\n'),

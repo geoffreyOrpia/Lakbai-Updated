@@ -90,7 +90,7 @@ export const NearbyScreen = ({ viewModel }) => {
 
       {state.savedPackCount > 0 ? <SecondaryButton label="Refresh GPS position" icon="locate-outline" onPress={() => void viewModel.load()} /> : null}
 
-      <InfoBanner tone="info" text="Nearby Places uses only your foreground GPS fix and coordinates bundled inside saved LakbayLokal packs. It does not search the web for nearby businesses." />
+      <InfoBanner tone="info" text="Nearby Places uses only your foreground GPS fix and coordinates bundled inside saved LakBai packs. It does not search the web for nearby businesses." />
     </ScrollView>;
 };
 

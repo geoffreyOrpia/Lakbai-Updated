@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="./assets/logo.png" alt="LakbayLokal Logo" width="190" />
+  <img src="./assets/lakbai-mark.png" alt="LakBai mark" width="150" />
 </p>
 
-<h1 align="center">LakbayLokal</h1>
+<h1 align="center">LakBai</h1>
 
 <p align="center"><strong>Go beyond. Go local.</strong></p>
 
@@ -14,7 +14,7 @@
 
 ## Architecture
 
-LakbayLokal is a device-only Expo application built with MVVM / Clean Architecture.
+LakBai is a device-only Expo application built with MVVM / Clean Architecture.
 
 The mobile source is pure JSX. UI components and business operations use `const`/`let` and arrow functions; React state, props, and refs provide the native-safe equivalent of browser DOM selectors.
 
@@ -31,7 +31,7 @@ presentation/  →  domain/usecases/  →  domain/repositories
 - **Data:** repositories and DAOs store the catalog, packs, itineraries, preferences, library state, and safety checklist in SQLite.
 - **Bundled content:** Davao del Norte destination guides, licensed photos, spots, transport notes, and safety information ship with the app and seed SQLite automatically.
 
-LakbayLokal does not require an application backend, login, registration, or internet connection for its saved travel data. Existing account-scoped itineraries are migrated to the single device-local profile; legacy account credentials are removed after migration because accounts are no longer used. When connected, the destination map can request OpenStreetMap standard tiles and optional research/directions actions open the device's secure browser. Offline mode instead uses bundled/saved map files and SQLite data. Nearby Places and the in-app trail navigator use foreground GPS locally; LakbayLokal does not upload that position. Trail navigation uses saved MapLibre/PMTiles data and does not require Google Maps or network tiles.
+LakBai does not require an application backend, login, registration, or internet connection for its saved travel data. Existing account-scoped itineraries are migrated to the single device-local profile; legacy account credentials are removed after migration because accounts are no longer used. When connected, the destination map can request OpenStreetMap standard tiles and optional research/directions actions open the device's secure browser. Offline mode instead uses bundled/saved map files and SQLite data. Nearby Places and the in-app trail navigator use foreground GPS locally; LakBai does not upload that position. Trail navigation uses saved MapLibre/PMTiles data and does not require Google Maps or network tiles.
 
 ## Running
 
@@ -46,8 +46,8 @@ npx expo start       # press a (Android) or i (iOS)
 - **Explore** — a Davao del Norte-only catalog with search, categories, bundled destination images, inline Favorites, and save/update controls.
 - **Optional online research** — search the live web for a place or activity within Davao del Norte through the device's secure browser; no app backend or account is required.
 - **Destination maps** — MapLibre uses OpenStreetMap standard tiles while connected and a bundled Davao del Norte PMTiles basemap plus saved GeoJSON offline; visible status and fallback handling keep local context on map failures.
-- **Road-arrival directions** — external Maps remains optional for driving/transit arrival to a destination or point of interest; it is not used for LakbayLokal trail navigation.
-- **Verified trail navigation** — source-verified trail geometry opens in LakbayLokal's own MapLibre navigator with the saved PMTiles basemap, live foreground GPS, course-follow/recenter, progress, next-waypoint guidance, GPS-accuracy handling, and off-route warnings. The first enabled showcase is the source-matched 214 m Panabo Mangrove Park segment; unverified geometry remains hidden.
+- **Road-arrival directions** — external Maps remains optional for driving/transit arrival to a destination or point of interest; it is not used for LakBai trail navigation.
+- **Verified trail navigation** — source-verified trail geometry opens in LakBai's own MapLibre navigator with the saved PMTiles basemap, live foreground GPS, course-follow/recenter, progress, next-waypoint guidance, GPS-accuracy handling, and off-route warnings. The first enabled showcase is the source-matched 214 m Panabo Mangrove Park segment; unverified geometry remains hidden.
 - **Suggested routes** — curated stop sequences can be sent into an editable Trips draft as planning-only content, separate from verified GPS navigation.
 - **Local Library** — save built-in packs into durable app document storage, safely refresh versioned packs through staging/backup replacement, remove pack files, and see the measured local storage footprint.
 - **Nearby Places** — rank saved POIs and a clearly labeled approximate destination-area center using the foreground GPS fix entirely on-device, with GPS-accuracy feedback.
@@ -58,4 +58,4 @@ npx expo start       # press a (Android) or i (iOS)
 
 ## Version 1 technology rules
 
-Free and open-source only: React Native + Expo 54, SQLite, expo-location, expo-file-system, MapLibre React Native, OpenStreetMap for the live online base map, react-native-svg, and bundled destination content. Saved packs keep both LakbayLokal's local places and an MIT-licensed 2023 PSGC municipality boundary for recognizable offline regional context. The app also ships a bounded Davao del Norte PMTiles archive (~5.9 MB) with offline roads, water, land, and buildings from Protomaps/OpenStreetMap data without bulk-downloading the public OpenStreetMap tile service. Maintainers can regenerate it with `npm run maps:prepare` after installing the official PMTiles CLI. MapLibre contains custom native code, so the map-enabled app requires an Expo development/native build rather than Expo Go. No paid APIs, Firebase, account service, server, or cloud dependency.
+Free and open-source only: React Native + Expo 54, SQLite, expo-location, expo-file-system, MapLibre React Native, OpenStreetMap for the live online base map, react-native-svg, and bundled destination content. Saved packs keep both LakBai's local places and an MIT-licensed 2023 PSGC municipality boundary for recognizable offline regional context. The app also ships a bounded Davao del Norte PMTiles archive (~5.9 MB) with offline roads, water, land, and buildings from Protomaps/OpenStreetMap data without bulk-downloading the public OpenStreetMap tile service. Maintainers can regenerate it with `npm run maps:prepare` after installing the official PMTiles CLI. MapLibre contains custom native code, so the map-enabled app requires an Expo development/native build rather than Expo Go. No paid APIs, Firebase, account service, server, or cloud dependency.

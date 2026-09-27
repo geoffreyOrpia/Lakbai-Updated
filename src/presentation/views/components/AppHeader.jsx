@@ -5,9 +5,9 @@ import { colors, radius, spacing } from "../../../theme.jsx";
 export const AppHeader = () => {
   return <View style={styles.header}>
       <View style={styles.brandRow}>
-        <Image source={require('../../../../assets/logo-mark.png')} style={styles.logoMark} resizeMode="contain" />
+        <Image source={require('../../../../assets/lakbai-mark.png')} style={styles.logoMark} resizeMode="contain" />
         <Text style={styles.brandName}>
-          Lakbay<Text style={styles.brandAccent}>Lokal</Text>
+          Lak<Text style={styles.brandAccent}>Bai</Text>
         </Text>
       </View>
 
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.6
   },
   brandAccent: {
-    color: colors.primary
+    color: colors.accent
   },
   pill: {
     minHeight: 32,

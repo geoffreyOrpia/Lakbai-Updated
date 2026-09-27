@@ -229,7 +229,7 @@ export const DestinationScreen = ({
           <SectionHeader eyebrow="Suggested tourist routes" title="Curated stop sequences" />
           <InfoBanner
             tone="info"
-            text="Suggested routes remain planning sequences. When source-verified GPS geometry is available, LakbayLokal exposes it separately below in the in-app offline trail navigator."
+            text="Suggested routes remain planning sequences. When source-verified GPS geometry is available, LakBai exposes it separately below in the in-app offline trail navigator."
           />
           <View style={styles.list}>
             {pack.routeSuggestions.map(route => <View key={route.id} style={[styles.routeCard, shadows.card]}>
@@ -274,7 +274,7 @@ export const DestinationScreen = ({
         </View> : null}
 
       {pack.trails.length || pack.withheldTrailsCount ? <View style={styles.section}>
-          <SectionHeader eyebrow="Verified offline trails" title="LakbayLokal GPS navigation" />
+          <SectionHeader eyebrow="Verified offline trails" title="LakBai Trail Navigation" />
           {pack.withheldTrailsCount ? <InfoBanner
             tone="warn"
             text={`${pack.withheldTrailsCount} prototype ${pack.withheldTrailsCount === 1 ? 'route is' : 'routes are'} intentionally hidden until every waypoint is verified by a reliable local or mapping source.`}

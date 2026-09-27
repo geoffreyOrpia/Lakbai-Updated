@@ -1,6 +1,6 @@
 # Destination photo attributions
 
-These images are bundled with LakbayLokal so destination photos remain visible offline.
+These images are bundled with LakBai so destination photos remain visible offline.
 
 - `samal-island.jpg` — “Samal Island in Davao” by Ismael Cacharro, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Samal_Island_in_Davao.jpg). Resized to 1280 px.
 - `hagimit-falls.jpg` — “Hagimit Falls 001” by RoyKabanlit, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Hagimit_Falls_001.jpg). Resized to 1280 px.

@@ -416,7 +416,7 @@ export const packs = [{
     durationMin: 12,
     elevationGainM: null,
     routeVerified: true,
-    description: 'A verified pedestrian segment inside Panabo Mangrove Park. The City Government documents a 430-meter boardwalk at Barangay J.P. Laurel; LakbayLokal currently navigates only the 214-meter segment mapped in OpenStreetMap and does not claim the remainder is GPS-verified.',
+    description: 'A verified pedestrian segment inside Panabo Mangrove Park. The City Government documents a 430-meter boardwalk at Barangay J.P. Laurel; LakBai currently navigates only the 214-meter segment mapped in OpenStreetMap and does not claim the remainder is GPS-verified.',
     start: {
       name: 'Mapped boardwalk segment start',
       lat: 7.2723324,
@@ -448,7 +448,7 @@ export const packs = [{
       type: 'end',
       lat: 7.2710674,
       lng: 125.6810269,
-      note: 'LakbayLokal navigation stops here because the remaining boardwalk geometry has not been source-verified.'
+      note: 'LakBai navigation stops here because the remaining boardwalk geometry has not been source-verified.'
     }]
   }],
   spots: [{

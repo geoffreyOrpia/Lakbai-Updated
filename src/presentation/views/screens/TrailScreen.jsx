@@ -131,7 +131,7 @@ export const TrailScreen = ({
       <View style={styles.trailNote}>
         <Ionicons name="navigate-outline" size={17} color={colors.primary} />
         <Text style={styles.trailNoteText}>
-          Trail navigation is fully in-app and works from saved map data plus foreground GPS. Phone location can still drift under canopy or near structures, so follow posted signs and local instructions and do not rely on LakbayLokal as an emergency navigation device.
+          Trail navigation is fully in-app and works from saved map data plus foreground GPS. Phone location can still drift under canopy or near structures, so follow posted signs and local instructions and do not rely on LakBai as an emergency navigation device.
         </Text>
       </View>
     </ScrollView>;

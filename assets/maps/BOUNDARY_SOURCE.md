@@ -1,6 +1,6 @@
 # Davao del Norte administrative boundary source
 
-LakbayLokal includes a reduced 2023 PSGC municipality/city GeoJSON for offline regional context.
+LakBai includes a reduced 2023 PSGC municipality/city GeoJSON for offline regional context.
 
 Source repository: `faeldon/philippines-json-maps`
 Source file: `2023/geojson/provdists/lowres/municities-provdist-1102300000.0.001.json`

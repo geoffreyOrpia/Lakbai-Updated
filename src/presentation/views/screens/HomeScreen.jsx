@@ -81,7 +81,7 @@ export const HomeScreen = ({
       </View>
 
       <View style={styles.section}>
-        <SectionHeader eyebrow="Simple flow" title="How LakbayLokal works" />
+        <SectionHeader eyebrow="Simple flow" title="How LakBai works" />
         <View style={[styles.flowCard, shadows.card]}>
           <FlowStep icon="bookmark-outline" number="01" title="Save" text="Add a pack to your library." />
           <View style={styles.flowDivider} />

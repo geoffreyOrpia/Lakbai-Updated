@@ -191,7 +191,7 @@ const TripEditor = ({
       </View>
 
       <View style={[styles.formCard, shadows.card]}>
-        <SectionBadge step={2} title="Choose destinations" text="Add any available LakbayLokal destination pack to your route." />
+        <SectionBadge step={2} title="Choose destinations" text="Add any available LakBai destination pack to your route." />
         <View style={styles.destinationList}>
           {available.map(item => {
           const added = viewModel.isStopAdded(item.destination.id);

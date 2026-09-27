@@ -47,7 +47,7 @@ export const ExploreScreen = ({
   if (state.loading && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AppHeader />
-        <LoadingState title="Loading the local catalog" text="Reading destination guides stored with LakbayLokal." />
+        <LoadingState title="Loading the local catalog" text="Reading destination guides stored with LakBai." />
       </ScrollView>;
   }
   if (state.error && !state.items.length) {
@@ -115,7 +115,7 @@ export const ExploreScreen = ({
           <View style={styles.onlineCopy}>
             <Text style={styles.onlineTitle}>Optional web research</Text>
             <Text style={styles.onlineText}>
-              Opens a Google search in your browser. Web results stay separate from the local LakbayLokal catalog and are not treated as verified app content.
+              Opens a Google search in your browser. Web results stay separate from the local LakBai catalog and are not treated as verified app content.
             </Text>
           </View>
         </View>

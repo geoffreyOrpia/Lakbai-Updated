@@ -1,25 +1,25 @@
 {
   "expo": {
-    "name": "LakbayLokal",
+    "name": "LakBai",
     "slug": "lakbaylokal",
     "version": "1.0.0",
     "newArchEnabled": true,
     "orientation": "portrait",
-    "icon": "./assets/logo.png",
+    "icon": "./assets/lakbai-icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#F6F2EA",
-        "foregroundImage": "./assets/logo.png"
+        "backgroundColor": "#FCF8F2",
+        "foregroundImage": "./assets/lakbai-icon.png"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.ywach.lakbaylokal"
     },
     "web": {
-      "favicon": "./assets/logo.png"
+      "favicon": "./assets/lakbai-icon.png"
     },
     "plugins": [
       "expo-font",
@@ -27,14 +27,14 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow LakbayLokal to use your location to find nearby saved places and support offline trail guidance."
+          "locationWhenInUsePermission": "Allow LakBai to use your location to find nearby saved places and support offline trail guidance."
         }
       ],
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#F6F2EA",
-          "image": "./assets/logo.png"
+          "backgroundColor": "#FCF8F2",
+          "image": "./assets/lakbai-mark.png"
         }
       ],
       "expo-web-browser",

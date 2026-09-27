@@ -169,7 +169,7 @@ export const DestinationMap = ({
             <Text style={styles.failureTitle}>Base map unavailable</Text>
             <Text style={styles.failureText}>
               {canUseOffline
-                ? 'LakbayLokal switched to local map data. Your saved places remain available.'
+                ? 'LakBai switched to local map data. Your saved places remain available.'
                 : 'Local destination markers and municipality context remain available. Save this pack before travel for the full offline map.'}
             </Text>
           </View> : null}
@@ -179,7 +179,7 @@ export const DestinationMap = ({
           ? 'Detailed offline map: local vector roads, water, land, buildings, municipality context, and saved places. No network tiles are requested.'
           : offline
           ? 'Offline fallback: municipality context and saved places are local. No network tiles are requested.'
-          : 'Live base map: © OpenStreetMap contributors · local municipality context and LakbayLokal markers remain layered above it.'}
+          : 'Live base map: © OpenStreetMap contributors · local municipality context and LakBai places remain layered above it.'}
       </Text>
     </View>;
 };

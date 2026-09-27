@@ -52,7 +52,7 @@ export class DestinationViewModel extends ViewModel {
         updateAvailable: libraryState.updateAvailable,
         offlineBundle,
         favorite,
-        error: pack || source === 'bundled' ? null : 'This destination pack is not bundled with this version of LakbayLokal yet.'
+        error: pack || source === 'bundled' ? null : 'This destination pack is not bundled with this version of LakBai yet.'
       });
     } catch (error) {
       this.setState({

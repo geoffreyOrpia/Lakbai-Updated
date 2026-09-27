@@ -201,7 +201,7 @@ export const LandingScreen = ({
             })
           }]
         }]}>
-            <Image source={require('../../../../assets/logo-mark.png')} style={styles.logo} resizeMode="contain" />
+            <Image source={require('../../../../assets/lakbai-mark.png')} style={styles.logo} resizeMode="contain" />
             <Animated.View pointerEvents="none" style={[styles.roadTravel, {
               opacity: roadTravel.interpolate({
                 inputRange: [0, 0.15, 0.75, 1],
@@ -235,7 +235,8 @@ export const LandingScreen = ({
             <Ionicons name="navigate-outline" size={13} color={colors.primary} />
             <Text style={styles.locationBadgeText}>DAVAO DEL NORTE · OFFLINE-FIRST</Text>
           </View>
-          <Text style={styles.eyebrow}>WELCOME TO LAKBAYLOKAL</Text>
+          <Text style={styles.eyebrow}>WELCOME TO</Text>
+          <Text style={styles.wordmark}>Lak<Text style={styles.wordmarkAccent}>Bai</Text></Text>
           <Text style={styles.title}>Go beyond. Go local.</Text>
           <Text style={styles.subtitle}>
             Discover Davao del Norte with an offline-first travel companion designed for local exploration.
@@ -381,6 +382,18 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0.9,
     textAlign: 'center'
+  },
+  wordmark: {
+    marginTop: 3,
+    color: colors.text,
+    fontSize: 27,
+    lineHeight: 32,
+    fontWeight: '900',
+    letterSpacing: -0.8,
+    textAlign: 'center'
+  },
+  wordmarkAccent: {
+    color: colors.accent
   },
   title: {
     marginTop: spacing.xs,

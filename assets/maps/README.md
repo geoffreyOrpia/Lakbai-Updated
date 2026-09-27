@@ -1,8 +1,8 @@
 # Davao del Norte offline basemap
 
-LakbayLokal always saves a local municipality boundary with each destination pack, so offline mode has geographic context even when no detailed basemap archive is present. The boundary geometry comes from the 2023 PSGC-based Philippines JSON Maps dataset; see `BOUNDARY_SOURCE.md`.
+LakBai always saves a local municipality boundary with each destination pack, so offline mode has geographic context even when no detailed basemap archive is present. The boundary geometry comes from the 2023 PSGC-based Philippines JSON Maps dataset; see `BOUNDARY_SOURCE.md`.
 
-LakbayLokal also ships a shared local PMTiles vector basemap for roads, water, land, and buildings. The checked-in archive is bounded to Davao del Norte and capped at zoom 13 so it stays practical for the prototype.
+LakBai also ships a shared local PMTiles vector basemap for roads, water, land, and buildings. The checked-in archive is bounded to Davao del Norte and capped at zoom 13 so it stays practical for the prototype.
 
 To regenerate the detailed archive:
 

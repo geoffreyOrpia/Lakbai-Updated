@@ -1,6 +1,6 @@
 # Panabo Mangrove Boardwalk verified navigation segment
 
-LakbayLokal enables GPS trail navigation only for geometry that can be matched to an external source.
+LakBai enables GPS trail navigation only for geometry that can be matched to an external source.
 
 ## Official attraction evidence
 
@@ -19,13 +19,13 @@ Published research places Panabo Mangrove Park at approximately **7°16'20.579" 
 - Alimbon & Manseguiao, *Species composition, stand characteristics, aboveground biomass, and carbon stock of mangroves in Panabo Mangrove Park, Philippines*.
 - https://smujo.id/biodiv/article/download/8411/4859
 
-## Geometry used by LakbayLokal
+## Geometry used by LakBai
 
 The enabled navigation geometry comes from **OpenStreetMap way 641690678, version 2**, timestamped 2020-10-05T07:49:37Z:
 
 - https://www.openstreetmap.org/way/641690678
 
-The mapped pedestrian way is approximately **214 meters** long and begins within a few meters of the independently published park coordinate above. LakbayLokal intentionally enables **only this mapped segment**. It does not infer, interpolate, or claim GPS verification for the rest of Panabo City's documented 430-meter boardwalk.
+The mapped pedestrian way is approximately **214 meters** long and begins within a few meters of the independently published park coordinate above. LakBai intentionally enables **only this mapped segment**. It does not infer, interpolate, or claim GPS verification for the rest of Panabo City's documented 430-meter boardwalk.
 
 OpenStreetMap data is © OpenStreetMap contributors and available under the Open Database License (ODbL):
 
