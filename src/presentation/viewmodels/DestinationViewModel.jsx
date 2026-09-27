@@ -75,7 +75,7 @@ export class DestinationViewModel extends ViewModel {
       });
       return {
         ok: true,
-        message: 'Pack removed from this device.'
+        message: 'Removed from your local library.'
       };
     } catch (error) {
       return {
