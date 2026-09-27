@@ -152,12 +152,14 @@ export class DestinationViewModel extends ViewModel {
   openOfflineNavigation = () => {
     const destination = this.state.pack?.destination;
     const navigation = destination?.offlineNavigation;
+    const verifiedTrail = this.state.pack?.trails?.find(trail => trail.routeVerified === true);
     if (!destination || !navigation || !this.nav.onOpenNavigation) return;
     this.nav.onOpenNavigation({
       destinationId: destination.id,
       destinationName: destination.name,
       target: navigation.target,
       mode: navigation.mode ?? 'walk',
+      trailId: verifiedTrail?.id ?? null,
     });
   };
   planRoute = route => {

@@ -1,5 +1,7 @@
 import { aStarRoute } from '../src/core/routing/aStar.jsx';
 import { buildRoutingIndex, nearestGraphNode, routeBounds } from '../src/core/routing/graph.jsx';
+import { classifyTurn } from '../src/core/routing/maneuvers.jsx';
+import { nextRouteManeuver, projectPositionOntoRoute } from '../src/core/routing/routeProgress.jsx';
 import { calculateOfflineRoute } from '../src/domain/usecases/offlineNavigation.jsx';
 
 const graph = {
@@ -15,13 +17,26 @@ const graph = {
     { id: 'e', lat: 7.01, lng: 125.02 },
   ],
   edges: [
-    { from: 'a', to: 'b', distanceKm: 1, walk: true, drive: true, highway: 'residential' },
-    { from: 'b', to: 'a', distanceKm: 1, walk: true, drive: true, highway: 'residential' },
-    { from: 'b', to: 'c', distanceKm: 1, walk: true, drive: true, highway: 'residential' },
-    { from: 'c', to: 'b', distanceKm: 1, walk: true, drive: true, highway: 'residential' },
+    { from: 'a', to: 'b', distanceKm: 1, walk: true, drive: true, highway: 'residential', name: 'First Road' },
+    { from: 'b', to: 'a', distanceKm: 1, walk: true, drive: true, highway: 'residential', name: 'First Road' },
+    { from: 'b', to: 'c', distanceKm: 1, walk: true, drive: true, highway: 'residential', name: 'Second Road' },
+    { from: 'c', to: 'b', distanceKm: 1, walk: true, drive: true, highway: 'residential', name: 'Second Road' },
     { from: 'a', to: 'd', distanceKm: 1.4, walk: true, drive: false, highway: 'path' },
     { from: 'd', to: 'e', distanceKm: 1, walk: true, drive: false, highway: 'path' },
     { from: 'e', to: 'c', distanceKm: 1.4, walk: true, drive: false, highway: 'path' },
+  ],
+};
+
+const turnGraph = {
+  meta: { id: 'turn-fixture' },
+  nodes: [
+    { id: 'a', lat: 7, lng: 125 },
+    { id: 'b', lat: 7, lng: 125.01 },
+    { id: 'c', lat: 6.99, lng: 125.01 },
+  ],
+  edges: [
+    { from: 'a', to: 'b', distanceKm: 1, walk: true, drive: true, highway: 'residential', name: 'East Road' },
+    { from: 'b', to: 'c', distanceKm: 1, walk: true, drive: true, highway: 'residential', name: 'South Road' },
   ],
 };
 
@@ -50,13 +65,14 @@ describe('offline routing core', () => {
     expect(route).toBeNull();
   });
 
-  test('returns a route with geometry, distance, and ETA', () => {
+  test('returns route geometry, ETA, and source-derived maneuvers', () => {
     const result = calculateOfflineRoute({
       graph,
       from: { lat: 7.0001, lng: 125.0001 },
       to: { lat: 7.0001, lng: 125.0201 },
       mode: 'walk',
       maxSnapDistanceKm: 1,
+      targetLabel: 'Test Destination',
     });
 
     expect(result.ok).toBe(true);
@@ -69,6 +85,50 @@ describe('offline routing core', () => {
       [125.02, 7],
     ]);
     expect(routeBounds(result.geometry)).toEqual([125, 7, 125.02, 7]);
+    expect(result.maneuvers[0].instruction).toBe('Start on First Road');
+    expect(result.maneuvers.some(maneuver => maneuver.instruction === 'Continue onto Second Road')).toBe(true);
+    expect(result.maneuvers.at(-1).instruction).toBe('Arrive at Test Destination');
+  });
+
+  test('classifies a right-angle road change as a right turn', () => {
+    const result = calculateOfflineRoute({
+      graph: turnGraph,
+      from: { lat: 7, lng: 125 },
+      to: { lat: 6.99, lng: 125.01 },
+      mode: 'walk',
+      maxSnapDistanceKm: 0.2,
+      targetLabel: 'Corner',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.maneuvers.some(maneuver => (
+      maneuver.kind === 'right' && maneuver.instruction === 'Turn right onto South Road'
+    ))).toBe(true);
+    expect(classifyTurn(90)).toBe('right');
+    expect(classifyTurn(-90)).toBe('left');
+  });
+
+  test('projects live position onto a route and advances to the next maneuver', () => {
+    const route = calculateOfflineRoute({
+      graph,
+      from: { lat: 7, lng: 125 },
+      to: { lat: 7, lng: 125.02 },
+      mode: 'walk',
+      maxSnapDistanceKm: 0.2,
+      targetLabel: 'Test Destination',
+    });
+    const projection = projectPositionOntoRoute(route, { lat: 7.00002, lng: 125.005 });
+
+    expect(projection.distanceToRouteM).toBeLessThan(5);
+    expect(projection.progress).toBeGreaterThan(0.2);
+    expect(projection.progress).toBeLessThan(0.3);
+    expect(projection.remainingKm).toBeGreaterThan(1.4);
+
+    const next = nextRouteManeuver(route, projection.distanceAlongKm);
+    expect(next.maneuver).toEqual(expect.objectContaining({
+      instruction: 'Continue onto Second Road',
+    }));
+    expect(next.distanceKm).toBeGreaterThan(0);
   });
 
   test('reports coordinates outside graph coverage instead of inventing a route', () => {

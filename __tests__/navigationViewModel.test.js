@@ -11,10 +11,10 @@ const graph = {
     { id: 'c', lat: 7.272383, lng: 125.680829 },
   ],
   edges: [
-    { from: 'a', to: 'b', distanceKm: 1.7, walk: true, drive: true, highway: 'primary' },
-    { from: 'b', to: 'a', distanceKm: 1.7, walk: true, drive: true, highway: 'primary' },
-    { from: 'b', to: 'c', distanceKm: 1.4, walk: true, drive: true, highway: 'residential' },
-    { from: 'c', to: 'b', distanceKm: 1.4, walk: true, drive: true, highway: 'residential' },
+    { from: 'a', to: 'b', distanceKm: 1.7, walk: true, drive: true, highway: 'primary', name: 'Panabo Road' },
+    { from: 'b', to: 'a', distanceKm: 1.7, walk: true, drive: true, highway: 'primary', name: 'Panabo Road' },
+    { from: 'b', to: 'c', distanceKm: 1.4, walk: true, drive: true, highway: 'residential', name: 'J.P. Laurel Road' },
+    { from: 'c', to: 'b', distanceKm: 1.4, walk: true, drive: true, highway: 'residential', name: 'J.P. Laurel Road' },
   ],
 };
 
@@ -35,15 +35,27 @@ const createVm = ({
       ),
     },
   };
+  let watchCallback = null;
+  let watchError = null;
+  const removeWatch = jest.fn();
   const locationService = {
     requestPermissions: jest.fn().mockResolvedValue(true),
     getCurrentFix: jest.fn().mockResolvedValue(fix),
+    watchFix: jest.fn().mockImplementation(async (onFix, onError) => {
+      watchCallback = onFix;
+      watchError = onError;
+      return removeWatch;
+    }),
   };
-  const nav = { onBack: jest.fn() };
+  const nav = {
+    onBack: jest.fn(),
+    onOpenTrail: jest.fn(),
+  };
   const route = {
     destinationId: 'panabo',
     destinationName: 'Panabo City',
     target: { label: 'Panabo Mangrove Park', lat: 7.272383, lng: 125.680829 },
+    trailId: 'panabo-mangrove-boardwalk',
     mode: 'walk',
   };
   return {
@@ -52,6 +64,9 @@ const createVm = ({
     destinationDeps,
     locationService,
     nav,
+    removeWatch,
+    emitFix: next => watchCallback?.(next),
+    emitLocationError: message => watchError?.(message),
   };
 };
 
@@ -77,7 +92,71 @@ describe('NavigationViewModel', () => {
     expect(locationService.getCurrentFix).toHaveBeenCalledTimes(1);
     expect(vm.state.route?.ok).toBe(true);
     expect(vm.state.route.distanceKm).toBeCloseTo(3.1, 5);
+    expect(vm.state.route.maneuvers.at(-1).instruction).toBe('Arrive at Panabo Mangrove Park');
     expect(vm.state.preview).toBe(false);
+  });
+
+  test('starts foreground GPS tracking and updates route progress', async () => {
+    const setup = createVm();
+    const { vm, locationService, emitFix } = setup;
+    await vm.load();
+    await vm.startFromGps();
+
+    await vm.startNavigation();
+    expect(vm.state.tracking).toBe(true);
+    expect(locationService.watchFix).toHaveBeenCalledTimes(1);
+
+    emitFix({ lat: 7.285, lng: 125.6805, accuracy: 6 });
+
+    expect(vm.state.progressPct).toBeGreaterThan(40);
+    expect(vm.state.remainingKm).toBeLessThan(vm.state.route.distanceKm);
+    expect(vm.state.nextManeuver).toBeTruthy();
+    expect(vm.state.gpsError).toBeNull();
+  });
+
+  test('pauses navigation progress when live GPS accuracy is poor', async () => {
+    const { vm } = createVm();
+    await vm.load();
+    await vm.startFromGps();
+    const before = vm.state.progressPct;
+
+    vm.applyFix({ lat: 7.285, lng: 125.6805, accuracy: 120 });
+
+    expect(vm.lowAccuracy).toBe(true);
+    expect(vm.state.progressPct).toBe(before);
+    expect(vm.state.gpsError).toContain('paused');
+  });
+
+  test('waits for three reliable off-route fixes before rerouting', async () => {
+    const { vm } = createVm();
+    await vm.load();
+    await vm.startFromGps();
+    vm.setState({ tracking: true });
+    const reroute = jest.spyOn(vm, 'rerouteFrom').mockResolvedValue();
+
+    const offRouteFix = { lat: 7.2999, lng: 125.6815, accuracy: 5 };
+    vm.applyFix(offRouteFix);
+    vm.applyFix(offRouteFix);
+    expect(reroute).not.toHaveBeenCalled();
+
+    vm.applyFix(offRouteFix);
+    expect(reroute).toHaveBeenCalledTimes(1);
+  });
+
+  test('marks arrival, stops tracking, and can hand off to the verified trail', async () => {
+    const { vm, removeWatch, nav } = createVm();
+    await vm.load();
+    await vm.startFromGps();
+    await vm.startNavigation();
+
+    vm.applyFix({ lat: 7.272383, lng: 125.680829, accuracy: 5 });
+
+    expect(vm.state.arrived).toBe(true);
+    expect(vm.state.tracking).toBe(false);
+    expect(removeWatch).toHaveBeenCalled();
+
+    vm.openTrail();
+    expect(nav.onOpenTrail).toHaveBeenCalledWith('panabo-mangrove-boardwalk');
   });
 
   test('rejects GPS positions outside the current pilot coverage', async () => {
@@ -90,6 +169,18 @@ describe('NavigationViewModel', () => {
 
     expect(vm.state.route).toBeNull();
     expect(vm.state.error).toContain('outside the current Panabo offline-routing pilot');
+  });
+
+  test('rejects an initial GPS fix that is too inaccurate for routing', async () => {
+    const { vm } = createVm({
+      fix: { lat: 7.2999, lng: 125.6801, accuracy: 150 },
+    });
+    await vm.load();
+
+    await vm.startFromGps();
+
+    expect(vm.state.route).toBeNull();
+    expect(vm.state.error).toContain('GPS accuracy');
   });
 
   test('requires saved map files before enabling offline navigation', async () => {

@@ -8,7 +8,7 @@ LakBai's first road/path routing graph is generated from the **HOT OSM Philippin
 - License: Open Database License (ODbL) 1.0
 - Pilot bounds: west 125.650, south 7.245, east 125.705, north 7.325
 
-The checked-in graph is intentionally limited to the Panabo pilot area while LakBai's offline routing engine is validated. It is separate from the PMTiles basemap: PMTiles draws the map, while this graph stores connected road/path topology for A* routing.
+The checked-in graph is intentionally limited to the Panabo pilot area while LakBai's offline navigation engine is validated. It is separate from the PMTiles basemap: PMTiles draws the map, while this graph stores connected road/path topology for A* routing. Live navigation derives maneuver prompts, route progress, and confirmed off-route rerouting from this same local graph; those prompts are generated guidance, not a substitute for posted road signs or official access rules.
 
 ## Regeneration
 

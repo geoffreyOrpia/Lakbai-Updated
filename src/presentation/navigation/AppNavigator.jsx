@@ -85,7 +85,15 @@ export const AppNavigator = () => {
     return <TrailFlow destinationId={topRoute.destinationId} trailId={topRoute.trailId} onBack={pop} />;
   }
   if (topRoute?.name === 'navigation') {
-    return <NavigationFlow route={topRoute} onBack={pop} />;
+    return <NavigationFlow
+      route={topRoute}
+      onOpenTrail={trailId => push({
+        name: 'trail',
+        destinationId: topRoute.destinationId,
+        trailId
+      })}
+      onBack={pop}
+    />;
   }
   if (topRoute?.name === 'nearby') {
     return <NearbyFlow onOpenDestination={destinationId => push({
@@ -155,6 +163,7 @@ const DestinationFlow = ({
 };
 const NavigationFlow = ({
   route,
+  onOpenTrail,
   onBack
 }) => {
   const container = getContainer();
@@ -163,7 +172,7 @@ const NavigationFlow = ({
     container.destinationDeps,
     container.locationService,
     route,
-    { onBack },
+    { onBack, onOpenTrail },
   ));
   return <NavigationScreen viewModel={viewModel} />;
 };

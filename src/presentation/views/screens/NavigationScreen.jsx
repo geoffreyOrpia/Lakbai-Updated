@@ -6,7 +6,22 @@ import { BackAction, PrimaryButton, SecondaryButton } from "../components/Button
 import { InfoBanner } from "../components/InfoBanner.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { NavigationMap } from "../components/NavigationMap.jsx";
+import { ProgressBar } from "../components/ProgressBar.jsx";
 import { SectionHeader } from "../components/SectionHeader.jsx";
+
+const maneuverIcon = kind => {
+  if (kind === 'left' || kind === 'sharp-left' || kind === 'slight-left') return 'return-up-back-outline';
+  if (kind === 'right' || kind === 'sharp-right' || kind === 'slight-right') return 'return-up-forward-outline';
+  if (kind === 'uturn') return 'refresh-outline';
+  if (kind === 'arrive') return 'flag-outline';
+  return 'arrow-up-outline';
+};
+
+const formatAhead = km => {
+  if (km == null) return '';
+  if (km < 1) return `${Math.max(1, Math.round(km * 1000))} m`;
+  return formatKm(km);
+};
 
 export const NavigationScreen = ({ viewModel }) => {
   const state = viewModel.state;
@@ -16,6 +31,13 @@ export const NavigationScreen = ({ viewModel }) => {
         <LoadingState title="Loading offline routing" text="Opening the saved basemap and Panabo routing graph." />
       </View>;
   }
+
+  const shownDistanceKm = state.tracking || state.arrived
+    ? state.remainingKm ?? state.route?.distanceKm
+    : state.route?.distanceKm;
+  const shownDurationMin = state.tracking || state.arrived
+    ? state.remainingMin ?? state.route?.durationMin
+    : state.route?.durationMin;
 
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <BackAction label={state.destinationName || 'Destination'} onPress={() => viewModel.back()} />
@@ -33,32 +55,103 @@ export const NavigationScreen = ({ viewModel }) => {
 
       <InfoBanner
         tone="info"
-        text="This is LakBai’s first road-routing pilot. Route calculation happens on-device from a bundled OpenStreetMap road graph and the saved PMTiles basemap."
+        text="LakBai calculates this route on-device from a bundled OpenStreetMap road graph and renders it over the saved PMTiles map. No Google Maps or routing server is required."
       />
 
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
+      {state.gpsError ? <InfoBanner tone="warn" text={state.gpsError} /> : null}
+      {state.rerouting ? <InfoBanner tone="info" text="You left the active route. LakBai is recalculating another offline route from your current position." /> : null}
+      {viewModel.offRoute && state.tracking && !state.rerouting ? <InfoBanner
+        tone="warn"
+        text={`You are about ${Math.round(state.offRouteM ?? 0)} m from the active route. LakBai waits for several reliable GPS fixes before rerouting to avoid reacting to location drift.`}
+      /> : null}
 
       {state.route ? <>
           <NavigationMap
             route={state.route}
             target={state.target}
             offlineBasemapUri={state.offlineBasemapUri}
-            liveGps={!state.preview}
+            liveGps={state.tracking}
           />
 
           <View style={styles.summaryRow}>
-            <Summary icon="walk-outline" value={formatKm(state.route.distanceKm)} label="Route" />
-            <Summary icon="time-outline" value={formatDurationMinutes(state.route.durationMin)} label="Est. time" />
-            <Summary icon="cloud-offline-outline" value="Local" label="Routing" />
+            <Summary
+              icon="walk-outline"
+              value={formatKm(shownDistanceKm ?? 0)}
+              label={state.tracking || state.arrived ? 'Remaining' : 'Route'}
+            />
+            <Summary
+              icon="time-outline"
+              value={formatDurationMinutes(shownDurationMin ?? 0)}
+              label={state.tracking || state.arrived ? 'ETA' : 'Est. time'}
+            />
+            <Summary
+              icon="locate-outline"
+              value={state.accuracyM != null ? `±${Math.round(state.accuracyM)} m` : '—'}
+              label="GPS"
+            />
           </View>
 
           {state.preview ? <InfoBanner
             tone="warn"
-            text="Preview mode starts from Panabo city center for demonstration only. It is not using your live GPS position."
-          /> : <InfoBanner
-            tone="success"
-            text={`GPS snapped ${Math.round(state.route.startSnap.distanceKm * 1000)} m to the mapped road/path network. Destination snap is ${Math.round(state.route.endSnap.distanceKm * 1000)} m.`}
-          />}
+            text="Preview mode starts from a fixed Panabo city-center point for demonstration only. Clear the preview and use your GPS before real navigation."
+          /> : null}
+
+          {!state.preview && !state.arrived ? <View style={[styles.guidanceCard, shadows.card]}>
+              <View style={styles.guidanceHeader}>
+                <View style={styles.maneuverIcon}>
+                  <Ionicons
+                    name={maneuverIcon(state.nextManeuver?.kind)}
+                    size={25}
+                    color={colors.onPrimary}
+                  />
+                </View>
+                <View style={styles.guidanceCopy}>
+                  <Text style={styles.guidanceEyebrow}>{state.tracking ? 'NEXT MANEUVER' : 'ROUTE READY'}</Text>
+                  <Text style={styles.guidanceTitle}>
+                    {state.nextManeuver?.instruction ?? 'Follow the mapped route'}
+                  </Text>
+                  {state.distanceToNextManeuverKm != null ? <Text style={styles.guidanceDistance}>
+                      {formatAhead(state.distanceToNextManeuverKm)} ahead
+                    </Text> : null}
+                </View>
+              </View>
+
+              <ProgressBar percent={state.progressPct} height={8} />
+              <View style={styles.progressMeta}>
+                <Text style={styles.progressText}>{state.progressPct}% complete</Text>
+                <Text style={styles.progressText}>
+                  {state.rerouteCount ? `${state.rerouteCount} offline reroute${state.rerouteCount === 1 ? '' : 's'}` : 'No reroutes'}
+                </Text>
+              </View>
+
+              {!state.tracking ? <PrimaryButton
+                label="Start live navigation"
+                icon="navigate-outline"
+                disabled={state.rerouting}
+                onPress={() => void viewModel.startNavigation()}
+              /> : <SecondaryButton
+                label="Stop live navigation"
+                icon="stop-circle-outline"
+                onPress={() => viewModel.stopNavigation()}
+              />}
+            </View> : null}
+
+          {state.arrived ? <View style={[styles.arrivalCard, shadows.card]}>
+              <View style={styles.arrivalIcon}>
+                <Ionicons name="checkmark-circle" size={30} color={colors.primary} />
+              </View>
+              <Text style={styles.arrivalEyebrow}>ARRIVED</Text>
+              <Text style={styles.arrivalTitle}>{state.target.label ?? state.destinationName}</Text>
+              <Text style={styles.arrivalText}>
+                LakBai has reached the end of the offline road route. Confirm the physical entrance and posted local signs before continuing.
+              </Text>
+              {state.trailId ? <PrimaryButton
+                label="Continue in verified Trail Mode"
+                icon="trail-sign-outline"
+                onPress={() => viewModel.openTrail()}
+              /> : null}
+            </View> : null}
 
           <View style={[styles.sourceCard, shadows.soft]}>
             <SectionHeader eyebrow="Routing coverage" title="Panabo pilot graph" />
@@ -70,11 +163,15 @@ export const NavigationScreen = ({ viewModel }) => {
             </Text>
           </View>
 
-          <SecondaryButton label="Calculate again" icon="refresh-outline" onPress={() => viewModel.clearRoute()} />
+          <SecondaryButton
+            label={state.preview ? 'Use my GPS instead' : 'Calculate route again'}
+            icon="refresh-outline"
+            onPress={() => viewModel.clearRoute()}
+          />
         </> : <View style={[styles.actionCard, shadows.card]}>
           <Text style={styles.actionTitle}>Calculate an offline walking route</Text>
           <Text style={styles.actionText}>
-            LakBai will use your foreground GPS position and the local Panabo road/path graph. No route request is sent to Google or another routing server.
+            LakBai uses your foreground GPS position and the local Panabo road/path graph. No route request is sent to Google or another routing server.
           </Text>
           <PrimaryButton
             label={state.calculating ? 'Calculating…' : 'Route from my GPS'}
@@ -88,7 +185,7 @@ export const NavigationScreen = ({ viewModel }) => {
             disabled={state.calculating || !state.graph || !state.offlineBasemapUri}
             onPress={() => viewModel.previewPilot()}
           />
-          <Text style={styles.previewHint}>Preview uses Panabo city center as a clearly labeled demonstration start point.</Text>
+          <Text style={styles.previewHint}>Preview uses a fixed Panabo city-center point and is clearly separated from live GPS navigation.</Text>
         </View>}
     </ScrollView>;
 };
@@ -199,6 +296,88 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 9.5,
     fontWeight: '700',
+  },
+  guidanceCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    backgroundColor: colors.white,
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+  guidanceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  maneuverIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guidanceCopy: { flex: 1 },
+  guidanceEyebrow: {
+    color: colors.primary,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.65,
+  },
+  guidanceTitle: {
+    marginTop: 2,
+    color: colors.text,
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '900',
+  },
+  guidanceDistance: {
+    marginTop: 2,
+    color: colors.accentDark,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  progressMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  progressText: {
+    color: colors.muted,
+    fontSize: 9.8,
+    fontWeight: '700',
+  },
+  arrivalCard: {
+    borderWidth: 1,
+    borderColor: '#CBE6D5',
+    borderRadius: radius.lg,
+    backgroundColor: colors.primarySofter,
+    padding: spacing.lg,
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  arrivalIcon: {
+    marginBottom: spacing.xxs,
+  },
+  arrivalEyebrow: {
+    color: colors.primary,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.7,
+  },
+  arrivalTitle: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  arrivalText: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    lineHeight: 16,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
   },
   sourceCard: {
     borderWidth: 1,

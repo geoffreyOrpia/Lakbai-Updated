@@ -3,6 +3,17 @@ import { buildRoutingIndex, nearestGraphNode } from "../../core/routing/graph.js
 import { routeGeometryFromPath, summarizeRoutePath } from "../../core/routing/routeGeometry.jsx";
 import { buildRouteManeuvers } from "../../core/routing/maneuvers.jsx";
 
+const indexCache = new WeakMap();
+
+const routingIndexFor = graph => {
+  let index = indexCache.get(graph);
+  if (!index) {
+    index = buildRoutingIndex(graph);
+    indexCache.set(graph, index);
+  }
+  return index;
+};
+
 export const calculateOfflineRoute = ({
   graph,
   from,
@@ -11,7 +22,7 @@ export const calculateOfflineRoute = ({
   maxSnapDistanceKm = 1.5,
   targetLabel = 'destination',
 }) => {
-  const index = buildRoutingIndex(graph);
+  const index = routingIndexFor(graph);
   const startSnap = nearestGraphNode(index, from, mode, maxSnapDistanceKm);
   const endSnap = nearestGraphNode(index, to, mode, maxSnapDistanceKm);
 
