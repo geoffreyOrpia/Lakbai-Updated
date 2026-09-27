@@ -6,6 +6,7 @@ import { useViewModel } from "../viewmodel/useViewModel.jsx";
 import { DestinationViewModel } from "../viewmodels/DestinationViewModel.jsx";
 import { LibraryViewModel } from "../viewmodels/LibraryViewModel.jsx";
 import { NearbyViewModel } from "../viewmodels/NearbyViewModel.jsx";
+import { NavigationViewModel } from "../viewmodels/NavigationViewModel.jsx";
 import { ExploreViewModel } from "../viewmodels/ExploreViewModel.jsx";
 import { HomeViewModel } from "../viewmodels/HomeViewModel.jsx";
 import { OnboardingViewModel } from "../viewmodels/OnboardingViewModel.jsx";
@@ -16,6 +17,7 @@ import { TripsViewModel } from "../viewmodels/TripsViewModel.jsx";
 import { DestinationScreen } from "../views/screens/DestinationScreen.jsx";
 import { LibraryScreen } from "../views/screens/LibraryScreen.jsx";
 import { NearbyScreen } from "../views/screens/NearbyScreen.jsx";
+import { NavigationScreen } from "../views/screens/NavigationScreen.jsx";
 import { ExploreScreen } from "../views/screens/ExploreScreen.jsx";
 import { HomeScreen } from "../views/screens/HomeScreen.jsx";
 import { LandingScreen } from "../views/screens/LandingScreen.jsx";
@@ -70,6 +72,9 @@ export const AppNavigator = () => {
       name: 'trail',
       destinationId: topRoute.destinationId,
       trailId
+    })} onOpenNavigation={navigation => push({
+      name: 'navigation',
+      ...navigation
     })} onPlanRoute={draft => {
       setTripDraft(draft);
       setStack([]);
@@ -78,6 +83,9 @@ export const AppNavigator = () => {
   }
   if (topRoute?.name === 'trail') {
     return <TrailFlow destinationId={topRoute.destinationId} trailId={topRoute.trailId} onBack={pop} />;
+  }
+  if (topRoute?.name === 'navigation') {
+    return <NavigationFlow route={topRoute} onBack={pop} />;
   }
   if (topRoute?.name === 'nearby') {
     return <NearbyFlow onOpenDestination={destinationId => push({
@@ -132,17 +140,34 @@ const OnboardingFlow = ({
 const DestinationFlow = ({
   destinationId,
   onOpenTrail,
+  onOpenNavigation,
   onPlanRoute,
   onBack
 }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new DestinationViewModel(container.destinationDeps, destinationId, {
     onOpenTrail,
+    onOpenNavigation,
     onPlanRoute,
     onBack
   }, container.directionsDeps));
   return <DestinationScreen viewModel={viewModel} />;
 };
+const NavigationFlow = ({
+  route,
+  onBack
+}) => {
+  const container = getContainer();
+  const viewModel = useViewModel(() => new NavigationViewModel(
+    container.routingDeps,
+    container.destinationDeps,
+    container.locationService,
+    route,
+    { onBack },
+  ));
+  return <NavigationScreen viewModel={viewModel} />;
+};
+
 const TrailFlow = ({
   destinationId,
   trailId,

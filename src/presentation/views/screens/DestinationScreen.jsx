@@ -180,18 +180,48 @@ export const DestinationScreen = ({
             </View>
           </View>
           <Text style={styles.locationNote}>{destination.navigation.note}</Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Open directions to ${destination.name}`}
-            accessibilityState={{ disabled: state.directionsBusyId !== null, busy: state.directionsBusyId === destination.id }}
-            disabled={state.directionsBusyId !== null}
-            onPress={() => void runDirections(destination)}
-            style={({ pressed }) => [styles.directionsButton, state.directionsBusyId !== null && styles.ctaDisabled, pressed && state.directionsBusyId === null && styles.pressed]}
-          >
-            <Ionicons name={state.directionsBusyId === destination.id ? 'hourglass-outline' : 'map-outline'} size={17} color={colors.onPrimary} />
-            <Text style={styles.directionsButtonText}>{state.directionsBusyId === destination.id ? 'Opening Maps…' : 'Open directions'}</Text>
-          </Pressable>
-          <Text style={styles.connectionHint}>Requires internet. In Maps, choose “Your location” as the starting point.</Text>
+          {destination.offlineNavigation ? <>
+              <View style={styles.routingPilotBadge}>
+                <Ionicons name="cloud-offline-outline" size={13} color={colors.primary} />
+                <Text style={styles.routingPilotText}>OFFLINE ROUTING PILOT · {destination.offlineNavigation.coverage}</Text>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={state.saved ? `Navigate to ${destination.name} with LakBai` : `Save ${destination.name} to enable LakBai navigation`}
+                accessibilityState={{ disabled: !state.saved }}
+                disabled={!state.saved}
+                onPress={() => viewModel.openOfflineNavigation()}
+                style={({ pressed }) => [styles.directionsButton, !state.saved && styles.ctaDisabled, pressed && state.saved && styles.pressed]}
+              >
+                <Ionicons name={state.saved ? 'navigate' : 'lock-closed'} size={17} color={colors.onPrimary} />
+                <Text style={styles.directionsButtonText}>{state.saved ? 'Navigate with LakBai' : 'Save pack to enable LakBai navigation'}</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Open optional external directions to ${destination.name}`}
+                accessibilityState={{ disabled: state.directionsBusyId !== null, busy: state.directionsBusyId === destination.id }}
+                disabled={state.directionsBusyId !== null}
+                onPress={() => void runDirections(destination)}
+                style={({ pressed }) => [styles.externalDirectionsButton, state.directionsBusyId !== null && styles.ctaDisabled, pressed && state.directionsBusyId === null && styles.pressed]}
+              >
+                <Ionicons name={state.directionsBusyId === destination.id ? 'hourglass-outline' : 'open-outline'} size={16} color={colors.primary} />
+                <Text style={styles.externalDirectionsText}>{state.directionsBusyId === destination.id ? 'Opening…' : 'Optional external directions'}</Text>
+              </Pressable>
+              <Text style={styles.connectionHint}>LakBai routing and its saved map work offline. External directions require internet and are optional.</Text>
+            </> : <>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Open directions to ${destination.name}`}
+                accessibilityState={{ disabled: state.directionsBusyId !== null, busy: state.directionsBusyId === destination.id }}
+                disabled={state.directionsBusyId !== null}
+                onPress={() => void runDirections(destination)}
+                style={({ pressed }) => [styles.directionsButton, state.directionsBusyId !== null && styles.ctaDisabled, pressed && state.directionsBusyId === null && styles.pressed]}
+              >
+                <Ionicons name={state.directionsBusyId === destination.id ? 'hourglass-outline' : 'map-outline'} size={17} color={colors.onPrimary} />
+                <Text style={styles.directionsButtonText}>{state.directionsBusyId === destination.id ? 'Opening Maps…' : 'Open directions'}</Text>
+              </Pressable>
+              <Text style={styles.connectionHint}>Requires internet. In Maps, choose “Your location” as the starting point.</Text>
+            </>}
         </View> : null}
 
       {pack.spots?.length ? <View style={styles.section}>
@@ -642,6 +672,40 @@ const styles = StyleSheet.create({
   directionsButtonText: {
     color: colors.onPrimary,
     fontSize: 12.5,
+    fontWeight: '900'
+  },
+  routingPilotBadge: {
+    minHeight: 30,
+    alignSelf: 'flex-start',
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: '#CBE6D5',
+    backgroundColor: colors.white,
+    paddingHorizontal: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6
+  },
+  routingPilotText: {
+    color: colors.primary,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.35
+  },
+  externalDirectionsButton: {
+    minHeight: 42,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.white,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs
+  },
+  externalDirectionsText: {
+    color: colors.primary,
+    fontSize: 11.5,
     fontWeight: '900'
   },
   connectionHint: {

@@ -11,6 +11,7 @@ import { LocalItineraryRepository } from "../../data/repositories/itineraryRepos
 import { PackRepositoryImpl } from "../../data/repositories/packRepository.jsx";
 import { LocalPreferencesRepository } from "../../data/repositories/preferencesRepository.jsx";
 import { LocalSafetyRepository } from "../../data/repositories/safetyRepository.jsx";
+import { BundledRoutingGraphRepository } from "../../data/repositories/routingGraphRepository.jsx";
 import { ExpoLocationService } from "../../data/services/locationService.jsx";
 import { createOnlineResearchService } from "../../data/services/onlineResearchService.jsx";
 import { createPhoneService } from "../../data/services/phoneService.jsx";
@@ -37,6 +38,7 @@ const buildContainer = () => {
   const preferencesRepository = new LocalPreferencesRepository(preferencesDao);
   const itineraryRepository = new LocalItineraryRepository(itineraryDao);
   const safetyRepository = new LocalSafetyRepository(safetyDao);
+  const routingGraphRepository = new BundledRoutingGraphRepository();
 
   // Platform services
   const locationService = new ExpoLocationService();
@@ -65,6 +67,9 @@ const buildContainer = () => {
   const directionsDeps = {
     onlineResearchService
   };
+  const routingDeps = {
+    routingGraphRepository
+  };
   return {
     destinationDeps,
     preferencesDeps,
@@ -72,6 +77,7 @@ const buildContainer = () => {
     safetyDeps,
     onlineResearchDeps,
     directionsDeps,
+    routingDeps,
     locationService
   };
 };

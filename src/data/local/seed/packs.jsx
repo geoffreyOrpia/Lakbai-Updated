@@ -406,8 +406,8 @@ export const packs = [{
   }
 }, {
   id: 'panabo',
-  version: 4,
-  updatedAt: '2026-09-28T10:00:00.000Z',
+  version: 5,
+  updatedAt: '2026-09-28T11:00:00.000Z',
   trails: [{
     id: 'panabo-mangrove-boardwalk',
     name: 'Panabo Mangrove Boardwalk — mapped segment',

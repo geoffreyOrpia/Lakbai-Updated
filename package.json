@@ -39,6 +39,7 @@
     "deps:check": "expo install --check",
     "doctor": "npx --yes expo-doctor",
     "maps:prepare": "node scripts/prepare-offline-basemap.mjs",
+    "routing:prepare": "node scripts/prepare-routing-graph.mjs",
     "check": "npm run deps:check && npm run lint && npm test && npm run doctor"
   },
   "private": true
