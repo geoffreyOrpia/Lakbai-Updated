@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, BackHandler, StyleSheet, Text, View } from 'react-native';
 import { colors, spacing } from "../../theme.jsx";
 import { getContainer } from "../di/container.jsx";
 import { useViewModel } from "../viewmodel/useViewModel.jsx";
@@ -35,6 +35,20 @@ export const AppNavigator = () => {
   const [exploreQuery, setExploreQuery] = useState('');
   const push = route => setStack(current => [...current, route]);
   const pop = () => setStack(current => current.slice(0, -1));
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (stack.length > 0) {
+        pop();
+        return true;
+      }
+      if (tab !== 'home') {
+        setTab('home');
+        return true;
+      }
+      return false;
+    });
+    return () => subscription.remove();
+  }, [stack.length, tab]);
   if (session.state.phase === 'restoring') {
     return <View style={styles.splash}>
         <ActivityIndicator size="small" color={colors.primary} />
