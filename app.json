@@ -22,7 +22,6 @@
     "plugins": [
       "expo-font",
       "expo-sqlite",
-      "expo-status-bar",
       [
         "expo-splash-screen",
         {
