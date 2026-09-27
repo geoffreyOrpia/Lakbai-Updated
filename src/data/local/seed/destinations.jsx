@@ -11,10 +11,6 @@ export const destinations = [{
   summary: 'Beaches, island stops, coastal trails, and essential offline travel notes.',
   description: 'The Island Garden City of Samal sits a short ferry ride from Davao City and gathers most of what travelers look for in Davao del Norte: white-sand coves, snorkeling spots, spring resorts, and laid-back barangay roads. This pack keeps the island highlights, pier orientation, and coastal trail information available even when island signal becomes unreliable.',
   highlights: ['White-sand coves and snorkeling spots', 'Ferry and barge orientation from Davao City', 'Coastal walking trail with pier-to-beach waypoints', 'Resort, transport, and emergency notes stored offline'],
-  coordinates: {
-    lat: 7.1336203,
-    lng: 125.6847488
-  },
   navigation: {
     label: 'Port of Babak — Samal gateway',
     query: 'Port of Babak, Samal, Davao del Norte, Philippines',
@@ -43,10 +39,6 @@ export const destinations = [{
   summary: 'A tiered freshwater falls with natural pools, cottages, and a short nature trail.',
   description: 'Hagimit Falls is a cluster of small cascades and natural pools shaded by second-growth forest in Peñaplata. The pack covers the entrance notes, cottage areas, the falls trail with its waypoints, and practical reminders for a half-day visit.',
   highlights: ['Tiered cascades with swimmable natural pools', 'Short forest trail connecting the falls levels', 'Cottage, sari-sari, and habal-habal notes', 'Offline trail map with waterfall waypoints'],
-  coordinates: {
-    lat: 7.0666419,
-    lng: 125.7230055
-  },
   navigation: {
     label: 'Hagimit Falls Nature Park',
     query: 'Hagimit Falls, Samal, Davao del Norte, Philippines',
@@ -75,10 +67,6 @@ export const destinations = [{
   summary: 'Home of millions of Geoffrey\'s rousette bats in a protected cave complex.',
   description: 'The Monfort Bat Sanctuary protects a cave colony recognized as the largest of its kind in the world. Visits are short, guided, and heavily educational. This pack stores the visitor guidelines, viewing schedule, and the sanctuary path map for offline use.',
   highlights: ['Guinness-recognized bat cave colony', 'Guided viewing decks with scheduled talks', 'Conservation rules and visitor etiquette', 'Short accessible sanctuary path'],
-  coordinates: {
-    lat: 7.1655368,
-    lng: 125.6927417
-  },
   navigation: {
     label: 'Monfort Bat Sanctuary',
     query: 'Monfort Bat Sanctuary, Samal, Davao del Norte, Philippines',
@@ -107,10 +95,6 @@ export const destinations = [{
   summary: 'City parks, landmarks, markets, and a walkable heritage route.',
   description: 'Tagum, the provincial capital, is known for its golden Christ the King Cathedral, music festivals, and pedestrian-friendly parks. The pack keeps the city heritage walk, market orientation, and transport notes available offline.',
   highlights: ['Christ the King Cathedral and city landmarks', 'Walkable heritage route through the city core', 'Market, terminal, and jeepney notes', 'Festival calendar reminders stored offline'],
-  coordinates: {
-    lat: 7.4412082,
-    lng: 125.7999089
-  },
   navigation: {
     label: 'Christ the King Cathedral, Tagum',
     query: 'Christ the King Cathedral, Tagum, Davao del Norte, Philippines',
@@ -139,10 +123,6 @@ export const destinations = [{
   summary: 'Mangrove boardwalk, birdlife, and coastal conservation area notes.',
   description: 'Panabo\'s coastal fringe protects a community-managed mangrove forest crossed by a short boardwalk. The pack stores the boardwalk trail, birdwatching tips, and community visitor guidelines for offline trips.',
   highlights: ['Community-managed mangrove forest', 'Short boardwalk trail with viewing decks', 'Birdwatching and tidal timing notes', 'Local guide and donation information'],
-  coordinates: {
-    lat: 7.3389,
-    lng: 125.647
-  },
   navigation: {
     label: 'J.P. Laurel Mangrove Reforestation Area',
     query: 'J.P. Laurel Mangrove Reforestation Area, Panabo City, Davao del Norte, Philippines',
@@ -171,10 +151,6 @@ export const destinations = [{
   summary: 'Highland outdoor destinations and preparation notes for nature trips.',
   description: 'The Kapalong highlands are being prepared as a curated nature pack covering outdoor destinations and travel preparation notes. Check back once the pack is published.',
   highlights: [],
-  coordinates: {
-    lat: 7.3847,
-    lng: 125.7883
-  },
   coverTheme: {
     from: '#1E4D3B',
     to: '#33705B',
@@ -192,10 +168,6 @@ export const destinations = [{
   summary: 'Compact trail references and offline-ready local destination information.',
   description: 'The San Isidro trail pack is being curated with local guides. It will collect trail references, ridge viewpoints, and offline travel notes in one downloadable pack.',
   highlights: [],
-  coordinates: {
-    lat: 7.603,
-    lng: 125.684
-  },
   coverTheme: {
     from: '#173F2B',
     to: '#2C6E49',

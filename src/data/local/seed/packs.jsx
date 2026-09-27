@@ -119,15 +119,8 @@ export const packs = [{
     reminders: ['Confirm the last return ferry time before heading to southern coves.', 'Wear reef-safe sunscreen and footwear that handles coral rubble.', 'Tell your accommodation where your day route goes and when you expect to return.', 'Sea conditions change fast; agree on a cutoff time with boat operators.'],
     emergencyContacts: [{
       label: 'National Emergency Hotline',
-      phone: '911'
-    }, {
-      label: 'IGaCoS MDRRMO (Rescue)',
-      phone: '(082) 285-2880',
-      note: 'Island Garden City of Samal disaster risk office.'
-    }, {
-      label: 'Coast Guard Samal',
-      phone: '(082) 285-2628',
-      note: 'Sea incidents and boat safety concerns.'
+      phone: '911',
+      note: 'Use 911 for emergencies. Local agency numbers are withheld until they are reverified.'
     }],
     facilities: ['Peñaplata health center', 'Babak district hospital', 'Kaputian barangay station']
   }
@@ -216,11 +209,8 @@ export const packs = [{
     reminders: ['Do not swim directly after heavy rain; brown water means stronger undercurrents.', 'Watch children near the second falls; depths change quickly.', 'Leave before dusk; the trail has no lighting.'],
     emergencyContacts: [{
       label: 'National Emergency Hotline',
-      phone: '911'
-    }, {
-      label: 'IGaCoS MDRRMO (Rescue)',
-      phone: '(082) 285-2880',
-      note: 'Covers Samal barangays including Peñaplata.'
+      phone: '911',
+      note: 'Use 911 for emergencies. Local agency numbers are withheld until they are reverified.'
     }],
     facilities: ['Peñaplata health center', 'Falls entrance first-aid kit']
   }
@@ -302,10 +292,8 @@ export const packs = [{
     reminders: ['Follow your guide\'s distance markers at all times near the caves.', 'Do not touch guano, cave walls, or fallen pups.', 'Sanitize hands after the visit; wildlife areas carry zoonotic risk.'],
     emergencyContacts: [{
       label: 'National Emergency Hotline',
-      phone: '911'
-    }, {
-      label: 'IGaCoS MDRRMO (Rescue)',
-      phone: '(082) 285-2880'
+      phone: '911',
+      note: 'Use 911 for emergencies. Local agency numbers are withheld until they are reverified.'
     }],
     facilities: ['Babak district hospital', 'Sanctuary first-aid station']
   }
@@ -418,14 +406,8 @@ export const packs = [{
     reminders: ['Keep bags zipped in market crowds.', 'Cross only at pedestrian lanes; traffic around the terminal is fast.', 'Save the terminal\'s last-bus time for your return leg.'],
     emergencyContacts: [{
       label: 'National Emergency Hotline',
-      phone: '911'
-    }, {
-      label: 'Tagum CDRRMO',
-      phone: '(084) 400-0389',
-      note: 'City disaster risk and rescue office.'
-    }, {
-      label: 'Tagum City Police Station',
-      phone: '(084) 216-5521'
+      phone: '911',
+      note: 'Use 911 for emergencies. Local agency numbers are withheld until they are reverified.'
     }],
     facilities: ['Tagum City Hospital', 'Davao Regional Medical Center (nearby)', 'Freedom Park police assistance desk']
   }
@@ -507,11 +489,8 @@ export const packs = [{
     reminders: ['Stay on the boardwalk; mangrove mud can trap footwear and legs.', 'Bring insect repellent, especially around dusk.', 'Mind loose planks after storms; report them to the caretaker.'],
     emergencyContacts: [{
       label: 'National Emergency Hotline',
-      phone: '911'
-    }, {
-      label: 'Panabo CDRRMO',
-      phone: '(084) 628-2540',
-      note: 'City disaster risk office.'
+      phone: '911',
+      note: 'Use 911 for emergencies. Local agency numbers are withheld until they are reverified.'
     }],
     facilities: ['Panabo City Hospital', 'Barangay health station (coastal)']
   }

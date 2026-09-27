@@ -73,6 +73,8 @@ export const DestinationScreen = ({
 
       {!state.downloaded && destination.status === 'available' ? <InfoBanner tone="info" text="This guide and its photo are bundled with the app. Save it to your library to keep it in your personal collection and include its contacts in Safety." /> : null}
 
+      <InfoBanner tone="warn" text="Travel conditions, access rules, transport schedules, and local facilities can change. Confirm time-sensitive details with the destination or local authorities before traveling." />
+
       {destination.navigation ? <View style={[styles.locationCard, shadows.card]}>
           <View style={styles.locationHeading}>
             <View style={styles.locationIcon}>
