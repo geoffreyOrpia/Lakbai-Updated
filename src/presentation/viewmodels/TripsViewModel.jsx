@@ -75,6 +75,7 @@ export class TripsViewModel extends ViewModel {
   openCreate = () => {
     this.setState({
       mode: 'create',
+      selected: null,
       form: {
         title: '',
         travelDate: '',
@@ -84,9 +85,24 @@ export class TripsViewModel extends ViewModel {
       error: null
     });
   };
+  openEdit = trip => {
+    this.setState({
+      mode: 'edit',
+      selected: trip,
+      form: {
+        title: trip.title,
+        travelDate: trip.travelDate,
+        notes: trip.notes ?? '',
+        stops: trip.stops.map(stop => ({
+          ...stop
+        }))
+      },
+      error: null
+    });
+  };
   cancelCreate = () => {
     this.setState({
-      mode: 'list',
+      mode: this.state.selected ? 'details' : 'list',
       error: null
     });
   };
@@ -188,14 +204,15 @@ export class TripsViewModel extends ViewModel {
       return false;
     }
     const now = Date.now();
+    const existingTrip = this.state.mode === 'edit' ? this.state.selected : null;
     const trip = {
-      id: createItineraryId(),
+      id: existingTrip?.id ?? createItineraryId(),
       ownerKey: LOCAL_OWNER_KEY,
       title: this.state.form.title.trim(),
       travelDate: this.state.form.travelDate.trim(),
       notes: this.state.form.notes.trim(),
       stops: this.state.form.stops,
-      createdAt: now,
+      createdAt: existingTrip?.createdAt ?? now,
       updatedAt: now
     };
     this.setState({
@@ -206,7 +223,8 @@ export class TripsViewModel extends ViewModel {
       await saveItinerary(this.tripsDeps, trip);
       await this.load();
       this.setState({
-        mode: 'list'
+        mode: 'list',
+        selected: null
       });
       return true;
     } catch (error) {

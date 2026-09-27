@@ -14,8 +14,8 @@ export const TripsScreen = ({
   viewModel
 }) => {
   const state = viewModel.state;
-  if (state.mode === 'create') {
-    return <CreateTrip viewModel={viewModel} />;
+  if (state.mode === 'create' || state.mode === 'edit') {
+    return <TripEditor viewModel={viewModel} />;
   }
   if (state.mode === 'details' && state.selected) {
     return <TripDetails viewModel={viewModel} trip={state.selected} />;
@@ -130,11 +130,12 @@ const TripCard = ({
       </View>
     </Pressable>;
 };
-const CreateTrip = ({
+const TripEditor = ({
   viewModel
 }) => {
   const state = viewModel.state;
   const form = state.form;
+  const isEditing = state.mode === 'edit';
   const available = state.destinations.filter(item => item.destination.status === 'available');
   const {
     showSnackbar
@@ -142,22 +143,22 @@ const CreateTrip = ({
   const save = async () => {
     const ok = await viewModel.save();
     showSnackbar({
-      message: ok ? 'Itinerary saved to My Trips.' : viewModel.state.error ?? 'The itinerary could not be saved.',
+      message: ok ? isEditing ? 'Itinerary updated.' : 'Itinerary saved to My Trips.' : viewModel.state.error ?? 'The itinerary could not be saved.',
       tone: ok ? 'success' : 'error'
     });
   };
   return <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-      <BackAction label="Cancel" onPress={() => viewModel.cancelCreate()} />
+      <BackAction label={isEditing ? 'Trip details' : 'Cancel'} onPress={() => viewModel.cancelCreate()} />
 
       <View style={styles.createHero}>
         <View style={styles.createHeroIcon}>
           <Ionicons name="sparkles-outline" size={20} color={colors.accent} />
         </View>
         <View style={styles.createHeroCopy}>
-          <Text style={styles.eyebrow}>NEW ITINERARY</Text>
-          <Text style={styles.title}>Build your travel plan</Text>
+          <Text style={styles.eyebrow}>{isEditing ? 'EDIT ITINERARY' : 'NEW ITINERARY'}</Text>
+          <Text style={styles.title}>{isEditing ? 'Refine your travel plan' : 'Build your travel plan'}</Text>
           <Text style={styles.subtitle}>
-            Start with the essentials, add curated destinations, then arrange your route in the order that works for you.
+            {isEditing ? 'Update the details, destinations, timing, and route order while keeping the same saved itinerary.' : 'Start with the essentials, add curated destinations, then arrange your route in the order that works for you.'}
           </Text>
         </View>
       </View>
@@ -252,7 +253,7 @@ const CreateTrip = ({
 
       {state.error ? <InfoBanner tone="danger" text={state.error} /> : null}
 
-      <PrimaryButton label={state.busy ? 'Saving…' : 'Save itinerary'} icon="save-outline" onPress={() => void save()} disabled={state.busy} />
+      <PrimaryButton label={state.busy ? 'Saving…' : isEditing ? 'Update itinerary' : 'Save itinerary'} icon="save-outline" onPress={() => void save()} disabled={state.busy} />
     </ScrollView>;
 };
 const SectionBadge = ({
@@ -389,6 +390,8 @@ const TripDetails = ({
             </View>)}
         </View>
       </View>
+
+      <PrimaryButton label="Edit itinerary" icon="create-outline" onPress={() => viewModel.openEdit(trip)} />
 
       <Pressable accessibilityRole="button" accessibilityLabel={`Delete itinerary ${trip.title}`} style={({
       pressed
