@@ -1,11 +1,46 @@
 import { haversineKm } from "../utils/geo.jsx";
 
+const SPATIAL_CELL_DEGREES = 0.0025;
+
+const spatialCellKey = (lngIndex, latIndex) => `${lngIndex}:${latIndex}`;
+
+const cellRangeForBounds = (west, south, east, north) => {
+  const minLng = Math.floor(west / SPATIAL_CELL_DEGREES);
+  const maxLng = Math.floor(east / SPATIAL_CELL_DEGREES);
+  const minLat = Math.floor(south / SPATIAL_CELL_DEGREES);
+  const maxLat = Math.floor(north / SPATIAL_CELL_DEGREES);
+  const keys = [];
+  for (let lngIndex = minLng; lngIndex <= maxLng; lngIndex += 1) {
+    for (let latIndex = minLat; latIndex <= maxLat; latIndex += 1) {
+      keys.push(spatialCellKey(lngIndex, latIndex));
+    }
+  }
+  return keys;
+};
+
+const addEdgeToSpatialIndex = (spatialIndex, edge, fromNode, toNode) => {
+  const west = Math.min(fromNode.lng, toNode.lng);
+  const east = Math.max(fromNode.lng, toNode.lng);
+  const south = Math.min(fromNode.lat, toNode.lat);
+  const north = Math.max(fromNode.lat, toNode.lat);
+
+  for (const key of cellRangeForBounds(west, south, east, north)) {
+    const bucket = spatialIndex.get(key) ?? [];
+    bucket.push(edge);
+    spatialIndex.set(key, bucket);
+  }
+};
+
 export const buildRoutingIndex = graph => {
   const nodesById = new Map();
   const adjacency = new Map();
   const modeNodes = {
     walk: new Set(),
     drive: new Set(),
+  };
+  const edgeSpatialIndex = {
+    walk: new Map(),
+    drive: new Map(),
   };
 
   for (const node of graph.nodes ?? []) {
@@ -24,13 +59,17 @@ export const buildRoutingIndex = graph => {
       to,
     };
     adjacency.get(from).push(normalized);
+    const fromNode = nodesById.get(from);
+    const toNode = nodesById.get(to);
     if (edgeSupportsMode(normalized, 'walk')) {
       modeNodes.walk.add(from);
       modeNodes.walk.add(to);
+      addEdgeToSpatialIndex(edgeSpatialIndex.walk, normalized, fromNode, toNode);
     }
     if (edgeSupportsMode(normalized, 'drive')) {
       modeNodes.drive.add(from);
       modeNodes.drive.add(to);
+      addEdgeToSpatialIndex(edgeSpatialIndex.drive, normalized, fromNode, toNode);
     }
   }
 
@@ -39,6 +78,7 @@ export const buildRoutingIndex = graph => {
     nodesById,
     adjacency,
     modeNodes,
+    edgeSpatialIndex,
   };
 };
 
@@ -76,29 +116,47 @@ const projectOntoSegment = (position, fromNode, toNode) => {
   };
 };
 
+const nearbyEdges = (index, position, mode, maxDistanceKm) => {
+  const spatialIndex = index.edgeSpatialIndex?.[mode];
+  if (!spatialIndex) {
+    return Array.from(index.adjacency.values()).flat();
+  }
+
+  const latRadius = maxDistanceKm / 110;
+  const latitudeCosine = Math.max(0.01, Math.cos(position.lat * Math.PI / 180));
+  const lngRadius = maxDistanceKm / (110 * latitudeCosine);
+  const keys = cellRangeForBounds(
+    position.lng - lngRadius,
+    position.lat - latRadius,
+    position.lng + lngRadius,
+    position.lat + latRadius,
+  );
+  const candidates = new Set();
+  for (const key of keys) {
+    for (const edge of spatialIndex.get(key) ?? []) candidates.add(edge);
+  }
+  return candidates;
+};
+
 export const nearestGraphEdge = (index, position, mode = 'walk', maxDistanceKm = 1.5) => {
   let best = null;
 
-  for (const [fromId, edges] of index.adjacency.entries()) {
-    const fromNode = index.nodesById.get(fromId);
-    if (!fromNode) continue;
+  for (const edge of nearbyEdges(index, position, mode, maxDistanceKm)) {
+    if (!edgeSupportsMode(edge, mode)) continue;
+    const fromNode = index.nodesById.get(String(edge.from));
+    const toNode = index.nodesById.get(String(edge.to));
+    if (!fromNode || !toNode) continue;
 
-    for (const edge of edges) {
-      if (!edgeSupportsMode(edge, mode)) continue;
-      const toNode = index.nodesById.get(String(edge.to));
-      if (!toNode) continue;
-
-      const projection = projectOntoSegment(position, fromNode, toNode);
-      if (!best || projection.distanceKm < best.distanceKm) {
-        best = {
-          edge,
-          fromNode,
-          toNode,
-          fraction: projection.fraction,
-          projected: projection.projected,
-          distanceKm: projection.distanceKm,
-        };
-      }
+    const projection = projectOntoSegment(position, fromNode, toNode);
+    if (!best || projection.distanceKm < best.distanceKm) {
+      best = {
+        edge,
+        fromNode,
+        toNode,
+        fraction: projection.fraction,
+        projected: projection.projected,
+        distanceKm: projection.distanceKm,
+      };
     }
   }
 

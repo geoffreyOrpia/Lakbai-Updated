@@ -50,6 +50,8 @@ describe('offline routing core', () => {
     const index = buildRoutingIndex(graph);
     expect(index.nodesById.size).toBe(5);
     expect(index.adjacency.get('a')).toHaveLength(2);
+    expect(index.edgeSpatialIndex.walk.size).toBeGreaterThan(0);
+    expect(index.edgeSpatialIndex.drive.size).toBeGreaterThan(0);
 
     const snap = nearestGraphNode(index, { lat: 7.0001, lng: 125.0001 }, 'walk', 1);
     expect(snap.id).toBe('a');
