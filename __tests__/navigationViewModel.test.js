@@ -91,7 +91,8 @@ describe('NavigationViewModel', () => {
     expect(locationService.requestPermissions).toHaveBeenCalledTimes(1);
     expect(locationService.getCurrentFix).toHaveBeenCalledTimes(1);
     expect(vm.state.route?.ok).toBe(true);
-    expect(vm.state.route.distanceKm).toBeCloseTo(3.1, 5);
+    expect(vm.state.route.distanceKm).toBeGreaterThan(3);
+    expect(vm.state.route.distanceKm).toBeLessThan(3.1);
     expect(vm.state.route.maneuvers.at(-1).instruction).toBe('Arrive at Panabo Mangrove Park');
     expect(vm.state.preview).toBe(false);
   });

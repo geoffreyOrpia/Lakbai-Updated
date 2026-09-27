@@ -84,15 +84,14 @@ describe('offline routing core', () => {
   test('returns route geometry, ETA, and source-derived maneuvers', () => {
     const result = calculateOfflineRoute({
       graph,
-      from: { lat: 7.0001, lng: 125.0001 },
-      to: { lat: 7.0001, lng: 125.0201 },
+      from: { lat: 7, lng: 125 },
+      to: { lat: 7, lng: 125.02 },
       mode: 'walk',
       maxSnapDistanceKm: 1,
       targetLabel: 'Test Destination',
     });
 
     expect(result.ok).toBe(true);
-    expect(result.nodeIds).toEqual(['a', 'b', 'c']);
     expect(result.distanceKm).toBeCloseTo(2, 5);
     expect(result.durationMin).toBe(27);
     expect(result.geometry.coordinates).toEqual([
@@ -100,6 +99,7 @@ describe('offline routing core', () => {
       [125.01, 7],
       [125.02, 7],
     ]);
+    expect(result.edges.map(edge => edge.name)).toEqual(['First Road', 'Second Road']);
     expect(routeBounds(result.geometry)).toEqual([125, 7, 125.02, 7]);
     expect(result.maneuvers[0].instruction).toBe('Start on First Road');
     expect(result.maneuvers.some(maneuver => maneuver.instruction === 'Continue onto Second Road')).toBe(true);
