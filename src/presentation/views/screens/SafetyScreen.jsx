@@ -15,9 +15,10 @@ export const SafetyScreen = ({
   } = useFeedback();
   const completedCount = state.completed.length;
   const toggleItem = async (itemKey, label) => {
+    const wasCompleted = state.completed.includes(itemKey);
     const saved = await viewModel.toggle(itemKey);
     if (saved) {
-      showToast(saved ? `${label} marked ready.` : 'Checklist item reopened.', saved ? 'success' : 'info', 1700);
+      showToast(wasCompleted ? `${label} reopened.` : `${label} marked ready.`, wasCompleted ? 'info' : 'success', 1700);
     } else {
       showSnackbar({
         message: 'The checklist change could not be saved.',
