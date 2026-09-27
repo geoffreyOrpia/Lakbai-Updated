@@ -1,6 +1,7 @@
 import {
   boundsOf,
   haversineKm,
+  nextTrailWaypoint,
   projectOntoTrail,
   totalDistanceKm,
   trailCoordinates,
@@ -56,6 +57,27 @@ describe('geo utilities', () => {
 
     expect(projection.distanceToTrailM).toBeLessThan(1);
     expect(projection.progress).toBeCloseTo(0.25, 2);
+    expect(projection.distanceAlongKm).toBeGreaterThan(0);
+    expect(projection.totalDistanceKm).toBeGreaterThan(projection.distanceAlongKm);
+  });
+
+  test('finds the next named waypoint along the trail', () => {
+    const waypointTrail = {
+      ...trail,
+      waypoints: [
+        { id: 'start', name: 'Start', lat: 7, lng: 125 },
+        { id: 'mid', name: 'Middle', lat: 7, lng: 125.01 },
+        { id: 'end', name: 'End', lat: 7, lng: 125.02 },
+      ],
+    };
+
+    expect(nextTrailWaypoint(waypointTrail, 0.1)).toEqual(
+      expect.objectContaining({ id: 'mid', trailProgress: expect.any(Number) }),
+    );
+    expect(nextTrailWaypoint(waypointTrail, 0.6)).toEqual(
+      expect.objectContaining({ id: 'end' }),
+    );
+    expect(nextTrailWaypoint(waypointTrail, 0.99)).toBeNull();
   });
 
   test('handles empty trail geometry safely', () => {

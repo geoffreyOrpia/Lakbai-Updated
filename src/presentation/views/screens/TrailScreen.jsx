@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BackAction } from "../components/Buttons.jsx";
 import { InfoBanner } from "../components/InfoBanner.jsx";
 import { ProgressBar } from "../components/ProgressBar.jsx";
-import { TrailMiniMap } from "../components/TrailMiniMap.jsx";
+import { TrailMap } from "../components/TrailMap.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
 import { formatDurationMinutes, formatKm } from "../../../core/utils/format.jsx";
 export const TrailScreen = ({
@@ -28,14 +28,33 @@ export const TrailScreen = ({
       <View style={styles.header}>
         <Text style={styles.title}>{trail.name}</Text>
         <View style={styles.statRow}>
-          <Stat icon="footsteps-outline" value={formatKm(trail.distanceKm)} label="Distance" />
-          <Stat icon="time-outline" value={formatDurationMinutes(trail.durationMin)} label="Duration" />
-          <Stat icon="trending-up-outline" value={`${trail.elevationGainM} m`} label="Ascent" />
+          <Stat icon="footsteps-outline" value={formatKm(state.routeDistanceKm || trail.distanceKm)} label="Mapped route" />
+          <Stat icon="time-outline" value={formatDurationMinutes(trail.durationMin)} label="Est. time" />
+          <Stat icon="cloud-offline-outline" value="Local" label="Map" />
           <Stat icon="barbell-outline" value={trail.difficulty} label="Level" />
         </View>
       </View>
 
-      <TrailMiniMap trail={trail} fix={state.fix} height={240} />
+      <TrailMap
+        trail={trail}
+        tracking={state.tracking}
+        offlineBasemapUri={state.offlineBasemapUri}
+        height={330}
+      />
+
+      {trail.verification ? <View style={[styles.verificationCard, shadows.soft]}>
+          <View style={styles.verificationHeader}>
+            <Ionicons name="shield-checkmark-outline" size={18} color={colors.primary} />
+            <View style={styles.verificationCopy}>
+              <Text style={styles.verificationEyebrow}>VERIFIED TRAIL GEOMETRY</Text>
+              <Text style={styles.verificationTitle}>{trail.verification.label}</Text>
+            </View>
+          </View>
+          <Text style={styles.verificationText}>{trail.verification.summary}</Text>
+          <Text style={styles.verificationMeta}>
+            Checked {trail.verification.verifiedAt} · {trail.verification.geometrySource}
+          </Text>
+        </View> : null}
 
       {state.tracking ? <View style={[styles.trackingCard, shadows.card]}>
           <View style={styles.trackingHeader}>
@@ -53,12 +72,37 @@ export const TrailScreen = ({
             <Text style={styles.trackingStat}>
               <Text style={styles.trackingStatValue}>{formatKm(state.remainingKm)}</Text> remaining
             </Text>
+            <Text style={styles.trackingStat}>
+              <Text style={styles.trackingStatValue}>{state.estimatedRemainingMin ?? 0} min</Text> est.
+            </Text>
           </View>
         </View> : null}
 
+      {state.tracking && state.nextWaypoint ? <View style={[styles.nextCard, shadows.card]}>
+          <View style={styles.nextIcon}>
+            <Ionicons name="navigate" size={19} color={colors.onPrimary} />
+          </View>
+          <View style={styles.nextCopy}>
+            <Text style={styles.nextEyebrow}>NEXT WAYPOINT</Text>
+            <Text style={styles.nextName}>{state.nextWaypoint.name}</Text>
+            <Text style={styles.nextDistance}>
+              {state.distanceToNextWaypointKm != null ? `${Math.max(1, Math.round(state.distanceToNextWaypointKm * 1000))} m along trail` : 'Ahead on the verified route'}
+            </Text>
+            {state.nextWaypoint.note ? <Text style={styles.nextNote}>{state.nextWaypoint.note}</Text> : null}
+          </View>
+        </View> : null}
+
+      {state.tracking && state.completed ? <InfoBanner
+        tone="success"
+        text="You reached the end of this verified mapped trail segment."
+      /> : null}
+
       {state.tracking && state.accuracyM != null ? <InfoBanner tone={viewModel.lowAccuracy ? "warn" : "info"} text={viewModel.lowAccuracy ? `GPS accuracy is about ${Math.round(state.accuracyM)} m. Trail progress and off-route warnings are paused until accuracy improves.` : `GPS accuracy is about ${Math.round(state.accuracyM)} m.`} /> : null}
 
-      {viewModel.offTrail && state.tracking ? <InfoBanner tone="warn" text={`You are about ${Math.round(state.offTrailM ?? 0)} m from the saved trail line. Check your surroundings.`} /> : null}
+      {viewModel.offTrail && state.tracking ? <InfoBanner
+        tone="warn"
+        text={`You are about ${Math.round(state.offTrailM ?? 0)} m from the verified trail line. Move back toward the mapped route and confirm nearby signs before continuing.`}
+      /> : null}
 
       {state.permission === 'denied' ? <InfoBanner tone="danger" text="Location permission was declined. Enable it in system settings to follow the trail with GPS." /> : null}
 
@@ -87,7 +131,7 @@ export const TrailScreen = ({
       <View style={styles.trailNote}>
         <Ionicons name="navigate-outline" size={17} color={colors.primary} />
         <Text style={styles.trailNoteText}>
-          GPS positioning works offline, but phone location can drift or become inaccurate. Use the trail line as a planning aid, stay aware of signs and surroundings, and do not rely on LakbayLokal as an emergency navigation device.
+          Trail navigation is fully in-app and works from saved map data plus foreground GPS. Phone location can still drift under canopy or near structures, so follow posted signs and local instructions and do not rely on LakbayLokal as an emergency navigation device.
         </Text>
       </View>
     </ScrollView>;
@@ -181,6 +225,45 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.4
   },
+  verificationCard: {
+    borderWidth: 1,
+    borderColor: '#CBE6D5',
+    borderRadius: radius.lg,
+    backgroundColor: colors.primarySofter,
+    padding: spacing.md,
+    gap: spacing.xs
+  },
+  verificationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm
+  },
+  verificationCopy: {
+    flex: 1
+  },
+  verificationEyebrow: {
+    color: colors.primary,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.6
+  },
+  verificationTitle: {
+    marginTop: 2,
+    color: colors.text,
+    fontSize: 12.5,
+    fontWeight: '900'
+  },
+  verificationText: {
+    color: colors.textSecondary,
+    fontSize: 10.8,
+    lineHeight: 16
+  },
+  verificationMeta: {
+    color: colors.muted,
+    fontSize: 9.5,
+    lineHeight: 14,
+    fontWeight: '700'
+  },
   trackingCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -233,6 +316,50 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 13,
     fontWeight: '900'
+  },
+  nextCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    backgroundColor: colors.white,
+    padding: spacing.md,
+    flexDirection: 'row',
+    gap: spacing.sm
+  },
+  nextIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  nextCopy: {
+    flex: 1
+  },
+  nextEyebrow: {
+    color: colors.primary,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.6
+  },
+  nextName: {
+    marginTop: 2,
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: '900'
+  },
+  nextDistance: {
+    marginTop: 2,
+    color: colors.accentDark,
+    fontSize: 10.5,
+    fontWeight: '900'
+  },
+  nextNote: {
+    marginTop: spacing.xs,
+    color: colors.muted,
+    fontSize: 10.5,
+    lineHeight: 15
   },
   controls: {
     gap: spacing.sm

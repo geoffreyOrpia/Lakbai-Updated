@@ -67,6 +67,8 @@ export const projectOntoTrail = (trail, position) => {
   let best = {
     closestIndex: 0,
     distanceToTrailM: Number.POSITIVE_INFINITY,
+    distanceAlongKm: 0,
+    totalDistanceKm: full,
     progress: 0
   };
 
@@ -91,6 +93,8 @@ export const projectOntoTrail = (trail, position) => {
       best = {
         closestIndex: t < 0.5 ? index : index + 1,
         distanceToTrailM: distanceM,
+        distanceAlongKm,
+        totalDistanceKm: full,
         progress: full > 0 ? Math.min(1, distanceAlongKm / full) : 0
       };
     }
@@ -100,4 +104,15 @@ export const projectOntoTrail = (trail, position) => {
   return {
     ...best
   };
+};
+
+export const nextTrailWaypoint = (trail, progress) => {
+  const candidates = (trail.waypoints ?? []).map(waypoint => {
+    const projection = projectOntoTrail(trail, waypoint);
+    return {
+      ...waypoint,
+      trailProgress: projection.progress,
+    };
+  });
+  return candidates.find(waypoint => waypoint.trailProgress > progress + 0.015) ?? null;
 };

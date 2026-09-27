@@ -121,12 +121,12 @@ export const destinations = [{
   category: 'nature',
   status: 'available',
   summary: 'Mangrove boardwalk, birdlife, and coastal conservation area notes.',
-  description: 'Panabo\'s coastal fringe protects a community-managed mangrove forest crossed by a short boardwalk. The pack stores the boardwalk trail, birdwatching tips, and community visitor guidelines for offline trips.',
-  highlights: ['Community-managed mangrove forest', 'Short boardwalk trail with viewing decks', 'Birdwatching and tidal timing notes', 'Local guide and donation information'],
+  description: 'Panabo\'s coastal fringe protects a community-managed mangrove forest crossed by a short boardwalk. The pack includes a source-verified mapped boardwalk segment for LakbayLokal\'s own offline GPS navigator, plus visitor notes for the wider area.',
+  highlights: ['J.P. Laurel mangrove park', 'In-app GPS navigation on a verified mapped segment', 'Offline MapLibre basemap and trail progress', 'Visitor and tidal-condition notes'],
   navigation: {
     label: 'J.P. Laurel Mangrove Reforestation Area',
     query: 'J.P. Laurel Mangrove Reforestation Area, Panabo City, Davao del Norte, Philippines',
-    note: 'The destination is in Barangay J.P. Laurel; live Maps resolves the latest access road.'
+    note: 'Optional road-arrival aid only. The destination is in Barangay J.P. Laurel; verified trail navigation stays inside LakbayLokal.'
   },
   photos: [{
     key: 'panabo-city',

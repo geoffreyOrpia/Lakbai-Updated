@@ -1,5 +1,6 @@
 import { seedPacks } from '../src/data/local/seed/catalog.jsx';
 import { packs as rawPacks } from '../src/data/local/seed/packs.jsx';
+import { totalDistanceKm, trailCoordinates } from '../src/core/utils/geo.jsx';
 
 describe('release catalog safety', () => {
   test('does not expose prototype trail geometry as verified release trails', () => {
@@ -10,11 +11,33 @@ describe('release catalog safety', () => {
     }
   });
 
+  test('enables only the source-matched Panabo boardwalk segment for in-app GPS navigation', () => {
+    const panabo = seedPacks.find(pack => pack.id === 'panabo');
+    const trail = panabo?.trails.find(candidate => candidate.id === 'panabo-mangrove-boardwalk');
+
+    expect(trail).toEqual(expect.objectContaining({
+      routeVerified: true,
+      distanceKm: 0.214,
+      verification: expect.objectContaining({
+        geometrySource: 'OpenStreetMap way 641690678 v2',
+        license: expect.stringContaining('ODbL'),
+      }),
+    }));
+    expect(trail.geometry.coordinates).toEqual([
+      [125.6808807, 7.2723324],
+      [125.681503, 7.2719787],
+      [125.6816693, 7.2717925],
+      [125.6810269, 7.2710674],
+    ]);
+    expect(totalDistanceKm(trailCoordinates(trail))).toBeCloseTo(0.214, 2);
+  });
+
   test('exposes planning route sequences without prototype coordinates', () => {
     for (const pack of seedPacks) {
       const rawPack = rawPacks.find(candidate => candidate.id === pack.id);
       expect(pack.routeSuggestions).toHaveLength(rawPack?.trails.length ?? 0);
       for (const route of pack.routeSuggestions) {
+        expect(route.planningOnly).toBe(true);
         expect(route).not.toHaveProperty('geometry');
         expect(route).not.toHaveProperty('start');
         for (const stop of route.stops) {

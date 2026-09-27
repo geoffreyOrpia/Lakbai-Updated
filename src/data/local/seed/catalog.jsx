@@ -17,7 +17,7 @@ const regionPacks = packs
       estimatedDistanceKm: trail.distanceKm,
       estimatedDurationMin: trail.durationMin,
       description: trail.description,
-      planningOnly: trail.routeVerified !== true,
+      planningOnly: true,
       stops: trail.waypoints.map(waypoint => ({
         id: waypoint.id,
         name: waypoint.name,

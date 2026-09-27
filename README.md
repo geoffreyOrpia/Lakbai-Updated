@@ -31,7 +31,7 @@ presentation/  →  domain/usecases/  →  domain/repositories
 - **Data:** repositories and DAOs store the catalog, packs, itineraries, preferences, library state, and safety checklist in SQLite.
 - **Bundled content:** Davao del Norte destination guides, licensed photos, spots, transport notes, and safety information ship with the app and seed SQLite automatically.
 
-LakbayLokal does not require an application backend, login, registration, or internet connection for its saved travel data. Existing account-scoped itineraries are migrated to the single device-local profile; legacy account credentials are removed after migration because accounts are no longer used. When connected, the destination map can request OpenStreetMap standard tiles and optional research/directions actions open the device's secure browser. Offline mode instead uses bundled/saved map files and SQLite data. Nearby Places uses the device's foreground GPS fix locally; LakbayLokal does not upload that position.
+LakbayLokal does not require an application backend, login, registration, or internet connection for its saved travel data. Existing account-scoped itineraries are migrated to the single device-local profile; legacy account credentials are removed after migration because accounts are no longer used. When connected, the destination map can request OpenStreetMap standard tiles and optional research/directions actions open the device's secure browser. Offline mode instead uses bundled/saved map files and SQLite data. Nearby Places and the in-app trail navigator use foreground GPS locally; LakbayLokal does not upload that position. Trail navigation uses saved MapLibre/PMTiles data and does not require Google Maps or network tiles.
 
 ## Running
 
@@ -46,7 +46,9 @@ npx expo start       # press a (Android) or i (iOS)
 - **Explore** — a Davao del Norte-only catalog with search, categories, bundled destination images, inline Favorites, and save/update controls.
 - **Optional online research** — search the live web for a place or activity within Davao del Norte through the device's secure browser; no app backend or account is required.
 - **Destination maps** — MapLibre uses OpenStreetMap standard tiles while connected and a bundled Davao del Norte PMTiles basemap plus saved GeoJSON offline; visible status and fallback handling keep local context on map failures.
-- **Destination routes** — open a destination or point of interest in Google Maps when connected, and send planning-only suggested routes directly into an editable Trips draft without exposing unverified GPS geometry.
+- **Road-arrival directions** — external Maps remains optional for driving/transit arrival to a destination or point of interest; it is not used for LakbayLokal trail navigation.
+- **Verified trail navigation** — source-verified trail geometry opens in LakbayLokal's own MapLibre navigator with the saved PMTiles basemap, live foreground GPS, course-follow/recenter, progress, next-waypoint guidance, GPS-accuracy handling, and off-route warnings. The first enabled showcase is the source-matched 214 m Panabo Mangrove Park segment; unverified geometry remains hidden.
+- **Suggested routes** — curated stop sequences can be sent into an editable Trips draft as planning-only content, separate from verified GPS navigation.
 - **Local Library** — save built-in packs into durable app document storage, safely refresh versioned packs through staging/backup replacement, remove pack files, and see the measured local storage footprint.
 - **Nearby Places** — rank saved POIs and a clearly labeled approximate destination-area center using the foreground GPS fix entirely on-device, with GPS-accuracy feedback.
 - **Verified-route policy** — prototype trail geometry is hidden from release builds until every waypoint is checked against an authoritative local or mapping source.

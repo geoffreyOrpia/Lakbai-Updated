@@ -406,56 +406,59 @@ export const packs = [{
   }
 }, {
   id: 'panabo',
-  version: 3,
-  updatedAt: '2026-09-28T08:00:00.000Z',
+  version: 4,
+  updatedAt: '2026-09-28T10:00:00.000Z',
   trails: [{
     id: 'panabo-mangrove-boardwalk',
-    name: 'Mangrove Boardwalk Trail',
+    name: 'Panabo Mangrove Boardwalk — mapped segment',
     difficulty: 'easy',
-    distanceKm: 0.9,
-    durationMin: 30,
-    elevationGainM: 5,
-    description: 'An out-and-back boardwalk through the community mangrove stand with two watching decks. Time visits with the tide for the best birdlife.',
+    distanceKm: 0.214,
+    durationMin: 12,
+    elevationGainM: null,
+    routeVerified: true,
+    description: 'A verified pedestrian segment inside Panabo Mangrove Park. The City Government documents a 430-meter boardwalk at Barangay J.P. Laurel; LakbayLokal currently navigates only the 214-meter segment mapped in OpenStreetMap and does not claim the remainder is GPS-verified.',
     start: {
-      name: 'Boardwalk Entrance',
-      lat: 7.3389,
-      lng: 125.647
+      name: 'Mapped boardwalk segment start',
+      lat: 7.2723324,
+      lng: 125.6808807
+    },
+    verification: {
+      label: 'Source-matched Panabo Mangrove Park segment',
+      verifiedAt: '2026-09-28',
+      geometrySource: 'OpenStreetMap way 641690678 v2',
+      geometryUrl: 'https://www.openstreetmap.org/way/641690678',
+      officialSource: 'https://panabocity.gov.ph/panabo-mangrove-park-ecotourism-project-inaugurated/',
+      license: 'OpenStreetMap data © OpenStreetMap contributors, ODbL 1.0',
+      summary: 'Panabo City confirms the boardwalk attraction in Barangay J.P. Laurel and reports a 430-meter boardwalk. The navigation line is limited to OpenStreetMap way 641690678, whose approximately 214-meter mapped geometry sits at the independently published Panabo Mangrove Park coordinates.'
     },
     geometry: {
       type: 'LineString',
-      coordinates: [[125.647, 7.3389], [125.6475, 7.3393], [125.648, 7.3397], [125.6484, 7.3402], [125.6486, 7.3408], [125.6483, 7.3413], [125.6478, 7.341], [125.6473, 7.3405], [125.647, 7.3399], [125.6468, 7.3393]]
+      coordinates: [[125.6808807, 7.2723324], [125.681503, 7.2719787], [125.6816693, 7.2717925], [125.6810269, 7.2710674]]
     },
     waypoints: [{
-      id: 'wp-pan-entrance',
-      name: 'Boardwalk Entrance',
+      id: 'wp-pan-mapped-start',
+      name: 'Mapped segment start',
       type: 'start',
-      lat: 7.3389,
-      lng: 125.647,
-      note: 'Register with the caretaker and pay the community fee.'
+      lat: 7.2723324,
+      lng: 125.6808807,
+      note: 'Begin only when you are physically at the park and local access is open.'
     }, {
-      id: 'wp-pan-deck',
-      name: 'First Watching Deck',
-      type: 'poi',
-      lat: 7.3402,
-      lng: 125.6484,
-      note: 'Best heron sightings an hour after low tide.'
-    }, {
-      id: 'wp-pan-overlook',
-      name: 'Mangrove Overlook',
+      id: 'wp-pan-mapped-end',
+      name: 'Mapped segment end',
       type: 'end',
-      lat: 7.3413,
-      lng: 125.6483,
-      note: 'Turnaround point with a view across the channels; retrace the boardwalk back.'
+      lat: 7.2710674,
+      lng: 125.6810269,
+      note: 'LakbayLokal navigation stops here because the remaining boardwalk geometry has not been source-verified.'
     }]
   }],
   spots: [{
     id: 'spot-pan-entrance',
-    name: 'Community Boardwalk House',
-    category: 'facility',
-    lat: 7.3389,
-    lng: 125.647,
-    description: 'Registration hut and small interpretive display about the mangrove reserve.',
-    tip: 'Donations support the bantay-dagat and boardwalk upkeep.'
+    name: 'Panabo Mangrove Park',
+    category: 'park',
+    lat: 7.272383,
+    lng: 125.680829,
+    description: 'Barangay J.P. Laurel mangrove park location cross-checked against published field research and Panabo City tourism material.',
+    tip: 'The in-app trail navigator covers only the source-verified mapped segment; follow local signs for the rest of the facility.'
   }, {
     id: 'spot-pan-park',
     name: 'Panabo City Park',

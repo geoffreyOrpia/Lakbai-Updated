@@ -227,7 +227,10 @@ export const DestinationScreen = ({
 
       {pack.routeSuggestions?.length ? <View style={styles.section}>
           <SectionHeader eyebrow="Suggested tourist routes" title="Curated stop sequences" />
-          <InfoBanner tone="info" text="These routes are planning guides built from curated stops. Prototype GPS coordinates stay hidden until every waypoint is verified for navigation." />
+          <InfoBanner
+            tone="info"
+            text="Suggested routes remain planning sequences. When source-verified GPS geometry is available, LakbayLokal exposes it separately below in the in-app offline trail navigator."
+          />
           <View style={styles.list}>
             {pack.routeSuggestions.map(route => <View key={route.id} style={[styles.routeCard, shadows.card]}>
                 <View style={styles.routeHeader}>
@@ -271,7 +274,7 @@ export const DestinationScreen = ({
         </View> : null}
 
       {pack.trails.length || pack.withheldTrailsCount ? <View style={styles.section}>
-          <SectionHeader eyebrow="Verified offline trails" title="GPS trail navigation" />
+          <SectionHeader eyebrow="Verified offline trails" title="LakbayLokal GPS navigation" />
           {pack.withheldTrailsCount ? <InfoBanner
             tone="warn"
             text={`${pack.withheldTrailsCount} prototype ${pack.withheldTrailsCount === 1 ? 'route is' : 'routes are'} intentionally hidden until every waypoint is verified by a reliable local or mapping source.`}
@@ -300,7 +303,7 @@ export const DestinationScreen = ({
                     {trail.description}
                   </Text>
                   <View style={[styles.trailOpen, !state.saved && styles.trailOpenLocked]}>
-                    <Text style={[styles.trailOpenText, !state.saved && styles.trailOpenTextLocked]}>{state.saved ? 'Open trail navigator' : 'Save to Library to unlock'}</Text>
+                    <Text style={[styles.trailOpenText, !state.saved && styles.trailOpenTextLocked]}>{state.saved ? 'Open in-app navigator' : 'Save to Library to unlock'}</Text>
                     <Ionicons name={state.saved ? 'navigate' : 'lock-closed'} size={14} color={state.saved ? colors.primary : colors.muted} />
                   </View>
                 </View>
