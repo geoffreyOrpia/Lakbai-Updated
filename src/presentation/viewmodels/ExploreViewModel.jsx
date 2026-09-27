@@ -1,4 +1,4 @@
-import { downloadPack, listDestinationsWithState, removePack } from "../../domain/usecases/destinationPacks.jsx";
+import { listDestinationsWithState, removePackFromLibrary, savePackToLibrary } from "../../domain/usecases/destinationPacks.jsx";
 import { userMessage } from "../../core/errors/appError.jsx";
 import { searchTourismWeb } from "../../domain/usecases/onlineResearch.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
@@ -84,15 +84,15 @@ export class ExploreViewModel extends ViewModel {
       });
     }
   };
-  download = async packId => {
+  save = async packId => {
     this.setState({
       busyId: packId
     });
     try {
-      const pack = await downloadPack(this.deps, packId);
+      const pack = await savePackToLibrary(this.deps, packId);
       this.patchItem(packId, {
-        downloaded: true,
-        downloadedVersion: pack.version,
+        saved: true,
+        savedVersion: pack.version,
         updateAvailable: false
       });
       return {
@@ -110,15 +110,15 @@ export class ExploreViewModel extends ViewModel {
       });
     }
   };
-  remove = async packId => {
+  removeFromLibrary = async packId => {
     this.setState({
       busyId: packId
     });
     try {
-      await removePack(this.deps, packId);
+      await removePackFromLibrary(this.deps, packId);
       this.patchItem(packId, {
-        downloaded: false,
-        downloadedVersion: null,
+        saved: false,
+        savedVersion: null,
         updateAvailable: false
       });
       return {

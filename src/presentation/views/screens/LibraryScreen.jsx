@@ -8,7 +8,7 @@ import { EmptyState } from "../components/EmptyState.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { SectionHeader } from "../components/SectionHeader.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
-export const DownloadsScreen = ({
+export const LibraryScreen = ({
   viewModel
 }) => {
   const state = viewModel.state;
@@ -16,7 +16,7 @@ export const DownloadsScreen = ({
     showSnackbar,
     showConfirm
   } = useFeedback();
-  const downloaded = viewModel.downloaded;
+  const saved = viewModel.saved;
   const available = viewModel.available;
   if (state.loading && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -30,15 +30,15 @@ export const DownloadsScreen = ({
         <EmptyState icon="alert-circle-outline" title="Library could not load" text={state.error} actionLabel="Try again" onAction={() => void viewModel.load()} />
       </ScrollView>;
   }
-  const performAction = async (packId, isDownloaded) => {
-    const result = isDownloaded ? await viewModel.remove(packId) : await viewModel.download(packId);
+  const performAction = async (packId, isSaved) => {
+    const result = isSaved ? await viewModel.removeFromLibrary(packId) : await viewModel.save(packId);
     showSnackbar({
       message: result.message,
       tone: result.ok ? 'success' : 'error'
     });
   };
-  const runAction = (destinationName, packId, isDownloaded) => {
-    if (!isDownloaded) {
+  const runAction = (destinationName, packId, isSaved) => {
+    if (!isSaved) {
       void performAction(packId, false);
       return;
     }
@@ -65,7 +65,7 @@ export const DownloadsScreen = ({
         <View style={styles.summaryCopy}>
           <Text style={styles.summaryTitle}>Offline library</Text>
           <Text style={styles.summaryText}>
-            {downloaded.length} {downloaded.length === 1 ? 'pack' : 'packs'} saved to your library
+            {saved.length} {saved.length === 1 ? 'pack' : 'packs'} saved to your library
           </Text>
         </View>
         <View style={styles.readyPill}>
@@ -79,7 +79,7 @@ export const DownloadsScreen = ({
       <View style={styles.section}>
         <SectionHeader eyebrow="On this device" title="Saved packs" />
         <View style={styles.list}>
-          {downloaded.length ? downloaded.map(item => <DestinationCard key={item.destination.id} item={item} showCover={false} actionLabel={state.busyId === item.destination.id ? 'Removing…' : 'Remove'} actionDisabled={state.busyId !== null} onAction={() => void runAction(item.destination.name, item.destination.id, true)} />) : <Text style={styles.emptyText}>No destination packs are currently saved on this device.</Text>}
+          {saved.length ? saved.map(item => <DestinationCard key={item.destination.id} item={item} showCover={false} actionLabel={state.busyId === item.destination.id ? 'Removing…' : 'Remove'} actionDisabled={state.busyId !== null} onAction={() => void runAction(item.destination.name, item.destination.id, true)} />) : <Text style={styles.emptyText}>No destination packs are currently saved on this device.</Text>}
         </View>
       </View>
 

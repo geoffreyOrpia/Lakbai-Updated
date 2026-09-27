@@ -4,7 +4,7 @@ import { colors, spacing } from "../../theme.jsx";
 import { getContainer } from "../di/container.jsx";
 import { useViewModel } from "../viewmodel/useViewModel.jsx";
 import { DestinationViewModel } from "../viewmodels/DestinationViewModel.jsx";
-import { DownloadsViewModel } from "../viewmodels/DownloadsViewModel.jsx";
+import { LibraryViewModel } from "../viewmodels/LibraryViewModel.jsx";
 import { ExploreViewModel } from "../viewmodels/ExploreViewModel.jsx";
 import { HomeViewModel } from "../viewmodels/HomeViewModel.jsx";
 import { OnboardingViewModel } from "../viewmodels/OnboardingViewModel.jsx";
@@ -13,7 +13,7 @@ import { SessionViewModel } from "../viewmodels/SessionViewModel.jsx";
 import { TrailViewModel } from "../viewmodels/TrailViewModel.jsx";
 import { TripsViewModel } from "../viewmodels/TripsViewModel.jsx";
 import { DestinationScreen } from "../views/screens/DestinationScreen.jsx";
-import { DownloadsScreen } from "../views/screens/DownloadsScreen.jsx";
+import { LibraryScreen } from "../views/screens/LibraryScreen.jsx";
 import { ExploreScreen } from "../views/screens/ExploreScreen.jsx";
 import { HomeScreen } from "../views/screens/HomeScreen.jsx";
 import { LandingScreen } from "../views/screens/LandingScreen.jsx";
@@ -77,7 +77,7 @@ export const AppNavigator = () => {
         {tab === 'home' ? <HomeTab onOpenExplore={query => {
         setExploreQuery(query ?? '');
         setTab('explore');
-      }} onOpenDownloads={() => setTab('downloads')} onOpenDestination={destinationId => push({
+      }} onOpenLibrary={() => setTab('library')} onOpenDestination={destinationId => push({
         name: 'destination',
         destinationId
       })} /> : null}
@@ -89,7 +89,7 @@ export const AppNavigator = () => {
         name: 'destination',
         destinationId
       })} /> : null}
-        {tab === 'downloads' ? <DownloadsTab /> : null}
+        {tab === 'library' ? <LibraryTab /> : null}
         {tab === 'safety' ? <SafetyTab /> : null}
       </View>
       <BottomNav active={tab} onChange={setTab} />
@@ -129,13 +129,13 @@ const TrailFlow = ({
 };
 const HomeTab = ({
   onOpenExplore,
-  onOpenDownloads,
+  onOpenLibrary,
   onOpenDestination
 }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new HomeViewModel(container.destinationDeps, {
     onOpenExplore,
-    onOpenDownloads,
+    onOpenLibrary,
     onOpenDestination
   }));
   return <HomeScreen viewModel={viewModel} />;
@@ -151,10 +151,10 @@ const ExploreTab = ({
   ));
   return <ExploreScreen viewModel={viewModel} initialQuery={initialQuery} onOpenDestination={onOpenDestination} />;
 };
-const DownloadsTab = () => {
+const LibraryTab = () => {
   const container = getContainer();
-  const viewModel = useViewModel(() => new DownloadsViewModel(container.destinationDeps));
-  return <DownloadsScreen viewModel={viewModel} />;
+  const viewModel = useViewModel(() => new LibraryViewModel(container.destinationDeps));
+  return <LibraryScreen viewModel={viewModel} />;
 };
 const TripsTab = ({
   onOpenDestination

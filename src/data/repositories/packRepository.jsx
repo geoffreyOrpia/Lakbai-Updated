@@ -10,24 +10,24 @@ export class PackRepositoryImpl {
   getBundledPack = id => {
     return this.content.get(id);
   };
-  getDownloadedPack = async id => {
+  getSavedPack = async id => {
     const saved = await this.meta.get(id);
     return saved ? this.content.get(id) : null;
   };
-  listDownloadedMeta = async () => {
+  listSavedMeta = async () => {
     return this.meta.list();
   };
-  getDownloadedMeta = async id => {
+  getSavedMeta = async id => {
     return this.meta.get(id);
   };
-  downloadPack = async id => {
+  savePack = async id => {
     const pack = await this.content.get(id);
     if (!pack) throw new Error('This destination pack is not bundled with the app yet.');
     await this.meta.upsert({
       packId: pack.id,
       version: pack.version,
       updatedAt: pack.updatedAt,
-      downloadedAt: Date.now()
+      savedAt: Date.now()
     });
     return pack;
   };

@@ -15,7 +15,7 @@ export const HomeScreen = ({
   const state = viewModel.state;
   const [searchQuery, setSearchQuery] = useState('');
   const featured = state.items.filter(item => item.destination.featured).slice(0, 3);
-  const firstDownloaded = state.items.find(item => item.downloaded);
+  const firstSaved = state.items.find(item => item.saved);
   if (state.loading && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AppHeader />
@@ -43,16 +43,16 @@ export const HomeScreen = ({
 
       <Pressable accessibilityRole="button" accessibilityLabel="Open local library" style={({
       pressed
-    }) => [styles.readiness, shadows.card, pressed && styles.pressed]} onPress={() => viewModel.openDownloads()}>
+    }) => [styles.readiness, shadows.card, pressed && styles.pressed]} onPress={() => viewModel.openLibrary()}>
         <View style={styles.readinessIcon}>
           <Ionicons name="cloud-done-outline" size={21} color={colors.primary} />
         </View>
         <View style={styles.readinessCopy}>
           <Text style={styles.readinessTitle}>
-            {state.downloadedCount} {state.downloadedCount === 1 ? 'pack' : 'packs'} ready offline
+            {state.savedCount} {state.savedCount === 1 ? 'pack' : 'packs'} ready offline
           </Text>
           <Text style={styles.readinessText}>
-            {firstDownloaded ? `${firstDownloaded.destination.name} is saved on this device.` : 'Save a built-in destination pack to your personal library—no internet required.'}
+            {firstSaved ? `${firstSaved.destination.name} is saved on this device.` : 'Save a built-in destination pack to your personal library—no internet required.'}
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color={colors.primary} />
@@ -70,7 +70,7 @@ export const HomeScreen = ({
       <View style={styles.section}>
         <SectionHeader eyebrow="Simple flow" title="How LakbayLokal works" />
         <View style={[styles.flowCard, shadows.card]}>
-          <FlowStep icon="download-outline" number="01" title="Save" text="Add a pack to your library." />
+          <FlowStep icon="bookmark-outline" number="01" title="Save" text="Add a pack to your library." />
           <View style={styles.flowDivider} />
           <FlowStep icon="cloud-offline-outline" number="02" title="Explore" text="Read guides without a connection." />
           <View style={styles.flowDivider} />

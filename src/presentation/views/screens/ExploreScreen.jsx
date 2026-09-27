@@ -55,8 +55,8 @@ export const ExploreScreen = ({
         <EmptyState icon="alert-circle-outline" title="Explore could not load" text={state.error} actionLabel="Try again" onAction={() => void viewModel.load()} />
       </ScrollView>;
   }
-  const runAction = async (destinationName, packId, downloaded) => {
-    const result = downloaded ? await viewModel.remove(packId) : await viewModel.download(packId);
+  const runAction = async (destinationName, packId, saved) => {
+    const result = saved ? await viewModel.removeFromLibrary(packId) : await viewModel.save(packId);
     showSnackbar({
       message: result.ok ? result.message.replace('Pack removed', `${destinationName} removed`) : result.message,
       tone: result.ok ? 'success' : 'error'
@@ -117,7 +117,7 @@ export const ExploreScreen = ({
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
 
       <View style={styles.list}>
-        {results.map(item => <DestinationCard key={item.destination.id} item={item} onPress={onOpenDestination ? () => onOpenDestination(item.destination.id) : undefined} actionLabel={item.destination.status === 'available' ? state.busyId === item.destination.id ? 'Saving…' : item.downloaded ? 'Remove' : item.updateAvailable ? 'Update' : 'Save' : undefined} actionDisabled={state.busyId !== null} onAction={item.destination.status === 'available' ? () => void runAction(item.destination.name, item.destination.id, item.downloaded) : undefined} />)}
+        {results.map(item => <DestinationCard key={item.destination.id} item={item} onPress={onOpenDestination ? () => onOpenDestination(item.destination.id) : undefined} actionLabel={item.destination.status === 'available' ? state.busyId === item.destination.id ? 'Saving…' : item.saved ? 'Remove' : item.updateAvailable ? 'Update' : 'Save' : undefined} actionDisabled={state.busyId !== null} onAction={item.destination.status === 'available' ? () => void runAction(item.destination.name, item.destination.id, item.saved) : undefined} />)}
       </View>
 
       {!results.length && !state.loading ? <EmptyState icon="compass-outline" title="No packs found" text="Try another destination name or category." /> : null}

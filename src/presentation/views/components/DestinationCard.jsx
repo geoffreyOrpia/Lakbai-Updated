@@ -14,7 +14,7 @@ export const DestinationCard = ({
 }) => {
   const {
     destination,
-    downloaded,
+    saved,
     updateAvailable
   } = item;
   const available = destination.status === 'available';
@@ -47,17 +47,17 @@ export const DestinationCard = ({
         </View>
 
         <View style={styles.footer}>
-          <View style={[styles.status, downloaded ? styles.statusReady : available ? styles.statusAvailable : styles.statusSoon]}>
-            <Text style={[styles.statusText, downloaded ? styles.statusTextReady : available ? styles.statusTextAvailable : styles.statusTextSoon]}>
-              {updateAvailable ? 'Update available' : downloaded ? 'Offline ready' : available ? 'Available' : 'Coming soon'}
+          <View style={[styles.status, saved ? styles.statusReady : available ? styles.statusAvailable : styles.statusSoon]}>
+            <Text style={[styles.statusText, saved ? styles.statusTextReady : available ? styles.statusTextAvailable : styles.statusTextSoon]}>
+              {updateAvailable ? 'Update available' : saved ? 'Offline ready' : available ? 'Available' : 'Coming soon'}
             </Text>
           </View>
 
           {actionLabel && onAction ? <Pressable accessibilityRole="button" disabled={actionDisabled} onPress={onAction} style={({
           pressed
-        }) => [styles.actionButton, downloaded && styles.actionButtonRemove, actionDisabled && styles.actionButtonDisabled, pressed && !actionDisabled && styles.actionButtonPressed]}>
-              <Ionicons name={busy ? 'hourglass-outline' : downloaded ? 'trash-outline' : 'bookmark-outline'} size={13} color={downloaded ? colors.danger : colors.onPrimary} />
-              <Text style={[styles.actionText, downloaded && styles.actionTextRemove]}>{actionLabel}</Text>
+        }) => [styles.actionButton, saved && styles.actionButtonRemove, actionDisabled && styles.actionButtonDisabled, pressed && !actionDisabled && styles.actionButtonPressed]}>
+              <Ionicons name={busy ? 'hourglass-outline' : saved ? 'trash-outline' : 'bookmark-outline'} size={13} color={saved ? colors.danger : colors.onPrimary} />
+              <Text style={[styles.actionText, saved && styles.actionTextRemove]}>{actionLabel}</Text>
             </Pressable> : null}
         </View>
       </View>

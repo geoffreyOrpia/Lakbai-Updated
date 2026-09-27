@@ -1,28 +1,28 @@
 // Use cases: pure application rules orchestrating repositories.
 // View models call these; they never touch REST, SQLite, or files directly.
-const mergeWithDownloadState = (destinations, downloadedMeta, manifests) => {
+const mergeWithLibraryState = (destinations, savedMeta, manifests) => {
   const manifestVersions = new Map(manifests.map(manifest => [manifest.id, manifest.version]));
-  const metaById = new Map(downloadedMeta.map(meta => [meta.packId, meta]));
+  const metaById = new Map(savedMeta.map(meta => [meta.packId, meta]));
   return destinations.map(destination => {
     const meta = metaById.get(destination.id);
-    const remoteVersion = manifestVersions.get(destination.id);
+    const bundledVersion = manifestVersions.get(destination.id);
     return {
       destination,
-      downloaded: Boolean(meta),
-      downloadedVersion: meta?.version ?? null,
-      updateAvailable: Boolean(meta && remoteVersion != null && remoteVersion > meta.version)
+      saved: Boolean(meta),
+      savedVersion: meta?.version ?? null,
+      updateAvailable: Boolean(meta && bundledVersion != null && bundledVersion > meta.version)
     };
   });
 };
 /** Bundled destination catalog merged with the user's SQLite library state. */
 export const listDestinationsWithState = async (deps, filter = {}) => {
-  const [catalogResult, downloadedMeta, manifests] = await Promise.all([deps.destinationRepository.getDestinations(filter), deps.packRepository.listDownloadedMeta(), deps.packRepository.listManifests()]);
+  const [catalogResult, savedMeta, manifests] = await Promise.all([deps.destinationRepository.getDestinations(filter), deps.packRepository.listSavedMeta(), deps.packRepository.listManifests()]);
   const {
     items: destinations,
     source
   } = catalogResult;
   return {
-    items: mergeWithDownloadState(destinations, downloadedMeta, manifests).filter(item => {
+    items: mergeWithLibraryState(destinations, savedMeta, manifests).filter(item => {
       const matchesCategory = !filter.category || filter.category === 'all' || item.destination.category === filter.category;
       const normalizedQuery = (filter.query ?? '').trim().toLowerCase();
       const matchesQuery = !normalizedQuery || [item.destination.name, item.destination.area, item.destination.municipality, item.destination.summary].some(value => value.toLowerCase().includes(normalizedQuery));
@@ -31,18 +31,18 @@ export const listDestinationsWithState = async (deps, filter = {}) => {
     source
   };
 };
-export const downloadPack = async (deps, packId) => {
-  return deps.packRepository.downloadPack(packId);
+export const savePackToLibrary = async (deps, packId) => {
+  return deps.packRepository.savePack(packId);
 };
-export const removePack = async (deps, packId) => {
+export const removePackFromLibrary = async (deps, packId) => {
   return deps.packRepository.removePack(packId);
 };
 /** Pack for the destination screen: saved library copy or bundled offline preview. */
 export const loadPackForViewing = async (deps, packId) => {
-  const local = await deps.packRepository.getDownloadedPack(packId);
-  if (local) return {
-    pack: local,
-    source: 'local'
+  const saved = await deps.packRepository.getSavedPack(packId);
+  if (saved) return {
+    pack: saved,
+    source: 'library'
   };
   const bundled = await deps.packRepository.getBundledPack(packId);
   if (bundled) return {

@@ -24,10 +24,10 @@ const createViewModel = () => {
     deleteItinerary: jest.fn().mockResolvedValue(undefined),
   };
   const packRepository = {
-    listDownloadedMeta: jest.fn().mockResolvedValue([]),
+    listSavedMeta: jest.fn().mockResolvedValue([]),
   };
   const destinationRepository = {
-    getDestinations: jest.fn().mockResolvedValue({ items: [], source: 'local' }),
+    getDestinations: jest.fn().mockResolvedValue({ items: [], source: 'library' }),
   };
   const nav = {
     onOpenDestination: jest.fn(),
@@ -94,7 +94,7 @@ describe('TripsViewModel itinerary editing', () => {
   test('reports the exact stops missing from the local Library', () => {
     const { viewModel } = createViewModel();
     viewModel.setState({
-      downloadedIds: ['samal'],
+      savedPackIds: ['samal'],
     });
     const trip = {
       ...existingTrip,

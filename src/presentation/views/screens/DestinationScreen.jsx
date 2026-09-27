@@ -20,14 +20,14 @@ export const DestinationScreen = ({
   } = useFeedback();
   const pack = state.pack;
   const performLibraryAction = async () => {
-    const result = state.downloaded ? await viewModel.remove() : await viewModel.download();
+    const result = state.saved ? await viewModel.removeFromLibrary() : await viewModel.saveToLibrary();
     showSnackbar({
       message: result.message,
       tone: result.ok ? 'success' : 'error'
     });
   };
   const runLibraryAction = () => {
-    if (!state.downloaded) {
+    if (!state.saved) {
       void performLibraryAction();
       return;
     }
@@ -75,19 +75,19 @@ export const DestinationScreen = ({
         <Pill icon="ellipse" text={`v${pack.version}`} />
         <Pill icon="time-outline" text={formatRelativeTime(pack.updatedAt)} />
         <Pill icon="archive-outline" text={formatSizeKb(pack.sizeKb)} />
-        {state.downloaded ? <Pill icon="checkmark-circle" text="Offline ready" tone="primary" /> : null}
+        {state.saved ? <Pill icon="checkmark-circle" text="Offline ready" tone="primary" /> : null}
       </View>
 
       <Pressable accessibilityRole="button" disabled={state.busy} onPress={() => void runLibraryAction()} style={({
       pressed
-    }) => [styles.cta, state.downloaded && styles.ctaRemove, state.busy && styles.ctaDisabled, pressed && !state.busy && styles.pressed]}>
-        <Ionicons name={state.busy ? 'hourglass-outline' : state.downloaded ? 'trash-outline' : 'bookmark-outline'} size={18} color={state.downloaded ? colors.danger : colors.onPrimary} />
-        <Text style={[styles.ctaText, state.downloaded && styles.ctaTextRemove]}>
-          {state.busy ? 'Working…' : state.downloaded ? 'Remove from library' : destination.status === 'available' ? 'Save pack to local library' : 'Pack coming soon'}
+    }) => [styles.cta, state.saved && styles.ctaRemove, state.busy && styles.ctaDisabled, pressed && !state.busy && styles.pressed]}>
+        <Ionicons name={state.busy ? 'hourglass-outline' : state.saved ? 'trash-outline' : 'bookmark-outline'} size={18} color={state.saved ? colors.danger : colors.onPrimary} />
+        <Text style={[styles.ctaText, state.saved && styles.ctaTextRemove]}>
+          {state.busy ? 'Working…' : state.saved ? 'Remove from library' : destination.status === 'available' ? 'Save pack to local library' : 'Pack coming soon'}
         </Text>
       </Pressable>
 
-      {!state.downloaded && destination.status === 'available' ? <InfoBanner tone="info" text="This guide and its photo are bundled with the app. Save it to your library to keep it in your personal collection and include its contacts in Safety." /> : null}
+      {!state.saved && destination.status === 'available' ? <InfoBanner tone="info" text="This guide and its photo are bundled with the app. Save it to your library to keep it in your personal collection and include its contacts in Safety." /> : null}
 
       <InfoBanner tone="warn" text="Travel conditions, access rules, transport schedules, and local facilities can change. Confirm time-sensitive details with the destination or local authorities before traveling." />
 
@@ -138,13 +138,13 @@ export const DestinationScreen = ({
             {pack.trails.map(trail => <Pressable
               key={trail.id}
               accessibilityRole="button"
-              accessibilityLabel={state.downloaded ? `Open ${trail.name} trail navigator` : `Save ${destination.name} to your Library to unlock ${trail.name}`}
+              accessibilityLabel={state.saved ? `Open ${trail.name} trail navigator` : `Save ${destination.name} to your Library to unlock ${trail.name}`}
               accessibilityState={{
-                disabled: !state.downloaded
+                disabled: !state.saved
               }}
-              disabled={!state.downloaded}
+              disabled={!state.saved}
               onPress={() => viewModel.openTrail(trail.id)}
-              style={({ pressed }) => [[styles.card, shadows.card], !state.downloaded && styles.trailLocked, pressed && state.downloaded && styles.pressed]}
+              style={({ pressed }) => [[styles.card, shadows.card], !state.saved && styles.trailLocked, pressed && state.saved && styles.pressed]}
             >
                 <TrailMiniMap trail={trail} height={130} />
                 <View style={styles.trailBody}>
@@ -157,9 +157,9 @@ export const DestinationScreen = ({
                   <Text style={styles.trailDescription} numberOfLines={2}>
                     {trail.description}
                   </Text>
-                  <View style={[styles.trailOpen, !state.downloaded && styles.trailOpenLocked]}>
-                    <Text style={[styles.trailOpenText, !state.downloaded && styles.trailOpenTextLocked]}>{state.downloaded ? 'Open trail navigator' : 'Save to Library to unlock'}</Text>
-                    <Ionicons name={state.downloaded ? 'navigate' : 'lock-closed'} size={14} color={state.downloaded ? colors.primary : colors.muted} />
+                  <View style={[styles.trailOpen, !state.saved && styles.trailOpenLocked]}>
+                    <Text style={[styles.trailOpenText, !state.saved && styles.trailOpenTextLocked]}>{state.saved ? 'Open trail navigator' : 'Save to Library to unlock'}</Text>
+                    <Ionicons name={state.saved ? 'navigate' : 'lock-closed'} size={14} color={state.saved ? colors.primary : colors.muted} />
                   </View>
                 </View>
               </Pressable>)}

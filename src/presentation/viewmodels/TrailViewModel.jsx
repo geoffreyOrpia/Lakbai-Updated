@@ -3,7 +3,7 @@ import { ViewModel } from "../viewmodel/ViewModel.jsx";
 const OFF_TRAIL_WARNING_M = 120;
 const MAX_RELIABLE_ACCURACY_M = 50;
 
-/** GPS trail navigation over a downloaded pack; works fully offline. */
+/** GPS trail navigation over a pack saved to the local Library; works fully offline. */
 export class TrailViewModel extends ViewModel {
   unwatch = null;
   constructor(deps, location, destinationId, trailId, nav) {
@@ -37,7 +37,7 @@ export class TrailViewModel extends ViewModel {
     this.stopTracking();
   };
   load = async () => {
-    const pack = await this.deps.packRepository.getDownloadedPack(this.destinationId);
+    const pack = await this.deps.packRepository.getSavedPack(this.destinationId);
     if (!pack) {
       this.setState({
         loading: false,

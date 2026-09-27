@@ -7,7 +7,7 @@ export class HomeViewModel extends ViewModel {
     super({
       loading: true,
       items: [],
-      downloadedCount: 0,
+      savedCount: 0,
       source: null,
       error: null
     });
@@ -30,7 +30,7 @@ export class HomeViewModel extends ViewModel {
         items,
         source,
         error: null,
-        downloadedCount: items.filter(item => item.downloaded).length
+        savedCount: items.filter(item => item.saved).length
       });
     } catch (error) {
       this.setState({
@@ -45,8 +45,8 @@ export class HomeViewModel extends ViewModel {
   openExplore = query => {
     this.nav.onOpenExplore(query);
   };
-  openDownloads = () => {
-    this.nav.onOpenDownloads();
+  openLibrary = () => {
+    this.nav.onOpenLibrary();
   };
   openDestination = destinationId => {
     this.nav.onOpenDestination(destinationId);

@@ -203,7 +203,7 @@ const TripEditor = ({
                   <Text style={styles.destinationName}>{item.destination.name}</Text>
                   <Text style={styles.destinationMeta}>
                     {item.destination.municipality}
-                    {item.downloaded ? ' · offline ready' : ''}
+                    {item.saved ? ' · offline ready' : ''}
                   </Text>
                 </View>
                 <Pressable accessibilityRole="button" accessibilityLabel={added ? `${item.destination.name} already added` : `Add ${item.destination.name} to itinerary`} accessibilityState={{

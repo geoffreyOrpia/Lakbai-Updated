@@ -4,7 +4,7 @@ export const createPackMetaDao = () => {
     upsert: async meta => {
       const db = await getDatabase();
       await db.runAsync(`INSERT OR REPLACE INTO pack_library (pack_id, version, updated_at, downloaded_at)
-         VALUES (?, ?, ?, ?)`, meta.packId, meta.version, meta.updatedAt, meta.downloadedAt);
+         VALUES (?, ?, ?, ?)`, meta.packId, meta.version, meta.updatedAt, meta.savedAt);
     },
     get: async packId => {
       const db = await getDatabase();
@@ -27,6 +27,6 @@ const rowToMeta = row => {
     packId: row.pack_id,
     version: row.version,
     updatedAt: row.updated_at,
-    downloadedAt: row.downloaded_at
+    savedAt: row.downloaded_at
   };
 };

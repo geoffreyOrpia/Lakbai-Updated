@@ -17,7 +17,7 @@ export class TripsViewModel extends ViewModel {
         notes: '',
         stops: []
       },
-      downloadedIds: [],
+      savedPackIds: [],
       destinations: [],
       loading: true,
       busy: false,
@@ -30,9 +30,9 @@ export class TripsViewModel extends ViewModel {
   onInit = () => {
     void this.load();
   };
-  /** Downloaded-pack readiness for a trip's stops. */
+  /** Local-Library readiness for a trip's stops. */
   tripReadiness = trip => {
-    const missingStops = trip.stops.filter(stop => !this.state.downloadedIds.includes(stop.destinationId));
+    const missingStops = trip.stops.filter(stop => !this.state.savedPackIds.includes(stop.destinationId));
     const ready = trip.stops.length - missingStops.length;
     const total = trip.stops.length;
     return {
@@ -43,10 +43,10 @@ export class TripsViewModel extends ViewModel {
     };
   };
   load = async () => {
-    const meta = await this.destinationDeps.packRepository.listDownloadedMeta().catch(() => []);
-    const downloadedIds = meta.map(entry => entry.packId);
+    const meta = await this.destinationDeps.packRepository.listSavedMeta().catch(() => []);
+    const savedPackIds = meta.map(entry => entry.packId);
     this.setState({
-      downloadedIds
+      savedPackIds
     });
     try {
       const {

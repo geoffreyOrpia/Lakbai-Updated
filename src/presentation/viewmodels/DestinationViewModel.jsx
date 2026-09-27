@@ -1,4 +1,4 @@
-import { downloadPack, loadPackForViewing, removePack } from "../../domain/usecases/destinationPacks.jsx";
+import { loadPackForViewing, removePackFromLibrary, savePackToLibrary } from "../../domain/usecases/destinationPacks.jsx";
 import { userMessage } from "../../core/errors/appError.jsx";
 import { openDirectionsToPlace } from "../../domain/usecases/directions.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
@@ -11,7 +11,7 @@ export class DestinationViewModel extends ViewModel {
       loading: true,
       busy: false,
       directionsBusyId: null,
-      downloaded: false,
+      saved: false,
       error: null
     });
     this.deps = deps;
@@ -35,14 +35,14 @@ export class DestinationViewModel extends ViewModel {
       this.setState({
         pack,
         source,
-        downloaded: source === 'local',
+        saved: source === 'library',
         error: pack || source === 'bundled' ? null : 'This destination pack is not bundled with this version of LakbayLokal yet.'
       });
     } catch (error) {
       this.setState({
         pack: null,
         source: 'none',
-        downloaded: false,
+        saved: false,
         error: userMessage(error, 'This destination could not be loaded from local storage.')
       });
     } finally {
@@ -51,16 +51,16 @@ export class DestinationViewModel extends ViewModel {
       });
     }
   };
-  download = async () => {
+  saveToLibrary = async () => {
     this.setState({
       busy: true
     });
     try {
-      const pack = await downloadPack(this.deps, this.destinationId);
+      const pack = await savePackToLibrary(this.deps, this.destinationId);
       this.setState({
         pack,
-        source: 'local',
-        downloaded: true
+        source: 'library',
+        saved: true
       });
       return {
         ok: true,
@@ -77,14 +77,14 @@ export class DestinationViewModel extends ViewModel {
       });
     }
   };
-  remove = async () => {
+  removeFromLibrary = async () => {
     this.setState({
       busy: true
     });
     try {
-      await removePack(this.deps, this.destinationId);
+      await removePackFromLibrary(this.deps, this.destinationId);
       this.setState({
-        downloaded: false
+        saved: false
       });
       return {
         ok: true,

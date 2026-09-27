@@ -25,10 +25,10 @@ export class SafetyViewModel extends ViewModel {
     });
     try {
       const [checklist, completed] = await Promise.all([listChecklist(this.deps), listCompletedKeys(this.deps)]);
-      const meta = await this.packRepository.listDownloadedMeta().catch(() => []);
+      const meta = await this.packRepository.listSavedMeta().catch(() => []);
       const contacts = [];
       for (const entry of meta) {
-        const pack = await this.packRepository.getDownloadedPack(entry.packId).catch(() => null);
+        const pack = await this.packRepository.getSavedPack(entry.packId).catch(() => null);
         if (!pack) continue;
         for (const contact of pack.safety.emergencyContacts) {
           contacts.push({

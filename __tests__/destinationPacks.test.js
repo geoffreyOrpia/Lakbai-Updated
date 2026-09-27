@@ -27,12 +27,12 @@ const createDeps = () => ({
     getDestinations: jest.fn().mockResolvedValue({ items: destinations, source: 'bundled' }),
   },
   packRepository: {
-    listDownloadedMeta: jest.fn().mockResolvedValue([{ packId: 'samal', version: 1 }]),
+    listSavedMeta: jest.fn().mockResolvedValue([{ packId: 'samal', version: 1 }]),
     listManifests: jest.fn().mockResolvedValue([
       { id: 'samal', version: 2 },
       { id: 'tagum', version: 1 },
     ]),
-    getDownloadedPack: jest.fn(),
+    getSavedPack: jest.fn(),
     getBundledPack: jest.fn(),
   },
 });
@@ -47,14 +47,14 @@ describe('destination pack use cases', () => {
     expect(result.items).toEqual([
       expect.objectContaining({
         destination: destinations[0],
-        downloaded: true,
-        downloadedVersion: 1,
+        saved: true,
+        savedVersion: 1,
         updateAvailable: true,
       }),
       expect.objectContaining({
         destination: destinations[1],
-        downloaded: false,
-        downloadedVersion: null,
+        saved: false,
+        savedVersion: null,
         updateAvailable: false,
       }),
     ]);
@@ -75,15 +75,15 @@ describe('destination pack use cases', () => {
   test('prefers a saved pack, then falls back to bundled content', async () => {
     const deps = createDeps();
     const saved = { id: 'samal', version: 2 };
-    deps.packRepository.getDownloadedPack.mockResolvedValue(saved);
+    deps.packRepository.getSavedPack.mockResolvedValue(saved);
 
     await expect(loadPackForViewing(deps, 'samal')).resolves.toEqual({
       pack: saved,
-      source: 'local',
+      source: 'library',
     });
     expect(deps.packRepository.getBundledPack).not.toHaveBeenCalled();
 
-    deps.packRepository.getDownloadedPack.mockResolvedValue(null);
+    deps.packRepository.getSavedPack.mockResolvedValue(null);
     const bundled = { id: 'tagum', version: 1 };
     deps.packRepository.getBundledPack.mockResolvedValue(bundled);
 
@@ -95,7 +95,7 @@ describe('destination pack use cases', () => {
 
   test('returns none when a pack does not exist', async () => {
     const deps = createDeps();
-    deps.packRepository.getDownloadedPack.mockResolvedValue(null);
+    deps.packRepository.getSavedPack.mockResolvedValue(null);
     deps.packRepository.getBundledPack.mockResolvedValue(null);
 
     await expect(loadPackForViewing(deps, 'missing')).resolves.toEqual({
