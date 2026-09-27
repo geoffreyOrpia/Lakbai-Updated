@@ -81,3 +81,34 @@ export const remainingDurationMin = (route, remainingKm) => {
   if (!route?.distanceKm || !route?.durationMin) return 0;
   return Math.max(0, Math.ceil(route.durationMin * remainingKm / route.distanceKm));
 };
+
+export const placesAlongRoute = (
+  route,
+  places,
+  distanceAlongKm = 0,
+  {
+    corridorM = 180,
+    minimumAheadKm = 0.03,
+    maxResults = 3,
+  } = {},
+) => {
+  if (!route || !Array.isArray(places) || !places.length) return [];
+
+  return places
+    .filter(place => Number.isFinite(place?.lat) && Number.isFinite(place?.lng))
+    .map(place => {
+      const projection = projectPositionOntoRoute(route, place);
+      return {
+        ...place,
+        distanceFromRouteM: projection.distanceToRouteM,
+        routeDistanceKm: projection.distanceAlongKm,
+        distanceAheadKm: Math.max(0, projection.distanceAlongKm - distanceAlongKm),
+      };
+    })
+    .filter(place => (
+      place.distanceFromRouteM <= corridorM
+      && place.routeDistanceKm >= distanceAlongKm + minimumAheadKm
+    ))
+    .sort((a, b) => a.routeDistanceKm - b.routeDistanceKm)
+    .slice(0, maxResults);
+};

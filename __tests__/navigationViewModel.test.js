@@ -33,6 +33,24 @@ const verifiedTrail = {
   },
 };
 
+const offlineSpots = [
+  {
+    id: 'spot-city-park',
+    name: 'Panabo City Park',
+    category: 'park',
+    lat: 7.285,
+    lng: 125.6805,
+    tip: 'A useful meeting point.',
+  },
+  {
+    id: 'spot-destination',
+    name: 'Panabo Mangrove Park',
+    category: 'park',
+    lat: 7.272383,
+    lng: 125.680829,
+  },
+];
+
 const createVm = ({
   fix = { lat: 7.2999, lng: 125.6801, accuracy: 8 },
   graphValue = graph,
@@ -55,6 +73,7 @@ const createVm = ({
       ),
       getSavedPack: jest.fn().mockResolvedValue({
         trails: [verifiedTrail],
+        spots: offlineSpots,
       }),
     },
   };
@@ -104,6 +123,7 @@ describe('NavigationViewModel', () => {
     expect(vm.state.graphMeta.id).toBe('panabo-routing-pilot');
     expect(vm.state.offlineBasemapUri).toBe('file:///maps/davao-del-norte.pmtiles');
     expect(vm.state.trailPreview).toBe(verifiedTrail);
+    expect(vm.state.offlinePois).toHaveLength(1);
     expect(vm.state.error).toBeNull();
     expect(routingDeps.routingGraphRepository.getForDestination).toHaveBeenCalledWith(
       'panabo',
@@ -123,6 +143,9 @@ describe('NavigationViewModel', () => {
     expect(vm.state.route.distanceKm).toBeGreaterThan(3);
     expect(vm.state.route.distanceKm).toBeLessThan(3.1);
     expect(vm.state.route.maneuvers.at(-1).instruction).toBe('Arrive at Panabo Mangrove Park');
+    expect(vm.state.routePois[0]).toEqual(expect.objectContaining({
+      id: 'spot-city-park',
+    }));
     expect(vm.state.preview).toBe(false);
   });
 

@@ -1,6 +1,7 @@
 import { haversineKm } from "../../core/utils/geo.jsx";
 import {
   nextRouteManeuver,
+  placesAlongRoute,
   projectPositionOntoRoute,
   remainingDurationMin,
 } from "../../core/routing/routeProgress.jsx";
@@ -66,6 +67,8 @@ export class NavigationViewModel extends ViewModel {
       target: route.target,
       trailId: route.trailId ?? null,
       trailPreview: null,
+      offlinePois: [],
+      routePois: [],
       mode: route.mode ?? 'walk',
       preference: normalizeRoutePreference(route.preference),
       offlineBasemapUri: null,
@@ -116,10 +119,14 @@ export class NavigationViewModel extends ViewModel {
           trail.id === this.state.trailId && trail.routeVerified === true
         )) ?? null
         : null;
+      const offlinePois = (savedPack?.spots ?? []).filter(spot => (
+        haversineKm(spot, this.state.target) > 0.08
+      ));
       this.setState({
         graph,
         graphMeta: graph?.meta ?? null,
         trailPreview,
+        offlinePois,
         offlineBasemapUri: bundle?.basemapUri ?? null,
         error: !graph
           ? 'Offline road routing is not available for this destination yet.'
@@ -241,6 +248,7 @@ export class NavigationViewModel extends ViewModel {
       offRouteM: null,
       nextManeuver: result.maneuvers?.[1] ?? result.maneuvers?.[0] ?? null,
       distanceToNextManeuverKm: result.maneuvers?.[1]?.distanceAlongKm ?? null,
+      routePois: placesAlongRoute(result, this.state.offlinePois),
       arrived: false,
       error: null,
     });
@@ -396,6 +404,7 @@ export class NavigationViewModel extends ViewModel {
       offRouteM: projection.distanceToRouteM,
       nextManeuver: next.maneuver,
       distanceToNextManeuverKm: next.distanceKm,
+      routePois: placesAlongRoute(route, this.state.offlinePois, projection.distanceAlongKm),
       arrived,
       gpsError: null,
     });
@@ -475,6 +484,7 @@ export class NavigationViewModel extends ViewModel {
       offRouteM: null,
       nextManeuver: null,
       distanceToNextManeuverKm: null,
+      routePois: [],
       rerouteCount: 0,
       arrived: false,
       gpsError: null,

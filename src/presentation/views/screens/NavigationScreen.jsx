@@ -111,6 +111,7 @@ export const NavigationScreen = ({ viewModel }) => {
             rerouting={state.rerouting}
             voiceGuidance={state.voiceGuidance}
             trailPreview={state.trailPreview}
+            routePois={state.routePois}
           />
 
           {state.trailPreview ? <View style={[styles.journeyCard, shadows.soft]}>
@@ -145,6 +146,28 @@ export const NavigationScreen = ({ viewModel }) => {
               <Text style={styles.journeyNote}>
                 {state.trailPreview.name} · {formatDurationMinutes(state.trailPreview.durationMin ?? 0)} mapped segment
               </Text>
+            </View> : null}
+
+          {state.routePois.length ? <View style={[styles.routePoiCard, shadows.soft]}>
+              <View style={styles.routePoiHeader}>
+                <View>
+                  <Text style={styles.routePoiEyebrow}>OFFLINE PLACES AHEAD</Text>
+                  <Text style={styles.routePoiTitle}>Useful stops along this route</Text>
+                </View>
+                <Ionicons name="compass-outline" size={21} color={colors.primary} />
+              </View>
+              {state.routePois.map(place => <View key={place.id} style={styles.routePoiRow}>
+                  <View style={styles.routePoiIcon}>
+                    <Ionicons name="location-outline" size={16} color={colors.primary} />
+                  </View>
+                  <View style={styles.routePoiCopy}>
+                    <Text style={styles.routePoiName}>{place.name}</Text>
+                    <Text style={styles.routePoiMeta}>
+                      {formatAhead(place.distanceAheadKm)} ahead · {place.category}
+                    </Text>
+                    {place.tip ? <Text style={styles.routePoiTip} numberOfLines={2}>{place.tip}</Text> : null}
+                  </View>
+                </View>)}
             </View> : null}
 
           <View style={styles.summaryRow}>
@@ -511,6 +534,66 @@ const styles = StyleSheet.create({
     fontSize: 9.8,
     lineHeight: 14,
     textAlign: 'center',
+  },
+  routePoiCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    backgroundColor: colors.white,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  routePoiHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  routePoiEyebrow: {
+    color: colors.primary,
+    fontSize: 8.8,
+    fontWeight: '900',
+    letterSpacing: 0.6,
+  },
+  routePoiTitle: {
+    marginTop: 1,
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  routePoiRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    alignItems: 'flex-start',
+  },
+  routePoiIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primarySofter,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  routePoiCopy: {
+    flex: 1,
+  },
+  routePoiName: {
+    color: colors.text,
+    fontSize: 11.5,
+    fontWeight: '900',
+  },
+  routePoiMeta: {
+    marginTop: 1,
+    color: colors.accentDark,
+    fontSize: 9.5,
+    fontWeight: '800',
+    textTransform: 'capitalize',
+  },
+  routePoiTip: {
+    marginTop: 2,
+    color: colors.textSecondary,
+    fontSize: 9.5,
+    lineHeight: 14,
   },
   summaryCard: {
     flex: 1,

@@ -43,6 +43,7 @@ export const NavigationMap = ({
   rerouting = false,
   voiceGuidance = true,
   trailPreview = null,
+  routePois = [],
 }) => {
   const [following, setFollowing] = useState(liveGps);
   const [basemapFailed, setBasemapFailed] = useState(false);
@@ -82,8 +83,13 @@ export const NavigationMap = ({
           'trail-end',
         )]
         : []),
+      ...routePois.map(place => pointFeature(
+        'route-poi-' + place.id,
+        [place.lng, place.lat],
+        'poi',
+      )),
     ],
-  }), [geometry.coordinates, target.lat, target.lng, trailPreview]);
+  }), [geometry.coordinates, target.lat, target.lng, trailPreview, routePois]);
 
   return <View style={[styles.card, shadows.card]}>
       <View style={[styles.mapFrame, liveGps && styles.mapFrameLive]}>
@@ -170,6 +176,7 @@ export const NavigationMap = ({
                   ['get', 'role'],
                   'destination', colors.accent,
                   'trail-end', colors.accentDark,
+                  'poi', colors.accentDark,
                   colors.primary,
                 ],
                 'circle-stroke-color': colors.white,

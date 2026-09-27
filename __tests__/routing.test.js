@@ -6,7 +6,11 @@ import {
   routeBounds,
 } from '../src/core/routing/graph.jsx';
 import { classifyTurn } from '../src/core/routing/maneuvers.jsx';
-import { nextRouteManeuver, projectPositionOntoRoute } from '../src/core/routing/routeProgress.jsx';
+import {
+  nextRouteManeuver,
+  placesAlongRoute,
+  projectPositionOntoRoute,
+} from '../src/core/routing/routeProgress.jsx';
 import { calculateOfflineRoute } from '../src/domain/usecases/offlineNavigation.jsx';
 
 const graph = {
@@ -232,6 +236,25 @@ describe('offline routing core', () => {
       instruction: 'Continue onto Second Road',
     }));
     expect(next.distanceKm).toBeGreaterThan(0);
+  });
+
+  test('finds offline places ahead inside the route corridor', () => {
+    const route = calculateOfflineRoute({
+      graph,
+      from: { lat: 7, lng: 125 },
+      to: { lat: 7, lng: 125.02 },
+      mode: 'walk',
+      maxSnapDistanceKm: 0.2,
+    });
+    const places = placesAlongRoute(route, [
+      { id: 'ahead', name: 'Ahead', lat: 7.0002, lng: 125.015 },
+      { id: 'far', name: 'Far away', lat: 7.01, lng: 125.015 },
+      { id: 'behind', name: 'Behind', lat: 7, lng: 125.002 },
+    ], 0.5, { corridorM: 100 });
+
+    expect(places.map(place => place.id)).toEqual(['ahead']);
+    expect(places[0].distanceAheadKm).toBeGreaterThan(0);
+    expect(places[0].distanceFromRouteM).toBeLessThan(100);
   });
 
   test('reports coordinates outside graph coverage instead of inventing a route', () => {
