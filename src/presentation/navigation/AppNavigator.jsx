@@ -89,7 +89,10 @@ export const AppNavigator = () => {
         name: 'destination',
         destinationId
       })} /> : null}
-        {tab === 'library' ? <LibraryTab /> : null}
+        {tab === 'library' ? <LibraryTab onOpenDestination={destinationId => push({
+        name: 'destination',
+        destinationId
+      })} /> : null}
         {tab === 'safety' ? <SafetyTab /> : null}
       </View>
       <BottomNav active={tab} onChange={setTab} />
@@ -151,10 +154,12 @@ const ExploreTab = ({
   ));
   return <ExploreScreen viewModel={viewModel} initialQuery={initialQuery} onOpenDestination={onOpenDestination} />;
 };
-const LibraryTab = () => {
+const LibraryTab = ({
+  onOpenDestination
+}) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new LibraryViewModel(container.destinationDeps));
-  return <LibraryScreen viewModel={viewModel} />;
+  return <LibraryScreen viewModel={viewModel} onOpenDestination={onOpenDestination} />;
 };
 const TripsTab = ({
   onOpenDestination

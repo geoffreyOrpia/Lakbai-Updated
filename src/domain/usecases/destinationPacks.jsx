@@ -16,13 +16,21 @@ const mergeWithLibraryState = (destinations, savedMeta, manifests) => {
 };
 /** Bundled destination catalog merged with the user's SQLite library state. */
 export const listDestinationsWithState = async (deps, filter = {}) => {
-  const [catalogResult, savedMeta, manifests] = await Promise.all([deps.destinationRepository.getDestinations(filter), deps.packRepository.listSavedMeta(), deps.packRepository.listManifests()]);
+  const [catalogResult, savedMeta, manifests, favoriteIds] = await Promise.all([
+    deps.destinationRepository.getDestinations(filter),
+    deps.packRepository.listSavedMeta(),
+    deps.packRepository.listManifests(),
+    deps.favoriteRepository?.listFavoriteIds?.() ?? [],
+  ]);
   const {
     items: destinations,
     source
   } = catalogResult;
   return {
-    items: mergeWithLibraryState(destinations, savedMeta, manifests).filter(item => {
+    items: mergeWithLibraryState(destinations, savedMeta, manifests).map(item => ({
+      ...item,
+      favorite: favoriteIds.includes(item.destination.id),
+    })).filter(item => {
       const matchesCategory = !filter.category || filter.category === 'all' || item.destination.category === filter.category;
       const normalizedQuery = (filter.query ?? '').trim().toLowerCase();
       const matchesQuery = !normalizedQuery || [item.destination.name, item.destination.area, item.destination.municipality, item.destination.summary].some(value => value.toLowerCase().includes(normalizedQuery));

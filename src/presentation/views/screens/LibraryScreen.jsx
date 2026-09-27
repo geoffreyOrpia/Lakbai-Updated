@@ -9,7 +9,8 @@ import { LoadingState } from "../components/LoadingState.jsx";
 import { SectionHeader } from "../components/SectionHeader.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
 export const LibraryScreen = ({
-  viewModel
+  viewModel,
+  onOpenDestination
 }) => {
   const state = viewModel.state;
   const {
@@ -17,6 +18,7 @@ export const LibraryScreen = ({
     showConfirm
   } = useFeedback();
   const saved = viewModel.saved;
+  const favorites = viewModel.favorites;
   const available = viewModel.available;
   if (state.loading && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -77,16 +79,28 @@ export const LibraryScreen = ({
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
 
       <View style={styles.section}>
+        <SectionHeader eyebrow="For future trips" title="Favorites" />
+        <View style={styles.list}>
+          {favorites.length ? favorites.map(item => <DestinationCard
+            key={item.destination.id}
+            item={item}
+            showCover={false}
+            onPress={() => onOpenDestination?.(item.destination.id)}
+          />) : <Text style={styles.emptyText}>No favorites yet. Open a destination and tap “Add to Favorites.”</Text>}
+        </View>
+      </View>
+
+      <View style={styles.section}>
         <SectionHeader eyebrow="On this device" title="Saved packs" />
         <View style={styles.list}>
-          {saved.length ? saved.map(item => <DestinationCard key={item.destination.id} item={item} showCover={false} actionLabel={state.busyId === item.destination.id ? 'Removing…' : 'Remove'} actionDisabled={state.busyId !== null} onAction={() => void runAction(item.destination.name, item.destination.id, true)} />) : <Text style={styles.emptyText}>No destination packs are currently saved on this device.</Text>}
+          {saved.length ? saved.map(item => <DestinationCard key={item.destination.id} item={item} showCover={false} onPress={() => onOpenDestination?.(item.destination.id)} actionLabel={state.busyId === item.destination.id ? 'Removing…' : 'Remove'} actionDisabled={state.busyId !== null} onAction={() => void runAction(item.destination.name, item.destination.id, true)} />) : <Text style={styles.emptyText}>No destination packs are currently saved on this device.</Text>}
         </View>
       </View>
 
       <View style={styles.section}>
         <SectionHeader eyebrow="Built into the app" title="Available to save" />
         <View style={styles.list}>
-          {available.length ? available.map(item => <DestinationCard key={item.destination.id} item={item} showCover={false} actionLabel={state.busyId === item.destination.id ? 'Saving…' : 'Save'} actionDisabled={state.busyId !== null} onAction={() => void runAction(item.destination.name, item.destination.id, false)} />) : <Text style={styles.emptyText}>All currently available packs are saved offline.</Text>}
+          {available.length ? available.map(item => <DestinationCard key={item.destination.id} item={item} showCover={false} onPress={() => onOpenDestination?.(item.destination.id)} actionLabel={state.busyId === item.destination.id ? 'Saving…' : 'Save'} actionDisabled={state.busyId !== null} onAction={() => void runAction(item.destination.name, item.destination.id, false)} />) : <Text style={styles.emptyText}>All currently available packs are saved offline.</Text>}
         </View>
       </View>
 

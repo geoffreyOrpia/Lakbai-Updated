@@ -18,6 +18,9 @@ export class LibraryViewModel extends ViewModel {
   get saved() {
     return this.state.items.filter(item => item.saved);
   }
+  get favorites() {
+    return this.state.items.filter(item => item.favorite);
+  }
   get available() {
     return this.state.items.filter(item => item.destination.status === 'available' && !item.saved);
   }

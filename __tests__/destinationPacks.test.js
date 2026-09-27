@@ -35,6 +35,9 @@ const createDeps = () => ({
     getSavedPack: jest.fn(),
     getBundledPack: jest.fn(),
   },
+  favoriteRepository: {
+    listFavoriteIds: jest.fn().mockResolvedValue(['samal']),
+  },
 });
 
 describe('destination pack use cases', () => {
@@ -48,12 +51,14 @@ describe('destination pack use cases', () => {
       expect.objectContaining({
         destination: destinations[0],
         saved: true,
+        favorite: true,
         savedVersion: 1,
         updateAvailable: true,
       }),
       expect.objectContaining({
         destination: destinations[1],
         saved: false,
+        favorite: false,
         savedVersion: null,
         updateAvailable: false,
       }),

@@ -1,6 +1,7 @@
 import { loadPackForViewing, removePackFromLibrary, savePackToLibrary } from "../../domain/usecases/destinationPacks.jsx";
 import { userMessage } from "../../core/errors/appError.jsx";
 import { openDirectionsToPlace } from "../../domain/usecases/directions.jsx";
+import { isFavoriteDestination, toggleDestinationFavorite } from "../../domain/usecases/favorites.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 /** Destination detail: bundled preview, library state, trails, and notes. */
 export class DestinationViewModel extends ViewModel {
@@ -12,6 +13,7 @@ export class DestinationViewModel extends ViewModel {
       busy: false,
       directionsBusyId: null,
       saved: false,
+      favorite: false,
       error: null
     });
     this.deps = deps;
@@ -28,14 +30,18 @@ export class DestinationViewModel extends ViewModel {
       error: null
     });
     try {
-      const {
+      const [{
         pack,
         source
-      } = await loadPackForViewing(this.deps, this.destinationId);
+      }, favorite] = await Promise.all([
+        loadPackForViewing(this.deps, this.destinationId),
+        isFavoriteDestination(this.deps, this.destinationId),
+      ]);
       this.setState({
         pack,
         source,
         saved: source === 'library',
+        favorite,
         error: pack || source === 'bundled' ? null : 'This destination pack is not bundled with this version of LakbayLokal yet.'
       });
     } catch (error) {
@@ -49,6 +55,23 @@ export class DestinationViewModel extends ViewModel {
       this.setState({
         loading: false
       });
+    }
+  };
+  toggleFavorite = async () => {
+    try {
+      const favorite = await toggleDestinationFavorite(this.deps, this.destinationId, this.state.favorite);
+      this.setState({
+        favorite
+      });
+      return {
+        ok: true,
+        message: favorite ? 'Added to Favorites.' : 'Removed from Favorites.'
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        message: userMessage(error, 'Favorite could not be updated.')
+      };
     }
   };
   saveToLibrary = async () => {

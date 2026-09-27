@@ -30,6 +30,9 @@ const openDatabase = async () => {
   if (currentVersion < 3) {
     await migrateToV3(db);
   }
+  if (currentVersion < 4) {
+    await migrateToV4(db);
+  }
   await seedBundledContent(db);
   return db;
 };
@@ -117,6 +120,15 @@ const migrateToV3 = async db => {
   await db.execAsync(`
     DROP TABLE IF EXISTS local_accounts;
     PRAGMA user_version = 3;
+  `);
+};
+const migrateToV4 = async db => {
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS favorite_destinations (
+      destination_id TEXT PRIMARY KEY NOT NULL,
+      favorited_at INTEGER NOT NULL
+    );
+    PRAGMA user_version = 4;
   `);
 };
 

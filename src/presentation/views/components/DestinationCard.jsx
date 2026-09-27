@@ -15,6 +15,7 @@ export const DestinationCard = ({
   const {
     destination,
     saved,
+    favorite,
     updateAvailable
   } = item;
   const available = destination.status === 'available';
@@ -33,6 +34,7 @@ export const DestinationCard = ({
               {destination.area}
             </Text>
           </View>
+          {favorite ? <Ionicons accessibilityLabel="Favorite destination" name="heart" size={16} color={colors.danger} /> : null}
           {onPress ? <Ionicons name="chevron-forward" size={16} color={colors.faint} /> : null}
         </View>
 

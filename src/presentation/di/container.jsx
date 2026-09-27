@@ -1,10 +1,12 @@
 import { createDestinationCacheDao } from "../../data/local/sqlite/destinationCacheDao.jsx";
+import { createFavoriteDao } from "../../data/local/sqlite/favoriteDao.jsx";
 import { createItineraryDao } from "../../data/local/sqlite/itineraryDao.jsx";
 import { createPackContentDao } from "../../data/local/sqlite/packContentDao.jsx";
 import { createPackMetaDao } from "../../data/local/sqlite/packMetaDao.jsx";
 import { createPreferencesDao } from "../../data/local/sqlite/preferencesDao.jsx";
 import { createSafetyDao } from "../../data/local/sqlite/safetyDao.jsx";
 import { LocalDestinationRepository } from "../../data/repositories/destinationRepository.jsx";
+import { LocalFavoriteRepository } from "../../data/repositories/favoriteRepository.jsx";
 import { LocalItineraryRepository } from "../../data/repositories/itineraryRepository.jsx";
 import { PackRepositoryImpl } from "../../data/repositories/packRepository.jsx";
 import { LocalPreferencesRepository } from "../../data/repositories/preferencesRepository.jsx";
@@ -19,6 +21,7 @@ import { createPhoneService } from "../../data/services/phoneService.jsx";
 const buildContainer = () => {
   // Local storage
   const destinationCacheDao = createDestinationCacheDao();
+  const favoriteDao = createFavoriteDao();
   const packContentDao = createPackContentDao();
   const packMetaDao = createPackMetaDao();
   const preferencesDao = createPreferencesDao();
@@ -27,6 +30,7 @@ const buildContainer = () => {
 
   // Repositories
   const destinationRepository = new LocalDestinationRepository(destinationCacheDao);
+  const favoriteRepository = new LocalFavoriteRepository(favoriteDao);
   const packRepository = new PackRepositoryImpl(packContentDao, packMetaDao);
   const preferencesRepository = new LocalPreferencesRepository(preferencesDao);
   const itineraryRepository = new LocalItineraryRepository(itineraryDao);
@@ -40,7 +44,8 @@ const buildContainer = () => {
   // Use case dependency bundles
   const destinationDeps = {
     destinationRepository,
-    packRepository
+    packRepository,
+    favoriteRepository
   };
   const preferencesDeps = {
     preferencesRepository

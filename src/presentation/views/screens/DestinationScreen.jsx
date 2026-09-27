@@ -39,6 +39,13 @@ export const DestinationScreen = ({
       onConfirm: () => void performLibraryAction()
     });
   };
+  const toggleFavorite = async () => {
+    const result = await viewModel.toggleFavorite();
+    showSnackbar({
+      message: result.message,
+      tone: result.ok ? 'success' : 'error'
+    });
+  };
   if (state.loading) {
     return <View style={styles.centerScreen}>
         <LoadingState title="Opening destination guide" text="Reading the bundled guide and your local Library state." />
@@ -77,6 +84,19 @@ export const DestinationScreen = ({
         <Pill icon="archive-outline" text={formatSizeKb(pack.sizeKb)} />
         {state.saved ? <Pill icon="checkmark-circle" text="Offline ready" tone="primary" /> : null}
       </View>
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ selected: state.favorite }}
+        accessibilityLabel={state.favorite ? `Remove ${destination.name} from Favorites` : `Add ${destination.name} to Favorites`}
+        onPress={() => void toggleFavorite()}
+        style={({ pressed }) => [styles.favoriteButton, state.favorite && styles.favoriteButtonActive, pressed && styles.pressed]}
+      >
+        <Ionicons name={state.favorite ? "heart" : "heart-outline"} size={18} color={state.favorite ? colors.danger : colors.primary} />
+        <Text style={[styles.favoriteButtonText, state.favorite && styles.favoriteButtonTextActive]}>
+          {state.favorite ? 'Saved to Favorites' : 'Add to Favorites'}
+        </Text>
+      </Pressable>
 
       <Pressable accessibilityRole="button" disabled={state.busy} onPress={() => void runLibraryAction()} style={({
       pressed
@@ -333,6 +353,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
     ...shadows.card
+  },
+  favoriteButton: {
+    minHeight: 46,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.white,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs
+  },
+  favoriteButtonActive: {
+    borderColor: '#F2CFCF',
+    backgroundColor: colors.dangerSoft
+  },
+  favoriteButtonText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: '900'
+  },
+  favoriteButtonTextActive: {
+    color: colors.danger
   },
   ctaRemove: {
     backgroundColor: colors.white,
