@@ -84,7 +84,8 @@ export const DestinationScreen = ({
         <Pill icon="time-outline" text={formatRelativeTime(pack.updatedAt)} />
         <Pill icon="archive-outline" text={formatSizeKb(pack.sizeKb)} />
         {state.saved ? <Pill icon="checkmark-circle" text="Offline ready" tone="primary" /> : null}
-        {state.offlineBundle?.mapUri ? <Pill icon="folder-open-outline" text="Local map file" /> : null}
+        {state.offlineBundle?.contextMapUri ? <Pill icon="map-outline" text="Regional map saved" /> : null}
+        {state.offlineBundle?.basemapUri ? <Pill icon="trail-sign-outline" text="Offline roads & water" tone="primary" /> : null}
       </View>
 
       <Pressable
@@ -139,8 +140,20 @@ export const DestinationScreen = ({
 
       {pack.spots?.length ? <View style={styles.section}>
           <SectionHeader eyebrow="MapLibre + OpenStreetMap" title="Destination map" />
-          <DestinationMap pack={pack} offlineMapUri={state.offlineBundle?.mapUri} />
-          <InfoBanner tone="info" text="Online mode uses OpenStreetMap as the live base layer. Saved packs also provide an offline MapLibre mode that reads only the local GeoJSON file and makes no tile request. Unverified prototype trail geometry is never drawn here." />
+          <DestinationMap
+            pack={pack}
+            offlineMapUri={state.offlineBundle?.mapUri}
+            offlineContextUri={state.offlineBundle?.contextMapUri}
+            offlineBasemapUri={state.offlineBundle?.basemapUri}
+          />
+          <InfoBanner
+            tone="info"
+            text={state.offlineBundle?.basemapUri
+              ? "Offline mode uses local vector geography, the saved municipality boundary, and this pack's places. Online mode uses OpenStreetMap's live standard tiles. Unverified prototype trail geometry is never drawn here."
+              : state.offlineBundle?.contextMapUri
+              ? "Offline mode uses the saved municipality boundary and this pack's places, so geographic context remains visible without internet. A prepared regional PMTiles archive can add detailed roads, water, land, and buildings."
+              : "Save this destination pack to enable its local map files. Online mode uses OpenStreetMap's live standard tiles."}
+          />
         </View> : null}
 
       <View style={styles.section}>

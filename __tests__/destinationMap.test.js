@@ -2,6 +2,14 @@ import {
   createDestinationMapData,
   destinationMapBounds,
 } from '../src/core/maps/destinationMapData.jsx';
+import {
+  createOfflineBasemapStyle,
+  toPmtilesSourceUrl,
+} from '../src/core/maps/offlineBasemapStyle.jsx';
+import {
+  createOfflineContextMapData,
+  offlineContextMapBounds,
+} from '../src/core/maps/offlineContextMapData.jsx';
 
 describe('destination planning map data', () => {
   test('builds GeoJSON points only from coordinate-based local places', () => {
@@ -48,5 +56,49 @@ describe('destination planning map data', () => {
 
     expect(east).toBeGreaterThan(west);
     expect(north).toBeGreaterThan(south);
+  });
+
+  test('selects the destination municipality for offline regional context', () => {
+    const context = createOfflineContextMapData({
+      destination: { municipality: 'Tagum' },
+    });
+
+    expect(context.features).toHaveLength(1);
+    expect(context.features[0].properties.adm3_en).toBe('City of Tagum');
+    const [west, south, east, north] = offlineContextMapBounds(context);
+    expect(east).toBeGreaterThan(west);
+    expect(north).toBeGreaterThan(south);
+  });
+
+  test('normalizes city naming when selecting municipality context', () => {
+    const samal = createOfflineContextMapData({
+      destination: { municipality: 'Samal' },
+    });
+    const panabo = createOfflineContextMapData({
+      destination: { municipality: 'Panabo' },
+    });
+
+    expect(samal.features[0].properties.adm3_en).toBe('Island Garden City of Samal');
+    expect(panabo.features[0].properties.adm3_en).toBe('City of Panabo');
+  });
+
+  test('wraps a local file URI with the MapLibre PMTiles protocol', () => {
+    expect(toPmtilesSourceUrl('file:///maps/davao-del-norte.pmtiles'))
+      .toBe('pmtiles://file:///maps/davao-del-norte.pmtiles');
+  });
+
+  test('creates a local vector style with recognizable geographic layers', () => {
+    const style = createOfflineBasemapStyle('file:///maps/davao-del-norte.pmtiles');
+
+    expect(style.sources['offline-basemap']).toEqual(expect.objectContaining({
+      type: 'vector',
+      url: 'pmtiles://file:///maps/davao-del-norte.pmtiles',
+    }));
+    expect(style.layers.map(layer => layer.id)).toEqual(expect.arrayContaining([
+      'offline-earth',
+      'offline-water',
+      'offline-buildings',
+      'offline-roads',
+    ]));
   });
 });

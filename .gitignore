@@ -10,6 +10,7 @@ web-build/
 expo-env.d.ts
 .codex-jsx-export/
 .conversion-backups/
+.expo-map-check/
 
 # Native
 .kotlin/

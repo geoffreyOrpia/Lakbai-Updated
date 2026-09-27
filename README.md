@@ -46,12 +46,12 @@ npx expo start       # press a (Android) or i (iOS)
 - **Explore** — a Davao del Norte-only catalog with search, categories, bundled destination images, and offline place information.
 - **Optional online research** — search the live web for a place or activity within Davao del Norte through the device's secure browser; no app backend or account is required.
 - **Destination routes** — open a destination or point of interest in Google Maps when connected, then choose **Your location** as the starting point.
-- **Local library** — save built-in packs to a personal SQLite library and materialize their guide, map, routes, and bundled image files into durable app document storage without an internet download.
+- **Local library** — save built-in packs to a personal SQLite library and materialize their guide, places, municipality map context, routes, and bundled image files into durable app document storage without an internet download.
 - **Verified-route policy** — prototype trail geometry is hidden from release builds until every waypoint is checked against an authoritative local or mapping source.
 - **Trips** — personal itineraries with a multi-stop builder, reordering, and per-trip offline-readiness scoring.
-- **Local Library** — saved-pack summary and library management. Saving a pack materializes durable guide, GeoJSON map, route-plan, image, and photo-metadata files under app document storage.
+- **Local Library** — saved-pack summary and library management. Saving a pack materializes durable guide, place GeoJSON, municipality-context GeoJSON, route-plan, image, and photo-metadata files under app document storage.
 - **Safety** — a persisted checklist plus emergency contacts aggregated from saved packs.
 
 ## Version 1 technology rules
 
-Free and open-source only: React Native + Expo 54, SQLite, expo-location, expo-file-system, MapLibre React Native, OpenStreetMap for the live online base map, react-native-svg, and bundled destination content. Offline maps use LakbayLokal's own saved GeoJSON files rather than bulk-downloading OpenStreetMap tiles. MapLibre contains custom native code, so the map-enabled app requires an Expo development/native build rather than Expo Go. No paid APIs, Firebase, account service, server, or cloud dependency.
+Free and open-source only: React Native + Expo 54, SQLite, expo-location, expo-file-system, MapLibre React Native, OpenStreetMap for the live online base map, react-native-svg, and bundled destination content. Saved packs keep both LakbayLokal's local places and an MIT-licensed 2023 PSGC municipality boundary for recognizable offline regional context. A prepared Davao del Norte PMTiles archive can additionally provide offline roads, water, land, and buildings from Protomaps/OpenStreetMap data without bulk-downloading the public OpenStreetMap tile service; run `npm run maps:prepare` after installing the official PMTiles CLI. MapLibre contains custom native code, so the map-enabled app requires an Expo development/native build rather than Expo Go. No paid APIs, Firebase, account service, server, or cloud dependency.

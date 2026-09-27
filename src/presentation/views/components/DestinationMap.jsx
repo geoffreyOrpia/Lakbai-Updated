@@ -2,6 +2,8 @@ import { Camera, GeoJSONSource, Layer, Map } from '@maplibre/maplibre-react-nati
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { createDestinationMapData, destinationMapBounds } from "../../../core/maps/destinationMapData.jsx";
+import { createOfflineBasemapStyle } from "../../../core/maps/offlineBasemapStyle.jsx";
+import { createOfflineContextMapData, offlineContextMapBounds } from "../../../core/maps/offlineContextMapData.jsx";
 import { colors, radius, spacing } from "../../../theme.jsx";
 
 const OSM_STYLE = {
@@ -34,9 +36,16 @@ const OFFLINE_STYLE = {
   }],
 };
 
-export const DestinationMap = ({ pack, offlineMapUri = null }) => {
+export const DestinationMap = ({
+  pack,
+  offlineMapUri = null,
+  offlineContextUri = null,
+  offlineBasemapUri = null,
+}) => {
   const geojson = createDestinationMapData(pack);
   const bounds = destinationMapBounds(geojson);
+  const contextGeojson = createOfflineContextMapData(pack);
+  const contextBounds = offlineContextMapBounds(contextGeojson);
   const canUseOffline = Boolean(offlineMapUri);
   const [mode, setMode] = useState(canUseOffline ? 'offline' : 'online');
   useEffect(() => {
@@ -47,7 +56,13 @@ export const DestinationMap = ({ pack, offlineMapUri = null }) => {
   if (!bounds) return null;
 
   const offline = mode === 'offline' && canUseOffline;
+  const detailedOffline = offline && Boolean(offlineBasemapUri);
+  const hasOfflineContext = offline && Boolean(offlineContextUri);
+  const offlineStyle = detailedOffline
+    ? createOfflineBasemapStyle(offlineBasemapUri)
+    : OFFLINE_STYLE;
   const mapData = offline ? offlineMapUri : geojson;
+  const activeBounds = hasOfflineContext ? (contextBounds ?? bounds) : bounds;
   return <View style={styles.card}>
       {canUseOffline ? <View style={styles.modeRow}>
           <MapModeButton label="Offline pack" active={offline} onPress={() => setMode('offline')} />
@@ -55,16 +70,17 @@ export const DestinationMap = ({ pack, offlineMapUri = null }) => {
         </View> : null}
       <View style={styles.mapFrame}>
         <Map
+          key={offline ? (detailedOffline ? 'offline-detailed' : 'offline-context') : 'online'}
           style={styles.map}
-          mapStyle={offline ? OFFLINE_STYLE : OSM_STYLE}
-          attribution={!offline}
+          mapStyle={offline ? offlineStyle : OSM_STYLE}
+          attribution={!offline || detailedOffline}
           attributionPosition={{ bottom: 8, right: 8 }}
           logo={false}
           compass
           compassPosition={{ top: 8, right: 8 }}
         >
           <Camera initialViewState={{
-            bounds,
+            bounds: activeBounds,
             padding: {
               top: 44,
               right: 44,
@@ -72,6 +88,27 @@ export const DestinationMap = ({ pack, offlineMapUri = null }) => {
               left: 44,
             },
           }} />
+          {hasOfflineContext ? <GeoJSONSource id="lakbaylokal-context" data={offlineContextUri}>
+              <Layer
+                id="lakbaylokal-context-fill"
+                type="fill"
+                source="lakbaylokal-context"
+                paint={{
+                  'fill-color': colors.primarySofter,
+                  'fill-opacity': detailedOffline ? 0.12 : 0.78,
+                }}
+              />
+              <Layer
+                id="lakbaylokal-context-boundary"
+                type="line"
+                source="lakbaylokal-context"
+                paint={{
+                  'line-color': colors.primary,
+                  'line-opacity': detailedOffline ? 0.45 : 0.72,
+                  'line-width': 1.6,
+                }}
+              />
+            </GeoJSONSource> : null}
           <GeoJSONSource id="lakbaylokal-places" data={mapData}>
             <Layer
               id="lakbaylokal-place-dots"
@@ -88,8 +125,12 @@ export const DestinationMap = ({ pack, offlineMapUri = null }) => {
         </Map>
       </View>
       <Text style={styles.caption}>
-        {offline
-          ? 'Offline map: MapLibre is reading the GeoJSON file saved in this pack. No OpenStreetMap tile request is made in this mode.'
+        {detailedOffline
+          ? 'Detailed offline map: local vector roads, water, land, buildings, municipality context, and saved places. No network tiles are requested.'
+          : hasOfflineContext
+          ? 'Offline regional context: the municipality boundary and saved places are loaded from local GeoJSON files. No network tiles are requested.'
+          : offline
+          ? 'Offline fallback: saved places are loaded from the pack without network tiles.'
           : 'Live base map: © OpenStreetMap contributors · LakbayLokal markers come from the local destination catalog.'}
       </Text>
     </View>;

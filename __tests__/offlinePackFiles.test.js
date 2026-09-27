@@ -6,6 +6,7 @@ const pack = {
   updatedAt: '2026-09-27T08:00:00.000Z',
   destination: {
     name: 'Tagum City',
+    municipality: 'Tagum',
     photos: [{
       key: 'tagum-cathedral',
       credit: 'Example',
@@ -32,6 +33,7 @@ describe('offline pack file serialization', () => {
     const files = buildOfflinePackFiles(pack, 12345, ['images/tagum-cathedral.jpg']);
 
     expect(Object.keys(files).sort()).toEqual([
+      'context.geojson',
       'manifest.json',
       'pack.json',
       'photos.json',
@@ -39,6 +41,10 @@ describe('offline pack file serialization', () => {
       'routes.json',
     ]);
     expect(JSON.parse(files['places.geojson']).features[0].geometry.coordinates).toEqual([125.8071, 7.4477]);
+    const context = JSON.parse(files['context.geojson']);
+    expect(context.type).toBe('FeatureCollection');
+    expect(context.features).toHaveLength(1);
+    expect(context.features[0].properties.adm3_en).toBe('City of Tagum');
     expect(JSON.parse(files['routes.json'])).toEqual(pack.routeSuggestions);
     expect(JSON.parse(files['photos.json'])).toEqual(pack.destination.photos);
   });
@@ -50,6 +56,14 @@ describe('offline pack file serialization', () => {
       packId: 'tagum',
       version: 4,
       savedAt: 12345,
+      format: 2,
+      files: expect.objectContaining({
+        map: 'places.geojson',
+        contextMap: 'context.geojson',
+      }),
+      mapContext: expect.objectContaining({
+        license: 'MIT',
+      }),
       imageStorage: 'saved-pack-files',
       photoKeys: ['tagum-cathedral'],
       photoFiles: ['images/tagum-cathedral.jpg'],
