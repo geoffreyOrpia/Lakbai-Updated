@@ -5,12 +5,16 @@ const sizeInKb = value => Math.max(1, Math.round(JSON.stringify(value).length / 
 const regionDestinations = destinations.filter(destination => destination.province === REGION_PROVINCE);
 const regionPacks = packs
   .filter(pack => regionDestinations.some(destination => destination.id === pack.id))
-  .map(pack => ({
-    ...pack,
+  .map(pack => {
     // Prototype trail lines are kept out of release navigation until a local
     // tourism or mapping authority verifies every waypoint.
-    trails: pack.trails.filter(trail => trail.routeVerified === true)
-  }));
+    const verifiedTrails = pack.trails.filter(trail => trail.routeVerified === true);
+    return {
+      ...pack,
+      trails: verifiedTrails,
+      withheldTrailsCount: pack.trails.length - verifiedTrails.length
+    };
+  });
 const packById = new Map(regionPacks.map(pack => [pack.id, pack]));
 export const seedDestinations = regionDestinations.map(destination => {
   const pack = packById.get(destination.id);
@@ -19,7 +23,8 @@ export const seedDestinations = regionDestinations.map(destination => {
     version: pack?.version ?? 0,
     sizeKb: pack ? sizeInKb(pack) : null,
     spotsCount: pack?.spots.length ?? null,
-    trailsCount: pack?.trails.length ?? null
+    trailsCount: pack?.trails.length ?? null,
+    withheldTrailsCount: pack?.withheldTrailsCount ?? 0
   };
 });
 const destinationById = new Map(seedDestinations.map(destination => [destination.id, destination]));
@@ -41,5 +46,6 @@ export const seedManifests = seedPacks.map(pack => ({
   updatedAt: pack.updatedAt,
   sizeKb: pack.sizeKb,
   trailsCount: pack.trails.length,
-  spotsCount: pack.spots.length
+  spotsCount: pack.spots.length,
+  withheldTrailsCount: pack.withheldTrailsCount
 }));

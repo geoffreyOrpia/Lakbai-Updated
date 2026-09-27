@@ -126,12 +126,24 @@ export const DestinationScreen = ({
         </View>
       </View>
 
-      {pack.trails.length ? <View style={styles.section}>
-          <SectionHeader eyebrow="Offline trails" title="Saved trails" />
-          <View style={styles.list}>
-            {pack.trails.map(trail => <Pressable key={trail.id} accessibilityRole="button" accessibilityLabel={`Open ${trail.name} trail navigator`} onPress={() => viewModel.openTrail(trail.id)} style={({
-          pressed
-        }) => [[styles.card, shadows.card], pressed && styles.pressed]}>
+      {pack.trails.length || pack.withheldTrailsCount ? <View style={styles.section}>
+          <SectionHeader eyebrow="Offline trails" title="Trail navigation" />
+          {pack.withheldTrailsCount ? <InfoBanner
+            tone="warn"
+            text={`${pack.withheldTrailsCount} prototype ${pack.withheldTrailsCount === 1 ? 'route is' : 'routes are'} intentionally hidden until every waypoint is verified by a reliable local or mapping source.`}
+          /> : null}
+          {pack.trails.length ? <View style={styles.list}>
+            {pack.trails.map(trail => <Pressable
+              key={trail.id}
+              accessibilityRole="button"
+              accessibilityLabel={state.downloaded ? `Open ${trail.name} trail navigator` : `Save ${destination.name} to your Library to unlock ${trail.name}`}
+              accessibilityState={{
+                disabled: !state.downloaded
+              }}
+              disabled={!state.downloaded}
+              onPress={() => viewModel.openTrail(trail.id)}
+              style={({ pressed }) => [[styles.card, shadows.card], !state.downloaded && styles.trailLocked, pressed && state.downloaded && styles.pressed]}
+            >
                 <TrailMiniMap trail={trail} height={130} />
                 <View style={styles.trailBody}>
                   <Text style={styles.trailName}>{trail.name}</Text>
@@ -143,13 +155,13 @@ export const DestinationScreen = ({
                   <Text style={styles.trailDescription} numberOfLines={2}>
                     {trail.description}
                   </Text>
-                  <View style={styles.trailOpen}>
-                    <Text style={styles.trailOpenText}>Open trail navigator</Text>
-                    <Ionicons name="navigate" size={14} color={colors.primary} />
+                  <View style={[styles.trailOpen, !state.downloaded && styles.trailOpenLocked]}>
+                    <Text style={[styles.trailOpenText, !state.downloaded && styles.trailOpenTextLocked]}>{state.downloaded ? 'Open trail navigator' : 'Save to Library to unlock'}</Text>
+                    <Ionicons name={state.downloaded ? 'navigate' : 'lock-closed'} size={14} color={state.downloaded ? colors.primary : colors.muted} />
                   </View>
                 </View>
               </Pressable>)}
-          </View>
+          </View> : null}
         </View> : null}
 
       {pack.spots.length ? <View style={styles.section}>
@@ -441,6 +453,9 @@ const styles = StyleSheet.create({
   trailBody: {
     gap: spacing.xs
   },
+  trailLocked: {
+    opacity: 0.72
+  },
   trailName: {
     color: colors.text,
     fontSize: 14.5,
@@ -466,12 +481,18 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: colors.primarySofter
   },
+  trailOpenLocked: {
+    backgroundColor: colors.surfaceMuted
+  },
   trailOpenText: {
     color: colors.primary,
     fontSize: 10.5,
     fontWeight: '900',
     textTransform: 'uppercase',
     letterSpacing: 0.3
+  },
+  trailOpenTextLocked: {
+    color: colors.muted
   },
   spotRow: {
     flexDirection: 'row',

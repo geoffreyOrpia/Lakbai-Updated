@@ -1,9 +1,12 @@
 import { seedPacks } from '../src/data/local/seed/catalog.jsx';
+import { packs as rawPacks } from '../src/data/local/seed/packs.jsx';
 
 describe('release catalog safety', () => {
   test('does not expose prototype trail geometry as verified release trails', () => {
     for (const pack of seedPacks) {
       expect(pack.trails.every(trail => trail.routeVerified === true)).toBe(true);
+      const rawPack = rawPacks.find(candidate => candidate.id === pack.id);
+      expect(pack.trails.length + pack.withheldTrailsCount).toBe(rawPack?.trails.length ?? 0);
     }
   });
 
