@@ -6,7 +6,7 @@ const LOCAL_OWNER_KEY = 'local-device';
 
 /** Personal itineraries stored locally for this device. */
 export class TripsViewModel extends ViewModel {
-  constructor(tripsDeps, destinationDeps) {
+  constructor(tripsDeps, destinationDeps, nav = {}) {
     super({
       mode: 'list',
       trips: [],
@@ -25,18 +25,21 @@ export class TripsViewModel extends ViewModel {
     });
     this.tripsDeps = tripsDeps;
     this.destinationDeps = destinationDeps;
+    this.nav = nav;
   }
   onInit = () => {
     void this.load();
   };
   /** Downloaded-pack readiness for a trip's stops. */
   tripReadiness = trip => {
-    const ready = trip.stops.filter(stop => this.state.downloadedIds.includes(stop.destinationId)).length;
+    const missingStops = trip.stops.filter(stop => !this.state.downloadedIds.includes(stop.destinationId));
+    const ready = trip.stops.length - missingStops.length;
     const total = trip.stops.length;
     return {
       ready,
       total,
-      percent: total ? Math.round(ready / total * 100) : 0
+      percent: total ? Math.round(ready / total * 100) : 0,
+      missingStops
     };
   };
   load = async () => {
@@ -112,6 +115,9 @@ export class TripsViewModel extends ViewModel {
       selected: trip,
       error: null
     });
+  };
+  openDestination = destinationId => {
+    this.nav.onOpenDestination?.(destinationId);
   };
   backToList = () => {
     this.setState({

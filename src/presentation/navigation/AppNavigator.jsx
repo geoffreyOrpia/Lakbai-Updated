@@ -85,7 +85,10 @@ export const AppNavigator = () => {
         name: 'destination',
         destinationId
       })} /> : null}
-        {tab === 'trips' ? <TripsTab /> : null}
+        {tab === 'trips' ? <TripsTab onOpenDestination={destinationId => push({
+        name: 'destination',
+        destinationId
+      })} /> : null}
         {tab === 'downloads' ? <DownloadsTab /> : null}
         {tab === 'safety' ? <SafetyTab /> : null}
       </View>
@@ -153,9 +156,13 @@ const DownloadsTab = () => {
   const viewModel = useViewModel(() => new DownloadsViewModel(container.destinationDeps));
   return <DownloadsScreen viewModel={viewModel} />;
 };
-const TripsTab = () => {
+const TripsTab = ({
+  onOpenDestination
+}) => {
   const container = getContainer();
-  const viewModel = useViewModel(() => new TripsViewModel(container.tripsDeps, container.destinationDeps));
+  const viewModel = useViewModel(() => new TripsViewModel(container.tripsDeps, container.destinationDeps, {
+    onOpenDestination
+  }));
   return <TripsScreen viewModel={viewModel} />;
 };
 const SafetyTab = () => {

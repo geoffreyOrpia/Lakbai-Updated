@@ -126,6 +126,9 @@ const TripCard = ({
             <Text style={styles.readinessPercent}>{readiness.percent}%</Text>
           </View>
           <ProgressBar percent={readiness.percent} />
+          {readiness.missingStops.length ? <Text style={styles.readinessMissing} numberOfLines={2}>
+              Needs Library: {readiness.missingStops.map(stop => stop.destinationName).join(', ')}
+            </Text> : <Text style={styles.readinessReady}>All stops are ready offline.</Text>}
         </View>
       </View>
     </Pressable>;
@@ -365,6 +368,34 @@ const TripDetails = ({
           <Text style={styles.localDetailText}>Saved locally · {readiness.ready}/{readiness.total} stops offline-ready</Text>
         </View>
       </View>
+
+      {readiness.missingStops.length ? <View style={[styles.missingCard, shadows.soft]}>
+          <View style={styles.missingHeader}>
+            <Ionicons name="cloud-offline-outline" size={18} color={colors.accent} />
+            <View style={styles.missingCopy}>
+              <Text style={styles.missingTitle}>Finish offline preparation</Text>
+              <Text style={styles.missingText}>Save these destination packs to your Library before traveling without a connection.</Text>
+            </View>
+          </View>
+          <View style={styles.missingList}>
+            {readiness.missingStops.map(stop => <Pressable
+              key={stop.destinationId}
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${stop.destinationName} to save it for offline use`}
+              onPress={() => viewModel.openDestination(stop.destinationId)}
+              style={({ pressed }) => [styles.missingRow, pressed && styles.pressed]}
+            >
+                <View style={styles.missingRowCopy}>
+                  <Text style={styles.missingRowName}>{stop.destinationName}</Text>
+                  <Text style={styles.missingRowMeta}>{stop.municipality}</Text>
+                </View>
+                <View style={styles.missingOpen}>
+                  <Text style={styles.missingOpenText}>Open</Text>
+                  <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+                </View>
+              </Pressable>)}
+          </View>
+        </View> : <InfoBanner tone="info" text="Every stop in this itinerary is saved to your local Library and ready for offline use." />}
 
       {trip.notes ? <View style={[styles.noteCard, shadows.soft]}>
           <Text style={styles.noteLabel}>TRIP NOTES</Text>
@@ -612,6 +643,18 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 10.5,
     fontWeight: '900'
+  },
+  readinessMissing: {
+    color: colors.accent,
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '700'
+  },
+  readinessReady: {
+    color: colors.primary,
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '700'
   },
   mutedCenter: {
     color: colors.muted,
@@ -893,6 +936,68 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 10,
     fontWeight: '800'
+  },
+  missingCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    backgroundColor: colors.accentSoft,
+    padding: spacing.md,
+    gap: spacing.sm
+  },
+  missingHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm
+  },
+  missingCopy: {
+    flex: 1
+  },
+  missingTitle: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '900'
+  },
+  missingText: {
+    marginTop: 2,
+    color: colors.textSecondary,
+    fontSize: 10.8,
+    lineHeight: 15
+  },
+  missingList: {
+    gap: spacing.xs
+  },
+  missingRow: {
+    minHeight: 48,
+    borderRadius: radius.md,
+    backgroundColor: colors.white,
+    paddingHorizontal: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm
+  },
+  missingRowCopy: {
+    flex: 1
+  },
+  missingRowName: {
+    color: colors.text,
+    fontSize: 11.5,
+    fontWeight: '800'
+  },
+  missingRowMeta: {
+    marginTop: 1,
+    color: colors.muted,
+    fontSize: 9.8
+  },
+  missingOpen: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2
+  },
+  missingOpenText: {
+    color: colors.primary,
+    fontSize: 10.5,
+    fontWeight: '900'
   },
   noteCard: {
     borderRadius: radius.lg,

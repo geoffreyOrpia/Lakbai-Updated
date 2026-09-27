@@ -29,11 +29,15 @@ const createViewModel = () => {
   const destinationRepository = {
     getDestinations: jest.fn().mockResolvedValue({ items: [], source: 'local' }),
   };
+  const nav = {
+    onOpenDestination: jest.fn(),
+  };
   const viewModel = new TripsViewModel(
     { itineraryRepository },
     { packRepository, destinationRepository },
+    nav,
   );
-  return { viewModel, itineraryRepository };
+  return { viewModel, itineraryRepository, nav };
 };
 
 describe('TripsViewModel itinerary editing', () => {
@@ -85,5 +89,40 @@ describe('TripsViewModel itinerary editing', () => {
 
     expect(viewModel.state.mode).toBe('details');
     expect(viewModel.state.selected).toBe(existingTrip);
+  });
+
+  test('reports the exact stops missing from the local Library', () => {
+    const { viewModel } = createViewModel();
+    viewModel.setState({
+      downloadedIds: ['samal'],
+    });
+    const trip = {
+      ...existingTrip,
+      stops: [
+        existingTrip.stops[0],
+        {
+          destinationId: 'tagum',
+          destinationName: 'Tagum City',
+          municipality: 'Tagum',
+          plannedTime: '',
+          note: '',
+        },
+      ],
+    };
+
+    expect(viewModel.tripReadiness(trip)).toEqual({
+      ready: 1,
+      total: 2,
+      percent: 50,
+      missingStops: [trip.stops[1]],
+    });
+  });
+
+  test('opens a missing destination through navigation', () => {
+    const { viewModel, nav } = createViewModel();
+
+    viewModel.openDestination('tagum');
+
+    expect(nav.onOpenDestination).toHaveBeenCalledWith('tagum');
   });
 });
