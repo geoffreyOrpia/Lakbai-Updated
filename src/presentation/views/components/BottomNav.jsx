@@ -36,7 +36,9 @@ export const BottomNav = ({
       <View style={[styles.bar, shadows.floating]}>
         {items.map(item => {
         const isActive = active === item.key;
-        return <Pressable key={item.key} onPress={() => onChange(item.key)} style={({
+        return <Pressable key={item.key} accessibilityRole="tab" accessibilityState={{
+          selected: isActive
+        }} accessibilityLabel={`${item.label} tab`} onPress={() => onChange(item.key)} style={({
           pressed
         }) => [styles.item, pressed && styles.pressed]}>
               <View style={[styles.iconWrap, isActive && styles.iconWrapActive]}>

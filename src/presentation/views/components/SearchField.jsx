@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
 export const SearchField = ({
   value,
@@ -9,8 +9,10 @@ export const SearchField = ({
 }) => {
   return <View style={[styles.container, shadows.soft]}>
       <Ionicons name="search-outline" size={18} color={colors.muted} />
-      <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.faint} style={styles.input} returnKeyType="search" onSubmitEditing={() => onSubmit?.(value.trim())} />
-      {value ? <Ionicons name="close-circle" size={18} color={colors.faint} onPress={() => onChangeText('')} /> : null}
+      <TextInput accessibilityLabel={placeholder} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.faint} style={styles.input} returnKeyType="search" onSubmitEditing={() => onSubmit?.(value.trim())} />
+      {value ? <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={() => onChangeText('')} style={styles.clearButton}>
+          <Ionicons name="close-circle" size={18} color={colors.faint} />
+        </Pressable> : null}
     </View>;
 };
 const styles = StyleSheet.create({
@@ -24,6 +26,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     paddingHorizontal: spacing.sm + 2
+  },
+  clearButton: {
+    width: 44,
+    height: 44,
+    marginRight: -spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   input: {
     flex: 1,

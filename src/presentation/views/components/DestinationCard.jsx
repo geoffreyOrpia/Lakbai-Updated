@@ -18,7 +18,7 @@ export const DestinationCard = ({
     updateAvailable
   } = item;
   const available = destination.status === 'available';
-  return <Pressable onPress={onPress} disabled={!onPress} style={({
+  return <Pressable accessibilityRole={onPress ? "button" : undefined} accessibilityLabel={onPress ? `Open ${destination.name}` : undefined} onPress={onPress} disabled={!onPress} style={({
     pressed
   }) => [styles.card, pressed && onPress && styles.pressed]}>
       {showCover ? <CoverArt theme={destination.coverTheme} photoKey={destination.photos?.[0]?.key} height={104} radius={radius.md - 2} /> : null}
@@ -56,7 +56,7 @@ export const DestinationCard = ({
           {actionLabel && onAction ? <Pressable accessibilityRole="button" disabled={actionDisabled} onPress={onAction} style={({
           pressed
         }) => [styles.actionButton, downloaded && styles.actionButtonRemove, actionDisabled && styles.actionButtonDisabled, pressed && !actionDisabled && styles.actionButtonPressed]}>
-              <Ionicons name={busy ? 'hourglass-outline' : downloaded ? 'trash-outline' : 'download-outline'} size={13} color={downloaded ? colors.danger : colors.onPrimary} />
+              <Ionicons name={busy ? 'hourglass-outline' : downloaded ? 'trash-outline' : 'bookmark-outline'} size={13} color={downloaded ? colors.danger : colors.onPrimary} />
               <Text style={[styles.actionText, downloaded && styles.actionTextRemove]}>{actionLabel}</Text>
             </Pressable> : null}
         </View>
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     color: colors.muted
   },
   actionButton: {
-    minHeight: 34,
+    minHeight: 44,
     paddingHorizontal: spacing.sm + 2,
     borderRadius: radius.sm + 2,
     backgroundColor: colors.primary,

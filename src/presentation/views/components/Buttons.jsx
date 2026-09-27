@@ -31,7 +31,7 @@ export const BackAction = ({
   label,
   onPress
 }) => {
-  return <Pressable onPress={onPress} style={({
+  return <Pressable accessibilityRole="button" accessibilityLabel={`Back to ${label}`} onPress={onPress} style={({
     pressed
   }) => [styles.back, pressed && styles.pressed]}>
       <Ionicons name="arrow-back" size={19} color={colors.text} />
