@@ -1,4 +1,4 @@
-import { listChecklist, listCompletedKeys, resetChecklist, setChecklistItemCompleted } from "../../domain/usecases/safety.jsx";
+import { dedupeEmergencyContacts, listChecklist, listCompletedKeys, resetChecklist, setChecklistItemCompleted } from "../../domain/usecases/safety.jsx";
 import { callVerifiedEmergencyContact } from "../../domain/usecases/emergencyContacts.jsx";
 import { userMessage } from "../../core/errors/appError.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
@@ -40,7 +40,7 @@ export class SafetyViewModel extends ViewModel {
       this.setState({
         checklist,
         completed,
-        contacts,
+        contacts: dedupeEmergencyContacts(contacts),
         error: null
       });
     } catch (error) {

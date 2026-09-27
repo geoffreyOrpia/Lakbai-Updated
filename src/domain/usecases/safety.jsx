@@ -10,3 +10,14 @@ export const setChecklistItemCompleted = async (deps, key, completed) => {
 export const resetChecklist = async deps => {
   return deps.safetyRepository.resetChecklist();
 };
+
+export const dedupeEmergencyContacts = contacts => {
+  const unique = new Map();
+  for (const contact of contacts) {
+    const key = contact.label + '|' + contact.phone;
+    if (!unique.has(key)) {
+      unique.set(key, contact);
+    }
+  }
+  return [...unique.values()];
+};
