@@ -5,7 +5,12 @@ export const LoadingState = ({
   title = 'Loading…',
   text = 'Reading saved data from this device.'
 }) => {
-  return <View accessibilityRole="progressbar" style={styles.card}>
+  return <View
+      accessibilityRole="progressbar"
+      accessibilityLabel={`${title}. ${text}`}
+      accessibilityLiveRegion="polite"
+      style={styles.card}
+    >
       <ActivityIndicator size="small" color={colors.primary} />
       <View style={styles.copy}>
         <Text style={styles.title}>{title}</Text>

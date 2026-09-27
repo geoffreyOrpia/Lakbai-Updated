@@ -54,8 +54,8 @@ export const LibraryScreen = ({
       return;
     }
     showConfirm({
-      title: 'Remove from library?',
-      message: `${item.destination.name} will no longer appear in your saved library. Its saved pack files will be removed; the content bundled inside the app remains.`,
+      title: 'Remove saved pack?',
+      message: `${item.destination.name} will be removed from your local Library and its materialized pack files will be deleted. Favorites and itineraries are kept.`,
       confirmLabel: 'Remove',
       tone: 'danger',
       onConfirm: () => void performAction(item.destination.id, 'remove')
@@ -73,7 +73,7 @@ export const LibraryScreen = ({
 
       <View>
         <Text style={styles.title}>Local Library</Text>
-        <Text style={styles.subtitle}>Manage the destination packs you saved on this device.</Text>
+        <Text style={styles.subtitle}>Manage saved offline packs, updates, and favorites stored on this device.</Text>
       </View>
 
       <View style={[styles.summaryCard, shadows.card]}>
@@ -88,7 +88,7 @@ export const LibraryScreen = ({
         </View>
         <View style={styles.readyPill}>
           <View style={styles.readyDot} />
-          <Text style={styles.readyText}>Offline</Text>
+          <Text style={styles.readyText}>Stored locally</Text>
         </View>
       </View>
 
@@ -116,9 +116,10 @@ export const LibraryScreen = ({
             item={item}
             showCover={false}
             onPress={() => onOpenDestination?.(item.destination.id)}
-            actionLabel={state.busyId === item.destination.id ? 'Working…' : item.updateAvailable ? 'Update' : 'Remove'}
+            actionLabel={state.busyId === item.destination.id ? item.updateAvailable ? 'Updating…' : 'Removing…' : item.updateAvailable ? 'Update' : 'Remove'}
             actionDisabled={state.busyId !== null}
-            onAction={() => void runAction(item)}
+            busy={state.busyId === item.destination.id}
+            onAction={() => runAction(item)}
             onFavorite={() => void toggleFavorite(item.destination.id)}
             favoriteDisabled={state.busyId !== null}
           />) : <Text style={styles.emptyText}>No destination packs are currently saved on this device.</Text>}
@@ -135,7 +136,8 @@ export const LibraryScreen = ({
             onPress={() => onOpenDestination?.(item.destination.id)}
             actionLabel={state.busyId === item.destination.id ? 'Saving…' : 'Save'}
             actionDisabled={state.busyId !== null}
-            onAction={() => void runAction(item)}
+            busy={state.busyId === item.destination.id}
+            onAction={() => runAction(item)}
             onFavorite={() => void toggleFavorite(item.destination.id)}
             favoriteDisabled={state.busyId !== null}
           />) : <Text style={styles.emptyText}>All currently available packs are saved offline.</Text>}
@@ -154,7 +156,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: spacing.md,
-    paddingBottom: 128,
+    paddingBottom: layout.tabContentBottom,
     gap: spacing.lg
   },
   title: {

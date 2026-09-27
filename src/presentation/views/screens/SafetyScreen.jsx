@@ -12,7 +12,8 @@ export const SafetyScreen = ({
   const state = viewModel.state;
   const {
     showSnackbar,
-    showToast
+    showToast,
+    showConfirm
   } = useFeedback();
   const completedCount = state.completed.length;
   const toggleItem = async (itemKey, label) => {
@@ -40,6 +41,15 @@ export const SafetyScreen = ({
         tone: 'error'
       });
     }
+  };
+  const confirmResetChecklist = () => {
+    showConfirm({
+      title: 'Reset safety checklist?',
+      message: 'All completed checklist items will be marked unfinished on this device.',
+      confirmLabel: 'Reset',
+      tone: 'danger',
+      onConfirm: () => void resetChecklist()
+    });
   };
   const callContact = async contact => {
     const result = await viewModel.callContact(contact);
@@ -77,13 +87,13 @@ export const SafetyScreen = ({
         <View style={styles.emergencyCopy}>
           <Text style={styles.emergencyTitle}>Emergency information</Text>
           <Text style={styles.emergencyText}>
-            Keep official local emergency contacts inside packs saved to your library. Call 911 when service is available.
+            Verified emergency contacts from saved packs appear below. Nationwide 911 still requires available cellular service.
           </Text>
         </View>
       </View>
 
       <View style={styles.section}>
-        <SectionHeader eyebrow="Before leaving" title={state.loading ? 'Loading checklist…' : `${completedCount}/${state.checklist.length} ready`} actionLabel={completedCount ? 'Reset' : undefined} onAction={completedCount ? () => void resetChecklist() : undefined} />
+        <SectionHeader eyebrow="Before leaving" title={state.loading ? 'Loading checklist…' : `${completedCount}/${state.checklist.length} ready`} actionLabel={completedCount ? 'Reset' : undefined} onAction={completedCount ? confirmResetChecklist : undefined} />
         <View style={[styles.checklistCard, shadows.card]}>
           {state.checklist.map((item, index) => {
           const checked = state.completed.includes(item.key);
@@ -164,7 +174,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: spacing.md,
-    paddingBottom: 128,
+    paddingBottom: layout.tabContentBottom,
     gap: spacing.lg
   },
   title: {

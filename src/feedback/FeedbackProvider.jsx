@@ -76,7 +76,11 @@ export const FeedbackProvider = ({
 
         <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
           {toast ? <View pointerEvents="none" style={styles.toastPosition}>
-              <View style={[styles.toast, toneStyle(toast.tone)]}>
+              <View
+                accessibilityRole="alert"
+                accessibilityLiveRegion="polite"
+                style={[styles.toast, toneStyle(toast.tone)]}
+              >
                 <Ionicons name={toneIcon(toast.tone)} size={16} color={toneForeground(toast.tone)} />
                 <Text style={[styles.toastText, {
               color: toneForeground(toast.tone)
@@ -87,7 +91,11 @@ export const FeedbackProvider = ({
             </View> : null}
 
           {snackbar ? <View pointerEvents="box-none" style={styles.snackbarPosition}>
-              <View style={[styles.snackbar, shadows.floating]}>
+              <View
+                accessibilityRole="alert"
+                accessibilityLiveRegion="polite"
+                style={[styles.snackbar, shadows.floating]}
+              >
                 <View style={[styles.snackbarIcon, {
               backgroundColor: toneBackground(snackbar.tone)
             }]}>
@@ -115,17 +123,22 @@ export const FeedbackProvider = ({
 
         <Modal transparent visible={Boolean(confirmation)} animationType="fade" statusBarTranslucent onRequestClose={dismissConfirm}>
           <View style={styles.confirmBackdrop}>
-            <View style={[styles.confirmCard, shadows.floating]} accessibilityRole="alert">
-              <View style={styles.confirmIcon}>
+            <View
+              style={[styles.confirmCard, shadows.floating]}
+              accessibilityRole="alert"
+              accessibilityViewIsModal
+              accessibilityLabel={`${confirmation?.title}. ${confirmation?.message}`}
+            >
+              <View style={[styles.confirmIcon, confirmation?.tone === 'danger' ? styles.confirmIconDanger : styles.confirmIconInfo]}>
                 <Ionicons name={confirmation?.tone === 'danger' ? 'warning-outline' : 'help-circle-outline'} size={22} color={confirmation?.tone === 'danger' ? colors.danger : colors.primary} />
               </View>
               <Text style={styles.confirmTitle}>{confirmation?.title}</Text>
               <Text style={styles.confirmMessage}>{confirmation?.message}</Text>
               <View style={styles.confirmActions}>
-                <Pressable accessibilityRole="button" onPress={dismissConfirm} style={({ pressed }) => [styles.confirmCancel, pressed && styles.pressed]}>
+                <Pressable accessibilityRole="button" accessibilityLabel={confirmation?.cancelLabel} onPress={dismissConfirm} style={({ pressed }) => [styles.confirmCancel, pressed && styles.pressed]}>
                   <Text style={styles.confirmCancelText}>{confirmation?.cancelLabel}</Text>
                 </Pressable>
-                <Pressable accessibilityRole="button" onPress={() => {
+                <Pressable accessibilityRole="button" accessibilityLabel={confirmation?.confirmLabel} onPress={() => {
                   const action = confirmation?.onConfirm;
                   dismissConfirm();
                   action?.();
@@ -139,7 +152,12 @@ export const FeedbackProvider = ({
 
         <Modal transparent visible={Boolean(hudMessage)} animationType="fade" statusBarTranslucent onRequestClose={() => undefined}>
           <View style={styles.hudBackdrop}>
-            <View style={[styles.hudCard, shadows.floating]}>
+            <View
+              accessibilityRole="progressbar"
+              accessibilityLabel={hudMessage}
+              accessibilityLiveRegion="polite"
+              style={[styles.hudCard, shadows.floating]}
+            >
               <ActivityIndicator size="small" color={colors.primary} />
               <Text style={styles.hudText}>{hudMessage}</Text>
             </View>
@@ -275,9 +293,14 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: radius.pill,
-    backgroundColor: colors.dangerSoft,
     alignItems: 'center',
     justifyContent: 'center'
+  },
+  confirmIconDanger: {
+    backgroundColor: colors.dangerSoft
+  },
+  confirmIconInfo: {
+    backgroundColor: colors.primarySofter
   },
   confirmTitle: {
     color: colors.text,

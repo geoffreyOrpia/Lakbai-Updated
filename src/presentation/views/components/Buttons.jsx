@@ -1,43 +1,55 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
+
 export const PrimaryButton = ({
   label,
   onPress,
   disabled = false,
   icon = 'arrow-forward'
 }) => {
-  return <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={({
-    pressed
-  }) => [styles.primary, shadows.card, disabled && styles.disabled, pressed && !disabled && styles.pressed]}>
+  return <Pressable
+    accessibilityRole="button"
+    accessibilityLabel={label}
+    accessibilityState={{ disabled }}
+    disabled={disabled}
+    onPress={onPress}
+    style={({ pressed }) => [styles.primary, shadows.card, disabled && styles.disabled, pressed && !disabled && styles.pressed]}
+  >
       <Text style={styles.primaryText}>{label}</Text>
       <Ionicons name={icon} size={17} color={colors.onPrimary} />
     </Pressable>;
 };
+
 export const SecondaryButton = ({
   label,
   onPress,
   disabled = false,
   icon
 }) => {
-  return <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={({
-    pressed
-  }) => [styles.secondary, disabled && styles.disabled, pressed && !disabled && styles.pressed]}>
+  return <Pressable
+    accessibilityRole="button"
+    accessibilityLabel={label}
+    accessibilityState={{ disabled }}
+    disabled={disabled}
+    onPress={onPress}
+    style={({ pressed }) => [styles.secondary, disabled && styles.disabled, pressed && !disabled && styles.pressed]}
+  >
       {icon ? <Ionicons name={icon} size={17} color={colors.primary} /> : null}
       <Text style={styles.secondaryText}>{label}</Text>
     </Pressable>;
 };
+
 export const BackAction = ({
   label,
   onPress
 }) => {
-  return <Pressable accessibilityRole="button" accessibilityLabel={`Back to ${label}`} onPress={onPress} style={({
-    pressed
-  }) => [styles.back, pressed && styles.pressed]}>
+  return <Pressable accessibilityRole="button" accessibilityLabel={`Back to ${label}`} onPress={onPress} style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
       <Ionicons name="arrow-back" size={19} color={colors.text} />
       <Text style={styles.backText}>{label}</Text>
     </Pressable>;
 };
+
 const styles = StyleSheet.create({
   primary: {
     minHeight: layout.touchTarget,

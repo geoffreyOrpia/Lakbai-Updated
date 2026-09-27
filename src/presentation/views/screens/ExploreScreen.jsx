@@ -41,7 +41,8 @@ export const ExploreScreen = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery]);
   const {
-    showSnackbar
+    showSnackbar,
+    showConfirm
   } = useFeedback();
   if (state.loading && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -55,7 +56,7 @@ export const ExploreScreen = ({
         <EmptyState icon="alert-circle-outline" title="Explore could not load" text={state.error} actionLabel="Try again" onAction={() => void viewModel.load()} />
       </ScrollView>;
   }
-  const runAction = async (destinationName, item) => {
+  const performAction = async (destinationName, item) => {
     const result = item.updateAvailable
       ? await viewModel.update(item.destination.id)
       : item.saved
@@ -64,6 +65,19 @@ export const ExploreScreen = ({
     showSnackbar({
       message: result.ok ? result.message.replace('Pack removed', `${destinationName} removed`) : result.message,
       tone: result.ok ? 'success' : 'error'
+    });
+  };
+  const runAction = (destinationName, item) => {
+    if (!item.saved || item.updateAvailable) {
+      void performAction(destinationName, item);
+      return;
+    }
+    showConfirm({
+      title: 'Remove saved pack?',
+      message: `${destinationName} will be removed from your local Library and its materialized pack files will be deleted. Favorites and itineraries are kept.`,
+      confirmLabel: 'Remove',
+      tone: 'danger',
+      onConfirm: () => void performAction(destinationName, item)
     });
   };
   const toggleFavorite = async packId => {
@@ -87,7 +101,7 @@ export const ExploreScreen = ({
 
       <View>
         <Text style={styles.title}>Explore</Text>
-        <Text style={styles.subtitle}>Browse Davao del Norte guides, photos, and travel notes stored on your device.</Text>
+        <Text style={styles.subtitle}>Browse local guides, save packs for offline maps, and keep favorites ready for trip planning.</Text>
       </View>
 
       <SearchField value={state.query} onChangeText={value => viewModel.setQuery(value)} onSubmit={() => undefined} />
@@ -99,9 +113,9 @@ export const ExploreScreen = ({
             <Ionicons name="globe-outline" size={20} color={colors.primary} />
           </View>
           <View style={styles.onlineCopy}>
-            <Text style={styles.onlineTitle}>Search the web for more places</Text>
+            <Text style={styles.onlineTitle}>Optional web research</Text>
             <Text style={styles.onlineText}>
-              Opens an external Google search inside the browser. Web results stay separate from the local LakbayLokal catalog and are not treated as verified app content.
+              Opens a Google search in your browser. Web results stay separate from the local LakbayLokal catalog and are not treated as verified app content.
             </Text>
           </View>
         </View>
@@ -134,7 +148,11 @@ export const ExploreScreen = ({
           onPress={onOpenDestination ? () => onOpenDestination(item.destination.id) : undefined}
           actionLabel={item.destination.status === 'available'
             ? state.busyId === item.destination.id
-              ? 'Working…'
+              ? item.updateAvailable
+                ? 'Updating…'
+                : item.saved
+                ? 'Removing…'
+                : 'Saving…'
               : item.updateAvailable
               ? 'Update'
               : item.saved
@@ -142,20 +160,31 @@ export const ExploreScreen = ({
               : 'Save'
             : undefined}
           actionDisabled={state.busyId !== null}
-          onAction={item.destination.status === 'available' ? () => void runAction(item.destination.name, item) : undefined}
+          busy={state.busyId === item.destination.id}
+          onAction={item.destination.status === 'available' ? () => runAction(item.destination.name, item) : undefined}
           onFavorite={() => void toggleFavorite(item.destination.id)}
           favoriteDisabled={state.busyId !== null}
         />)}
       </View>
 
-      {!results.length && !state.loading ? <EmptyState icon="compass-outline" title="No packs found" text="Try another destination name or category." /> : null}
+      {!results.length && !state.loading ? <EmptyState
+        icon="compass-outline"
+        title="No local packs match"
+        text="Clear the search and category filters to see the full Davao del Norte catalog."
+        actionLabel="Clear filters"
+        actionIcon="options-outline"
+        onAction={() => {
+          viewModel.setQuery('');
+          viewModel.setCategory('all');
+        }}
+      /> : null}
     </ScrollView>;
 };
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: spacing.md,
-    paddingBottom: 128,
+    paddingBottom: layout.tabContentBottom,
     gap: spacing.lg
   },
   title: {

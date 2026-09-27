@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, spacing } from "../../../theme.jsx";
+
 export const SectionHeader = ({
   eyebrow,
   title,
@@ -11,13 +12,18 @@ export const SectionHeader = ({
         {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
         <Text style={styles.title}>{title}</Text>
       </View>
-      {actionLabel && onAction ? <Pressable accessibilityRole="button" accessibilityLabel={actionLabel} onPress={onAction} hitSlop={8} style={({
-      pressed
-    }) => pressed && styles.pressed}>
+      {actionLabel && onAction ? <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={actionLabel}
+        onPress={onAction}
+        hitSlop={8}
+        style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
+      >
           <Text style={styles.action}>{actionLabel}</Text>
         </Pressable> : null}
     </View>;
 };
+
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
@@ -43,6 +49,11 @@ const styles = StyleSheet.create({
     lineHeight: 23,
     fontWeight: '800',
     letterSpacing: -0.3
+  },
+  actionButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+    marginVertical: -8
   },
   action: {
     color: colors.primary,

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, radius, spacing } from "../../../theme.jsx";
+
 const TONES = {
   info: {
     bg: colors.infoSoft,
@@ -27,22 +28,26 @@ const TONES = {
     color: colors.danger
   }
 };
+
 export const InfoBanner = ({
   tone,
   icon,
   text
 }) => {
   const palette = TONES[tone];
-  return <View style={[styles.banner, {
-    backgroundColor: palette.bg,
-    borderColor: palette.border
-  }]}>
+  return <View
+    accessibilityRole={tone === 'danger' || tone === 'warn' ? 'alert' : 'text'}
+    accessibilityLiveRegion="polite"
+    style={[styles.banner, {
+      backgroundColor: palette.bg,
+      borderColor: palette.border
+    }]}
+  >
       <Ionicons name={icon ?? palette.icon} size={17} color={palette.color} />
-      <Text style={[styles.text, {
-      color: palette.color
-    }]}>{text}</Text>
+      <Text style={[styles.text, { color: palette.color }]}>{text}</Text>
     </View>;
 };
+
 const styles = StyleSheet.create({
   banner: {
     minHeight: 46,

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { colors, radius, spacing } from "../../../theme.jsx";
+
 export const AppHeader = () => {
   return <View style={styles.header}>
       <View style={styles.brandRow}>
@@ -10,12 +11,16 @@ export const AppHeader = () => {
         </Text>
       </View>
 
-      <View style={[styles.pill, styles.pillOffline]}>
-        <Ionicons name="shield-checkmark-outline" size={13} color={colors.primary} />
-        <Text style={[styles.pillText, styles.pillTextOffline]}>Private & offline</Text>
+      <View
+        accessibilityLabel="Offline-first app. Saved travel data stays on this device."
+        style={[styles.pill, styles.pillOffline]}
+      >
+        <Ionicons name="cloud-offline-outline" size={13} color={colors.primary} />
+        <Text style={[styles.pillText, styles.pillTextOffline]}>Offline-first</Text>
       </View>
     </View>;
 };
+
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
@@ -53,8 +58,8 @@ const styles = StyleSheet.create({
     gap: 5
   },
   pillOffline: {
-    backgroundColor: colors.accentSoft,
-    borderColor: '#F3D9C4'
+    backgroundColor: colors.primarySofter,
+    borderColor: '#CBE6D5'
   },
   pillText: {
     fontSize: 10.5,

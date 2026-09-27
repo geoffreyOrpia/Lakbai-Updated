@@ -37,8 +37,8 @@ export const DestinationScreen = ({
       return;
     }
     showConfirm({
-      title: 'Remove from library?',
-      message: 'This destination will no longer appear in your saved library. The bundled app content remains available.',
+      title: 'Remove saved pack?',
+      message: 'This pack’s materialized offline files will be removed from your local Library. Favorites and itineraries are kept, and the content bundled inside the app remains available.',
       confirmLabel: 'Remove',
       tone: 'danger',
       onConfirm: () => void performLibraryAction()
@@ -105,7 +105,13 @@ export const DestinationScreen = ({
         </Text>
       </Pressable>
 
-      <Pressable accessibilityRole="button" disabled={state.busy} onPress={() => void runLibraryAction()} style={({
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={state.updateAvailable ? `Update ${destination.name} saved pack` : state.saved ? `Remove ${destination.name} saved pack` : `Save ${destination.name} for offline use`}
+        accessibilityState={{ disabled: state.busy, busy: state.busy }}
+        disabled={state.busy}
+        onPress={() => void runLibraryAction()}
+        style={({
       pressed
     }) => [styles.cta, state.saved && !state.updateAvailable && styles.ctaRemove, state.busy && styles.ctaDisabled, pressed && !state.busy && styles.pressed]}>
         <Ionicons
@@ -115,7 +121,11 @@ export const DestinationScreen = ({
         />
         <Text style={[styles.ctaText, state.saved && !state.updateAvailable && styles.ctaTextRemove]}>
           {state.busy
-            ? 'Working…'
+            ? state.updateAvailable
+              ? 'Updating saved pack…'
+              : state.saved
+              ? 'Removing saved pack…'
+              : 'Saving offline pack…'
             : state.updateAvailable
             ? 'Update saved pack'
             : state.saved
@@ -172,6 +182,8 @@ export const DestinationScreen = ({
           <Text style={styles.locationNote}>{destination.navigation.note}</Text>
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={`Open directions to ${destination.name}`}
+            accessibilityState={{ disabled: state.directionsBusyId !== null, busy: state.directionsBusyId === destination.id }}
             disabled={state.directionsBusyId !== null}
             onPress={() => void runDirections(destination)}
             style={({ pressed }) => [styles.directionsButton, state.directionsBusyId !== null && styles.ctaDisabled, pressed && state.directionsBusyId === null && styles.pressed]}

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, shadows, spacing } from "../../../theme.jsx";
+import { colors, layout, shadows, spacing } from "../../../theme.jsx";
 const items = [{
   key: 'home',
   label: 'Home',
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   bar: {
     width: '100%',
     maxWidth: 560,
-    minHeight: 66,
+    minHeight: layout.tabBarHeight,
     borderRadius: 22,
     borderWidth: 1,
     borderColor: colors.border,

@@ -35,7 +35,7 @@ export const HomeScreen = ({
         <Text style={styles.eyebrow}>DAVAO DEL NORTE</Text>
         <Text style={styles.title}>Explore confidently, even beyond the signal.</Text>
         <Text style={styles.subtitle}>
-          Destination guides, trails, and planning tools are stored on your device and work without internet.
+          Saved maps, destination guides, itineraries, and nearby-place data keep working when your signal does not.
         </Text>
       </View>
 
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: spacing.md,
-    paddingBottom: 128,
+    paddingBottom: layout.tabContentBottom,
     gap: spacing.xl
   },
   intro: {

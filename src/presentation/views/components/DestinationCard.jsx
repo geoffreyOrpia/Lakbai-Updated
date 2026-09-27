@@ -39,7 +39,7 @@ export const DestinationCard = ({
           </View>
           {onFavorite ? <Pressable
               accessibilityRole="button"
-              accessibilityState={{ selected: favorite }}
+              accessibilityState={{ selected: favorite, disabled: favoriteDisabled }}
               accessibilityLabel={favorite ? `Remove ${destination.name} from Favorites` : `Add ${destination.name} to Favorites`}
               disabled={favoriteDisabled}
               hitSlop={8}
@@ -71,7 +71,13 @@ export const DestinationCard = ({
             </Text>
           </View>
 
-          {actionLabel && onAction ? <Pressable accessibilityRole="button" disabled={actionDisabled} onPress={onAction} style={({
+          {actionLabel && onAction ? <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${actionLabel} ${destination.name}`}
+            accessibilityState={{ disabled: actionDisabled, busy }}
+            disabled={actionDisabled}
+            onPress={onAction}
+            style={({
           pressed
         }) => [styles.actionButton, removing && styles.actionButtonRemove, actionDisabled && styles.actionButtonDisabled, pressed && !actionDisabled && styles.actionButtonPressed]}>
               <Ionicons name={busy ? 'hourglass-outline' : updateAvailable ? 'refresh-outline' : removing ? 'trash-outline' : 'bookmark-outline'} size={13} color={removing ? colors.danger : colors.onPrimary} />

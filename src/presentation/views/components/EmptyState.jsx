@@ -7,8 +7,10 @@ export const EmptyState = ({
   title,
   text,
   actionLabel,
+  actionIcon,
   onAction
 }) => {
+  const resolvedActionIcon = actionIcon ?? (actionLabel === 'Try again' ? 'refresh-outline' : 'arrow-forward');
   return <View style={styles.card}>
       <View style={styles.iconWrap}>
         <Ionicons name={icon} size={24} color={colors.primary} />
@@ -16,7 +18,7 @@ export const EmptyState = ({
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.text}>{text}</Text>
       {actionLabel && onAction ? <View style={styles.action}>
-          <SecondaryButton label={actionLabel} icon="refresh-outline" onPress={onAction} />
+          <SecondaryButton label={actionLabel} icon={resolvedActionIcon} onPress={onAction} />
         </View> : null}
     </View>;
 };

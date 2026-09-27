@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: spacing.md,
-    paddingBottom: 128,
+    paddingBottom: layout.tabContentBottom,
     gap: spacing.lg
   },
   intro: {

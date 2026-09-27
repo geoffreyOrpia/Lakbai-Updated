@@ -86,6 +86,7 @@ export const shadows = {
 export const layout = {
   screenGutter: 20,
   tabBarHeight: 66,
+  tabContentBottom: 128,
   touchTarget: 46,
   maxContentWidth: 560
 };
