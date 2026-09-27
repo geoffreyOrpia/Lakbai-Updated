@@ -1,6 +1,6 @@
 const DEFAULT_RESEARCH_TOPIC = 'tourist attractions "Davao del Norte" Philippines';
 
-export const buildTourismResearchQuery = (rawQuery = '') => {
+export const buildTourismSearchQuery = (rawQuery = '') => {
   const normalizedQuery = rawQuery.trim().replace(/\s+/g, ' ');
 
   if (!normalizedQuery) {
@@ -10,7 +10,7 @@ export const buildTourismResearchQuery = (rawQuery = '') => {
   return `${normalizedQuery} tourism "Davao del Norte" Philippines`;
 };
 
-export const researchTouristPlacesOnline = (deps, rawQuery) => {
-  const researchQuery = buildTourismResearchQuery(rawQuery);
-  return deps.onlineResearchService.openSearch(researchQuery);
+export const searchTourismWeb = (deps, rawQuery) => {
+  const searchQuery = buildTourismSearchQuery(rawQuery);
+  return deps.onlineResearchService.openSearch(searchQuery);
 };

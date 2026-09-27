@@ -49,8 +49,8 @@ export const ExploreScreen = ({
       tone: result.ok ? 'success' : 'error'
     });
   };
-  const runOnlineResearch = async () => {
-    const result = await viewModel.searchOnline();
+  const runWebSearch = async () => {
+    const result = await viewModel.searchWeb();
     if (!result.ok) {
       showSnackbar({
         message: result.message,
@@ -75,22 +75,22 @@ export const ExploreScreen = ({
             <Ionicons name="globe-outline" size={20} color={colors.primary} />
           </View>
           <View style={styles.onlineCopy}>
-            <Text style={styles.onlineTitle}>Research Davao del Norte online</Text>
+            <Text style={styles.onlineTitle}>Search the web for more places</Text>
             <Text style={styles.onlineText}>
-              Search live web results for places within the province using Wi-Fi or mobile data. LakbayLokal stays offline-first.
+              Opens an external Google search inside the browser. Web results stay separate from the local LakbayLokal catalog and are not treated as verified app content.
             </Text>
           </View>
         </View>
         <SecondaryButton
-          label={state.onlineSearching ? 'Opening browser…' : 'Search the internet'}
+          label={state.onlineSearching ? 'Opening browser…' : 'Open web search'}
           icon="open-outline"
           disabled={state.onlineSearching}
-          onPress={() => void runOnlineResearch()}
+          onPress={() => void runWebSearch()}
         />
         <Text style={styles.onlineHint}>
           {state.query.trim()
-            ? `Searching for “${state.query.trim()}” in Davao del Norte`
-            : 'Tip: enter a place or activity above before searching.'}
+            ? `Web query: “${state.query.trim()}” + Davao del Norte tourism`
+            : 'No search term entered · opens a general Davao del Norte tourism search.'}
         </Text>
       </View>
 
@@ -98,7 +98,7 @@ export const ExploreScreen = ({
         <Text style={styles.resultCount}>
           {results.length} {results.length === 1 ? 'result' : 'results'}
         </Text>
-        <Text style={styles.helper}>Stored on device</Text>
+        <Text style={styles.helper}>Local catalog</Text>
       </View>
 
       {state.error && !state.items.length ? <InfoBanner tone="warn" text={state.error} /> : null}

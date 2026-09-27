@@ -1,6 +1,6 @@
 import { downloadPack, listDestinationsWithState, removePack } from "../../domain/usecases/destinationPacks.jsx";
 import { userMessage } from "../../core/errors/appError.jsx";
-import { researchTouristPlacesOnline } from "../../domain/usecases/onlineResearch.jsx";
+import { searchTourismWeb } from "../../domain/usecases/onlineResearch.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 /** Explore catalog with search, categories, and pack download actions. */
 export class ExploreViewModel extends ViewModel {
@@ -10,7 +10,6 @@ export class ExploreViewModel extends ViewModel {
       query: '',
       category: 'all',
       loading: true,
-      refreshing: false,
       onlineSearching: false,
       busyId: null,
       source: null,
@@ -40,19 +39,15 @@ export class ExploreViewModel extends ViewModel {
       category
     });
   };
-  load = async (forceRefresh = false) => {
-    this.setState(forceRefresh ? {
-      refreshing: true
-    } : {
+  load = async () => {
+    this.setState({
       loading: true
     });
     try {
       const {
         items,
         source
-      } = await listDestinationsWithState(this.deps, {
-        forceRefresh
-      });
+      } = await listDestinationsWithState(this.deps);
       this.setState({
         items,
         source,
@@ -64,20 +59,16 @@ export class ExploreViewModel extends ViewModel {
       });
     } finally {
       this.setState({
-        loading: false,
-        refreshing: false
+        loading: false
       });
     }
   };
-  refresh = () => {
-    void this.load(true);
-  };
-  searchOnline = async () => {
+  searchWeb = async () => {
     this.setState({
       onlineSearching: true
     });
     try {
-      await researchTouristPlacesOnline(this.onlineResearchDeps, this.state.query);
+      await searchTourismWeb(this.onlineResearchDeps, this.state.query);
       return {
         ok: true,
         message: ''
@@ -85,7 +76,7 @@ export class ExploreViewModel extends ViewModel {
     } catch (error) {
       return {
         ok: false,
-        message: userMessage(error, 'The online search could not be opened. Check your connection and try again.')
+        message: userMessage(error, 'The web search could not be opened. Check your connection and try again.')
       };
     } finally {
       this.setState({

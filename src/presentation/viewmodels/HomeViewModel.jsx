@@ -17,7 +17,7 @@ export class HomeViewModel extends ViewModel {
   onInit = () => {
     void this.load();
   };
-  load = async (forceRefresh = false) => {
+  load = async () => {
     this.setState({
       loading: true
     });
@@ -25,9 +25,7 @@ export class HomeViewModel extends ViewModel {
       const {
         items,
         source
-      } = await listDestinationsWithState(this.deps, {
-        forceRefresh
-      });
+      } = await listDestinationsWithState(this.deps);
       this.setState({
         items,
         source,
@@ -43,9 +41,6 @@ export class HomeViewModel extends ViewModel {
         loading: false
       });
     }
-  };
-  refresh = () => {
-    void this.load(true);
   };
   openExplore = query => {
     this.nav.onOpenExplore(query);
