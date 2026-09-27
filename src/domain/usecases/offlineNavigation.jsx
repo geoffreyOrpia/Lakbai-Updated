@@ -6,6 +6,7 @@ import {
 } from "../../core/routing/graph.jsx";
 import { routeGeometryFromPath, summarizeRoutePath } from "../../core/routing/routeGeometry.jsx";
 import { buildRouteManeuvers } from "../../core/routing/maneuvers.jsx";
+import { normalizeRoutePreference } from "../../core/routing/routingProfiles.jsx";
 
 const indexCache = new WeakMap();
 
@@ -186,9 +187,13 @@ export const calculateOfflineRoute = ({
   from,
   to,
   mode = 'walk',
+  preference = 'direct',
   maxSnapDistanceKm = 1.5,
   targetLabel = 'destination',
 }) => {
+  const normalizedPreference = mode === 'walk'
+    ? normalizeRoutePreference(preference)
+    : 'direct';
   const index = routingIndexFor(graph);
   const startSnap = nearestGraphEdge(index, from, mode, maxSnapDistanceKm);
   const endSnap = nearestGraphEdge(index, to, mode, maxSnapDistanceKm);
@@ -203,7 +208,13 @@ export const calculateOfflineRoute = ({
   }
 
   const snapped = createSnappedRoutingIndex(index, startSnap, endSnap, mode);
-  const path = aStarRoute(snapped.index, snapped.startId, snapped.endId, mode);
+  const path = aStarRoute(
+    snapped.index,
+    snapped.startId,
+    snapped.endId,
+    mode,
+    normalizedPreference,
+  );
   if (!path) {
     return {
       ok: false,
@@ -217,6 +228,7 @@ export const calculateOfflineRoute = ({
   return {
     ok: true,
     mode,
+    preference: normalizedPreference,
     startSnap,
     endSnap,
     nodeIds: path.nodeIds,

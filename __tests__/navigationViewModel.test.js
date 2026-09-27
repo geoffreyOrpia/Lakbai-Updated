@@ -107,6 +107,17 @@ describe('NavigationViewModel', () => {
     expect(vm.state.preview).toBe(false);
   });
 
+  test('keeps the selected exploration preference in route calculation', async () => {
+    const { vm } = createVm();
+    await vm.load();
+
+    vm.setPreference('adventure');
+    await vm.startFromGps();
+
+    expect(vm.state.preference).toBe('adventure');
+    expect(vm.state.route.preference).toBe('adventure');
+  });
+
   test('starts foreground GPS tracking and updates route progress', async () => {
     const setup = createVm();
     const { vm, locationService, emitFix } = setup;

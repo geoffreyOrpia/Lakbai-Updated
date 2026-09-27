@@ -4,6 +4,7 @@ import {
   projectPositionOntoRoute,
   remainingDurationMin,
 } from "../../core/routing/routeProgress.jsx";
+import { normalizeRoutePreference } from "../../core/routing/routingProfiles.jsx";
 import { calculateOfflineRoute } from "../../domain/usecases/offlineNavigation.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 
@@ -65,6 +66,7 @@ export class NavigationViewModel extends ViewModel {
       target: route.target,
       trailId: route.trailId ?? null,
       mode: route.mode ?? 'walk',
+      preference: normalizeRoutePreference(route.preference),
       offlineBasemapUri: null,
       fix: null,
       accuracyM: null,
@@ -197,6 +199,7 @@ export class NavigationViewModel extends ViewModel {
       from,
       to: this.state.target,
       mode: this.state.mode,
+      preference: this.state.preference,
       maxSnapDistanceKm: 1,
       targetLabel: this.state.target.label ?? this.state.destinationName,
     });
@@ -289,6 +292,11 @@ export class NavigationViewModel extends ViewModel {
   stopLocationWatch = () => {
     this.unwatch?.();
     this.unwatch = null;
+  };
+
+  setPreference = preference => {
+    if (this.state.tracking || this.state.calculating) return;
+    this.setState({ preference: normalizeRoutePreference(preference) });
   };
 
   stopSpeech = () => {
@@ -414,6 +422,7 @@ export class NavigationViewModel extends ViewModel {
         from: fix,
         to: this.state.target,
         mode: this.state.mode,
+        preference: this.state.preference,
         maxSnapDistanceKm: 1,
         targetLabel: this.state.target.label ?? this.state.destinationName,
       });

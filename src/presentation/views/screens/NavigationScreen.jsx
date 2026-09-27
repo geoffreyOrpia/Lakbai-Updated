@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { formatKm, formatDurationMinutes } from "../../../core/utils/format.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
 import { BackAction, PrimaryButton, SecondaryButton } from "../components/Buttons.jsx";
@@ -22,6 +22,36 @@ const formatAhead = km => {
   if (km < 1) return `${Math.max(1, Math.round(km * 1000))} m`;
   return formatKm(km);
 };
+
+const routePreferences = Object.freeze([
+  {
+    id: 'direct',
+    label: 'Direct',
+    icon: 'flash-outline',
+    description: 'Shortest practical walking route in the local graph.',
+  },
+  {
+    id: 'easy',
+    label: 'Easy',
+    icon: 'leaf-outline',
+    description: 'Prefer surfaced streets and avoid rough or path-like segments when data allows. Not an accessibility guarantee.',
+  },
+  {
+    id: 'adventure',
+    label: 'Adventure',
+    icon: 'trail-sign-outline',
+    description: 'Prefer walkable paths and tracks when they provide a practical alternative.',
+  },
+]);
+
+const preferenceLabel = preference => (
+  routePreferences.find(option => option.id === preference)?.label ?? 'Direct'
+);
+
+const preferenceDescription = preference => (
+  routePreferences.find(option => option.id === preference)?.description
+  ?? routePreferences[0].description
+);
 
 export const NavigationScreen = ({ viewModel }) => {
   const state = viewModel.state;
@@ -49,7 +79,9 @@ export const NavigationScreen = ({ viewModel }) => {
         <View style={styles.heroCopy}>
           <Text style={styles.eyebrow}>LAKBAI OFFLINE NAVIGATION</Text>
           <Text style={styles.title}>{state.destinationName}</Text>
-          <Text style={styles.subtitle}>Walking pilot · Panabo City</Text>
+          <Text style={styles.subtitle}>
+            Walking pilot · Panabo City · {preferenceLabel(state.preference)}
+          </Text>
         </View>
       </View>
 
@@ -184,6 +216,41 @@ export const NavigationScreen = ({ viewModel }) => {
           <Text style={styles.actionText}>
             LakBai uses your foreground GPS position and the local Panabo road/path graph. No route request is sent to Google or another routing server.
           </Text>
+          <View style={styles.preferenceBlock}>
+            <Text style={styles.preferenceEyebrow}>HOW DO YOU WANT TO EXPLORE?</Text>
+            <View style={styles.preferenceRow}>
+              {routePreferences.map(option => {
+                const selected = state.preference === option.id;
+                return <Pressable
+                  key={option.id}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: selected }}
+                  accessibilityLabel={option.label + ' route'}
+                  onPress={() => viewModel.setPreference(option.id)}
+                  style={({ pressed }) => [
+                    styles.preferenceOption,
+                    selected && styles.preferenceOptionSelected,
+                    pressed && styles.preferenceOptionPressed,
+                  ]}
+                >
+                  <Ionicons
+                    name={option.icon}
+                    size={19}
+                    color={selected ? colors.onPrimary : colors.primary}
+                  />
+                  <Text style={[
+                    styles.preferenceOptionText,
+                    selected && styles.preferenceOptionTextSelected,
+                  ]}>
+                    {option.label}
+                  </Text>
+                </Pressable>;
+              })}
+            </View>
+            <Text style={styles.preferenceDescription}>
+              {preferenceDescription(state.preference)}
+            </Text>
+          </View>
           <PrimaryButton
             label={state.calculating ? 'Calculating…' : 'Route from my GPS'}
             icon="navigate-outline"
@@ -273,6 +340,52 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 12,
     lineHeight: 18,
+  },
+  preferenceBlock: {
+    gap: spacing.xs,
+  },
+  preferenceEyebrow: {
+    color: colors.muted,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.6,
+  },
+  preferenceRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  preferenceOption: {
+    flex: 1,
+    minHeight: 62,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.xs,
+  },
+  preferenceOptionSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
+  },
+  preferenceOptionPressed: {
+    opacity: 0.82,
+  },
+  preferenceOptionText: {
+    color: colors.text,
+    fontSize: 10.5,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  preferenceOptionTextSelected: {
+    color: colors.onPrimary,
+  },
+  preferenceDescription: {
+    color: colors.textSecondary,
+    fontSize: 10,
+    lineHeight: 15,
   },
   previewHint: {
     color: colors.muted,

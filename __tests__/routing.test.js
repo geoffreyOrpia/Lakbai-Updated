@@ -45,6 +45,22 @@ const turnGraph = {
   ],
 };
 
+const preferenceGraph = {
+  meta: { id: 'preference-fixture' },
+  nodes: [
+    { id: 'start', lat: 7, lng: 125 },
+    { id: 'road', lat: 7, lng: 125.01 },
+    { id: 'path', lat: 7.005, lng: 125.01 },
+    { id: 'end', lat: 7, lng: 125.02 },
+  ],
+  edges: [
+    { from: 'start', to: 'road', distanceKm: 1.2, walk: true, highway: 'residential', name: 'Local Road' },
+    { from: 'road', to: 'end', distanceKm: 1.2, walk: true, highway: 'residential', name: 'Local Road' },
+    { from: 'start', to: 'path', distanceKm: 1.3, walk: true, highway: 'path', surface: 'ground', name: 'Forest Path' },
+    { from: 'path', to: 'end', distanceKm: 1.3, walk: true, highway: 'path', surface: 'ground', name: 'Forest Path' },
+  ],
+};
+
 describe('offline routing core', () => {
   test('builds adjacency and snaps to a usable graph node', () => {
     const index = buildRoutingIndex(graph);
@@ -75,6 +91,27 @@ describe('offline routing core', () => {
 
     expect(route.nodeIds).toEqual(['a', 'b', 'c']);
     expect(route.edges).toHaveLength(2);
+  });
+
+  test('supports direct, easy, and adventure walking preferences', () => {
+    const common = {
+      graph: preferenceGraph,
+      from: { lat: 7, lng: 125 },
+      to: { lat: 7, lng: 125.02 },
+      mode: 'walk',
+      maxSnapDistanceKm: 0.2,
+      targetLabel: 'Preference test',
+    };
+    const direct = calculateOfflineRoute({ ...common, preference: 'direct' });
+    const easy = calculateOfflineRoute({ ...common, preference: 'easy' });
+    const adventure = calculateOfflineRoute({ ...common, preference: 'adventure' });
+
+    expect(direct.preference).toBe('direct');
+    expect(direct.edges.every(edge => edge.highway === 'residential')).toBe(true);
+    expect(easy.preference).toBe('easy');
+    expect(easy.edges.every(edge => edge.highway === 'residential')).toBe(true);
+    expect(adventure.preference).toBe('adventure');
+    expect(adventure.edges.every(edge => edge.highway === 'path')).toBe(true);
   });
 
   test('drive mode excludes path-only edges', () => {

@@ -59,13 +59,19 @@ const reconstruct = (cameFrom, current) => {
   return { nodes, edges };
 };
 
-export const aStarRoute = (index, startId, endId, mode = 'walk') => {
+export const aStarRoute = (
+  index,
+  startId,
+  endId,
+  mode = 'walk',
+  preference = 'direct',
+) => {
   const start = String(startId);
   const end = String(endId);
   if (!index.nodesById.has(start) || !index.nodesById.has(end)) return null;
   if (start === end) return { nodeIds: [start], edges: [], cost: 0 };
 
-  const profile = routingProfile(mode);
+  const profile = routingProfile(mode, preference);
   const frontier = new MinHeap();
   const cameFrom = new Map();
   const costSoFar = new Map([[start, 0]]);
