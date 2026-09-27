@@ -110,7 +110,42 @@ export const NavigationScreen = ({ viewModel }) => {
             remainingMin={state.remainingMin}
             rerouting={state.rerouting}
             voiceGuidance={state.voiceGuidance}
+            trailPreview={state.trailPreview}
           />
+
+          {state.trailPreview ? <View style={[styles.journeyCard, shadows.soft]}>
+              <View style={styles.journeyHeader}>
+                <View style={styles.journeyIcon}>
+                  <Ionicons name="trail-sign-outline" size={19} color={colors.primary} />
+                </View>
+                <View style={styles.journeyCopy}>
+                  <Text style={styles.journeyEyebrow}>ROAD → VERIFIED TRAIL</Text>
+                  <Text style={styles.journeyTitle}>The journey continues after the entrance</Text>
+                </View>
+              </View>
+              <View style={styles.journeySteps}>
+                <JourneyStep
+                  icon="navigate-outline"
+                  label="Offline road route"
+                  detail={formatKm(state.route.distanceKm)}
+                />
+                <Ionicons name="chevron-forward" size={15} color={colors.muted} />
+                <JourneyStep
+                  icon="location-outline"
+                  label="Trail entrance"
+                  detail={state.target.label ?? 'Entrance'}
+                />
+                <Ionicons name="chevron-forward" size={15} color={colors.muted} />
+                <JourneyStep
+                  icon="footsteps-outline"
+                  label="Verified trail"
+                  detail={formatKm(state.trailPreview.distanceKm ?? 0)}
+                />
+              </View>
+              <Text style={styles.journeyNote}>
+                {state.trailPreview.name} · {formatDurationMinutes(state.trailPreview.durationMin ?? 0)} mapped segment
+              </Text>
+            </View> : null}
 
           <View style={styles.summaryRow}>
             <Summary
@@ -189,6 +224,12 @@ export const NavigationScreen = ({ viewModel }) => {
               <Text style={styles.arrivalText}>
                 LakBai has reached the end of the offline road route. Confirm the physical entrance and posted local signs before continuing.
               </Text>
+              {state.trailPreview ? <View style={styles.arrivalTrailMeta}>
+                  <Ionicons name="shield-checkmark-outline" size={17} color={colors.primary} />
+                  <Text style={styles.arrivalTrailMetaText}>
+                    {formatKm(state.trailPreview.distanceKm ?? 0)} verified segment · {formatDurationMinutes(state.trailPreview.durationMin ?? 0)} · offline GPS
+                  </Text>
+                </View> : null}
               {state.trailId ? <PrimaryButton
                 label="Continue in verified Trail Mode"
                 icon="trail-sign-outline"
@@ -273,6 +314,14 @@ const Summary = ({ icon, value, label }) => (
     <Ionicons name={icon} size={18} color={colors.primary} />
     <Text style={styles.summaryValue}>{value}</Text>
     <Text style={styles.summaryLabel}>{label}</Text>
+  </View>
+);
+
+const JourneyStep = ({ icon, label, detail }) => (
+  <View style={styles.journeyStep}>
+    <Ionicons name={icon} size={16} color={colors.primary} />
+    <Text style={styles.journeyStepLabel}>{label}</Text>
+    <Text style={styles.journeyStepDetail} numberOfLines={1}>{detail}</Text>
   </View>
 );
 
@@ -397,6 +446,72 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.xs,
   },
+  journeyCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    backgroundColor: colors.white,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  journeyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  journeyIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySofter,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  journeyCopy: {
+    flex: 1,
+  },
+  journeyEyebrow: {
+    color: colors.primary,
+    fontSize: 8.8,
+    fontWeight: '900',
+    letterSpacing: 0.6,
+  },
+  journeyTitle: {
+    marginTop: 1,
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  journeySteps: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 3,
+  },
+  journeyStep: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'center',
+    gap: 2,
+  },
+  journeyStepLabel: {
+    color: colors.text,
+    fontSize: 9,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  journeyStepDetail: {
+    color: colors.muted,
+    fontSize: 8.5,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  journeyNote: {
+    color: colors.textSecondary,
+    fontSize: 9.8,
+    lineHeight: 14,
+    textAlign: 'center',
+  },
   summaryCard: {
     flex: 1,
     minHeight: 92,
@@ -502,6 +617,21 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     textAlign: 'center',
     marginBottom: spacing.sm,
+  },
+  arrivalTrailMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  arrivalTrailMetaText: {
+    flex: 1,
+    color: colors.primary,
+    fontSize: 10.5,
+    lineHeight: 15,
+    fontWeight: '800',
+    textAlign: 'center',
   },
   sourceCard: {
     borderWidth: 1,

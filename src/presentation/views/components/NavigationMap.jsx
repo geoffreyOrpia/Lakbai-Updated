@@ -42,6 +42,7 @@ export const NavigationMap = ({
   remainingMin = null,
   rerouting = false,
   voiceGuidance = true,
+  trailPreview = null,
 }) => {
   const [following, setFollowing] = useState(liveGps);
   const [basemapFailed, setBasemapFailed] = useState(false);
@@ -57,13 +58,32 @@ export const NavigationMap = ({
       geometry,
     }],
   }), [geometry]);
+  const trailData = useMemo(() => {
+    if (!trailPreview?.geometry?.coordinates?.length) return null;
+    return {
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        id: 'verified-trail-continuation',
+        properties: {},
+        geometry: trailPreview.geometry,
+      }],
+    };
+  }, [trailPreview]);
   const markers = useMemo(() => ({
     type: 'FeatureCollection',
     features: [
       pointFeature('route-start', geometry.coordinates[0], 'start'),
       pointFeature('route-destination', [target.lng, target.lat], 'destination'),
+      ...(trailPreview?.geometry?.coordinates?.length
+        ? [pointFeature(
+          'verified-trail-end',
+          trailPreview.geometry.coordinates.at(-1),
+          'trail-end',
+        )]
+        : []),
     ],
-  }), [geometry.coordinates, target.lat, target.lng]);
+  }), [geometry.coordinates, target.lat, target.lng, trailPreview]);
 
   return <View style={[styles.card, shadows.card]}>
       <View style={[styles.mapFrame, liveGps && styles.mapFrameLive]}>
@@ -114,6 +134,30 @@ export const NavigationMap = ({
             />
           </GeoJSONSource>
 
+          {trailData ? <GeoJSONSource id="lakbai-navigation-trail" data={trailData}>
+              <Layer
+                id="lakbai-navigation-trail-casing"
+                type="line"
+                source="lakbai-navigation-trail"
+                paint={{
+                  'line-color': colors.white,
+                  'line-width': 8,
+                  'line-opacity': 0.9,
+                }}
+              />
+              <Layer
+                id="lakbai-navigation-trail-line"
+                type="line"
+                source="lakbai-navigation-trail"
+                paint={{
+                  'line-color': colors.accentDark,
+                  'line-width': 4.5,
+                  'line-opacity': 0.95,
+                  'line-dasharray': [1.5, 1.15],
+                }}
+              />
+            </GeoJSONSource> : null}
+
           <GeoJSONSource id="lakbai-navigation-markers" data={markers}>
             <Layer
               id="lakbai-navigation-marker-dots"
@@ -125,6 +169,7 @@ export const NavigationMap = ({
                   'match',
                   ['get', 'role'],
                   'destination', colors.accent,
+                  'trail-end', colors.accentDark,
                   colors.primary,
                 ],
                 'circle-stroke-color': colors.white,
@@ -187,7 +232,9 @@ export const NavigationMap = ({
       </View>
       <Text style={styles.caption}>
         {detailedOffline
-          ? 'Route geometry and the Davao del Norte basemap are both local. No Google Maps or network tiles are used.'
+          ? trailData
+            ? 'Road route and saved map data are local. The dashed line shows the source-verified trail continuation after the entrance.'
+            : 'Route geometry and the Davao del Norte basemap are both local. No Google Maps or network tiles are used.'
           : 'The route remains visible, but the detailed local basemap could not be loaded.'}
       </Text>
     </View>;

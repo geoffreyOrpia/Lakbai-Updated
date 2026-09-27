@@ -18,6 +18,21 @@ const graph = {
   ],
 };
 
+const verifiedTrail = {
+  id: 'panabo-mangrove-boardwalk',
+  name: 'Panabo Mangrove Boardwalk — mapped segment',
+  routeVerified: true,
+  distanceKm: 0.214,
+  durationMin: 12,
+  geometry: {
+    type: 'LineString',
+    coordinates: [
+      [125.6808807, 7.2723324],
+      [125.6810269, 7.2710674],
+    ],
+  },
+};
+
 const createVm = ({
   fix = { lat: 7.2999, lng: 125.6801, accuracy: 8 },
   graphValue = graph,
@@ -38,6 +53,9 @@ const createVm = ({
       getOfflineBundleStatus: jest.fn().mockResolvedValue(
         basemapUri ? { basemapUri, routingGraphUri } : null,
       ),
+      getSavedPack: jest.fn().mockResolvedValue({
+        trails: [verifiedTrail],
+      }),
     },
   };
   let watchCallback = null;
@@ -85,6 +103,7 @@ describe('NavigationViewModel', () => {
     expect(vm.state.graph).toBe(graph);
     expect(vm.state.graphMeta.id).toBe('panabo-routing-pilot');
     expect(vm.state.offlineBasemapUri).toBe('file:///maps/davao-del-norte.pmtiles');
+    expect(vm.state.trailPreview).toBe(verifiedTrail);
     expect(vm.state.error).toBeNull();
     expect(routingDeps.routingGraphRepository.getForDestination).toHaveBeenCalledWith(
       'panabo',

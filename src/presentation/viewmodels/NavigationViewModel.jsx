@@ -65,6 +65,7 @@ export class NavigationViewModel extends ViewModel {
       destinationName: route.destinationName,
       target: route.target,
       trailId: route.trailId ?? null,
+      trailPreview: null,
       mode: route.mode ?? 'walk',
       preference: normalizeRoutePreference(route.preference),
       offlineBasemapUri: null,
@@ -102,16 +103,23 @@ export class NavigationViewModel extends ViewModel {
 
   load = async () => {
     try {
-      const bundle = await (
-        this.destinationDeps.packRepository.getOfflineBundleStatus?.(this.state.destinationId) ?? null
-      );
+      const [bundle, savedPack] = await Promise.all([
+        this.destinationDeps.packRepository.getOfflineBundleStatus?.(this.state.destinationId) ?? null,
+        this.destinationDeps.packRepository.getSavedPack?.(this.state.destinationId) ?? null,
+      ]);
       const graph = await this.routingDeps.routingGraphRepository.getForDestination(
         this.state.destinationId,
         bundle?.routingGraphUri ?? null,
       );
+      const trailPreview = this.state.trailId
+        ? savedPack?.trails?.find(trail => (
+          trail.id === this.state.trailId && trail.routeVerified === true
+        )) ?? null
+        : null;
       this.setState({
         graph,
         graphMeta: graph?.meta ?? null,
+        trailPreview,
         offlineBasemapUri: bundle?.basemapUri ?? null,
         error: !graph
           ? 'Offline road routing is not available for this destination yet.'
