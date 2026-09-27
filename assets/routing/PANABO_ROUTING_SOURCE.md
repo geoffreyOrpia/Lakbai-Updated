@@ -20,6 +20,14 @@ npm run routing:prepare -- --source="path\\to\\hotosm_phl_roads_lines_geojson.ge
 
 The build script streams the source feature-by-feature, clips road segments to the pilot bounds, creates graph nodes from shared OSM geometry vertices, and records directed edges with distance, road class, name, surface, walking access, and prototype driving access.
 
+The same builder can generate additional bounded municipality graphs without changing the script. Supply the graph identity, output file, source timestamp, and municipality bounds explicitly:
+
+```powershell
+npm run routing:prepare -- --source="path\\to\\roads.geojson" --id="tagum-routing-pilot" --name="Tagum City routing pilot" --bounds="125.74,7.37,125.90,7.55" --output="src/data/assets/tagumRoutingGraph.json" --source-exported-at="YYYY-MM-DDTHH:mm:ssZ"
+```
+
+After a new graph has been source-reviewed, register its destination loader in `src/data/assets/routingGraphs.jsx`. Saved destination packs then include that graph as `routing.graph.json`, allowing navigation to load the pack-local routing data instead of depending on a hard-coded Panabo path.
+
 ## Current limitations
 
 The HOT road export used here does not expose every OpenStreetMap access/restriction tag. LakBai therefore treats this first graph conservatively and clearly labels it a pilot. Real signs, closures, private-property restrictions, and official traffic rules always take precedence. The graph must not be presented as verified trail geometry; verified trails use their own source-reviewed data pipeline.

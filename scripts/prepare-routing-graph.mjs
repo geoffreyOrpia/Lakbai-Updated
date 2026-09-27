@@ -1,13 +1,25 @@
-import { createReadStream, writeFileSync } from 'node:fs';
+import { createReadStream, mkdirSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 const DEFAULT_BOUNDS = [125.650, 7.245, 125.705, 7.325];
-const sourceArg = process.argv.find(arg => arg.startsWith('--source='))?.slice('--source='.length)
+const argValue = name => {
+  const prefix = '--' + name + '=';
+  return process.argv.find(arg => arg.startsWith(prefix))?.slice(prefix.length);
+};
+
+const sourceArg = argValue('source')
   ?? process.env.LAKBAI_ROUTING_SOURCE;
-const outputArg = process.argv.find(arg => arg.startsWith('--output='))?.slice('--output='.length)
+const outputArg = argValue('output')
   ?? 'src/data/assets/panaboRoutingGraph.json';
-const boundsArg = process.argv.find(arg => arg.startsWith('--bounds='))?.slice('--bounds='.length);
+const graphId = argValue('id') ?? 'panabo-routing-pilot';
+const graphName = argValue('name') ?? 'Panabo City walking/road routing pilot';
+const sourceDataset = argValue('source-dataset') ?? 'HOT OSM Philippines Roads';
+const sourceExportedAt = argValue('source-exported-at') ?? '2026-05-05T21:53:31Z';
+const sourceAttribution = argValue('source-attribution')
+  ?? 'Humanitarian OpenStreetMap Team / OpenStreetMap contributors';
+const license = argValue('license') ?? 'ODbL 1.0';
+const boundsArg = argValue('bounds');
 const bounds = boundsArg
   ? boundsArg.split(',').map(Number)
   : DEFAULT_BOUNDS;
@@ -18,6 +30,10 @@ if (!sourceArg) {
 }
 if (bounds.length !== 4 || bounds.some(value => !Number.isFinite(value))) {
   console.error('Bounds must be west,south,east,north.');
+  process.exit(1);
+}
+if (!graphId.trim() || !graphName.trim()) {
+  console.error('Routing graph --id and --name must not be empty.');
   process.exit(1);
 }
 
@@ -164,17 +180,17 @@ for await (const rawLine of input) {
 
 const graph = {
   meta: {
-    id: 'panabo-routing-pilot',
-    name: 'Panabo City walking/road routing pilot',
+    id: graphId,
+    name: graphName,
     format: 1,
     bounds,
-    source: 'Humanitarian OpenStreetMap Team / OpenStreetMap contributors',
-    sourceDataset: 'HOT OSM Philippines Roads',
-    sourceExportedAt: '2026-05-05T21:53:31Z',
-    license: 'ODbL 1.0',
+    source: sourceAttribution,
+    sourceDataset,
+    sourceExportedAt,
+    license,
     modes: ['walk', 'drive'],
     limitations: [
-      'Pilot coverage only; routes outside the Panabo graph are rejected.',
+      'Coverage is limited to the generated graph bounds; routes outside this graph are rejected.',
       'This HOT export does not include every OSM access restriction tag, so real-world closures and private access must still be obeyed.',
       'Walking is disabled on motorway/trunk classes; driving is limited to road classes represented as motor-access candidates in this prototype.',
     ],
@@ -183,9 +199,12 @@ const graph = {
   edges,
 };
 
+mkdirSync(dirname(outputPath), { recursive: true });
 writeFileSync(outputPath, JSON.stringify(graph));
 console.log(JSON.stringify({
   output: outputPath,
+  id: graphId,
+  name: graphName,
   bounds,
   features: includedFeatures,
   nodes: nodes.length,
