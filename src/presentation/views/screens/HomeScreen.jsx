@@ -87,7 +87,7 @@ export const HomeScreen = ({
           <View style={styles.flowDivider} />
           <FlowStep icon="cloud-offline-outline" number="02" title="Explore" text="Read guides without a connection." />
           <View style={styles.flowDivider} />
-          <FlowStep icon="navigate-outline" number="03" title="Follow" text="Use saved trails with GPS." />
+          <FlowStep icon="navigate-outline" number="03" title="Follow" text="Use suggested routes; verified trails unlock GPS guidance." />
         </View>
       </View>
     </ScrollView>;

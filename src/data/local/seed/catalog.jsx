@@ -9,9 +9,25 @@ const regionPacks = packs
     // Prototype trail lines are kept out of release navigation until a local
     // tourism or mapping authority verifies every waypoint.
     const verifiedTrails = pack.trails.filter(trail => trail.routeVerified === true);
+    const routeSuggestions = pack.trails.map(trail => ({
+      id: trail.id,
+      name: trail.name,
+      difficulty: trail.difficulty,
+      estimatedDistanceKm: trail.distanceKm,
+      estimatedDurationMin: trail.durationMin,
+      description: trail.description,
+      planningOnly: trail.routeVerified !== true,
+      stops: trail.waypoints.map(waypoint => ({
+        id: waypoint.id,
+        name: waypoint.name,
+        type: waypoint.type,
+        note: waypoint.note ?? ''
+      }))
+    }));
     return {
       ...pack,
       trails: verifiedTrails,
+      routeSuggestions,
       withheldTrailsCount: pack.trails.length - verifiedTrails.length
     };
   });
@@ -24,6 +40,7 @@ export const seedDestinations = regionDestinations.map(destination => {
     sizeKb: pack ? sizeInKb(pack) : null,
     spotsCount: pack?.spots.length ?? null,
     trailsCount: pack?.trails.length ?? null,
+    routeSuggestionsCount: pack?.routeSuggestions.length ?? null,
     withheldTrailsCount: pack?.withheldTrailsCount ?? 0
   };
 });
@@ -46,6 +63,7 @@ export const seedManifests = seedPacks.map(pack => ({
   updatedAt: pack.updatedAt,
   sizeKb: pack.sizeKb,
   trailsCount: pack.trails.length,
+  routeSuggestionsCount: pack.routeSuggestions.length,
   spotsCount: pack.spots.length,
   withheldTrailsCount: pack.withheldTrailsCount
 }));

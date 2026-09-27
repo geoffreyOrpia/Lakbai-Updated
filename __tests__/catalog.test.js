@@ -10,6 +10,21 @@ describe('release catalog safety', () => {
     }
   });
 
+  test('exposes planning route sequences without prototype coordinates', () => {
+    for (const pack of seedPacks) {
+      const rawPack = rawPacks.find(candidate => candidate.id === pack.id);
+      expect(pack.routeSuggestions).toHaveLength(rawPack?.trails.length ?? 0);
+      for (const route of pack.routeSuggestions) {
+        expect(route).not.toHaveProperty('geometry');
+        expect(route).not.toHaveProperty('start');
+        for (const stop of route.stops) {
+          expect(stop).not.toHaveProperty('lat');
+          expect(stop).not.toHaveProperty('lng');
+        }
+      }
+    }
+  });
+
   test('ships only the national emergency hotline until local numbers are reverified', () => {
     for (const pack of seedPacks) {
       expect(pack.safety.emergencyContacts).toEqual([

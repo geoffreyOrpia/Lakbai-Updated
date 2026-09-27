@@ -148,8 +148,44 @@ export const DestinationScreen = ({
         </View>
       </View>
 
+      {pack.routeSuggestions?.length ? <View style={styles.section}>
+          <SectionHeader eyebrow="Suggested tourist routes" title="Curated stop sequences" />
+          <InfoBanner tone="info" text="These routes are planning guides built from curated stops. Prototype GPS coordinates stay hidden until every waypoint is verified for navigation." />
+          <View style={styles.list}>
+            {pack.routeSuggestions.map(route => <View key={route.id} style={[styles.routeCard, shadows.card]}>
+                <View style={styles.routeHeader}>
+                  <View style={styles.routeIcon}>
+                    <Ionicons name="git-branch-outline" size={18} color={colors.primary} />
+                  </View>
+                  <View style={styles.routeCopy}>
+                    <Text style={styles.routeName}>{route.name}</Text>
+                    <Text style={styles.routeDescription}>{route.description}</Text>
+                  </View>
+                </View>
+                <View style={styles.trailMetaRow}>
+                  <Pill icon="footsteps-outline" text={`~${route.estimatedDistanceKm} km`} />
+                  <Pill icon="time-outline" text={`~${route.estimatedDurationMin} min`} />
+                  <Pill icon="trending-up-outline" text={route.difficulty} tone="accent" />
+                  {route.planningOnly ? <Pill icon="information-circle-outline" text="Planning only" /> : null}
+                </View>
+                <View style={styles.routeStops}>
+                  {route.stops.map((stop, index) => <View key={stop.id} style={styles.routeStop}>
+                      <View style={styles.routeStopMarker}>
+                        <Text style={styles.routeStopNumber}>{index + 1}</Text>
+                        {index < route.stops.length - 1 ? <View style={styles.routeStopLine} /> : null}
+                      </View>
+                      <View style={styles.routeStopCopy}>
+                        <Text style={styles.routeStopName}>{stop.name}</Text>
+                        {stop.note ? <Text style={styles.routeStopNote}>{stop.note}</Text> : null}
+                      </View>
+                    </View>)}
+                </View>
+              </View>)}
+          </View>
+        </View> : null}
+
       {pack.trails.length || pack.withheldTrailsCount ? <View style={styles.section}>
-          <SectionHeader eyebrow="Offline trails" title="Trail navigation" />
+          <SectionHeader eyebrow="Verified offline trails" title="GPS trail navigation" />
           {pack.withheldTrailsCount ? <InfoBanner
             tone="warn"
             text={`${pack.withheldTrailsCount} prototype ${pack.withheldTrailsCount === 1 ? 'route is' : 'routes are'} intentionally hidden until every waypoint is verified by a reliable local or mapping source.`}
@@ -494,6 +530,87 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
     fontWeight: '600'
+  },
+  routeCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    padding: spacing.md,
+    gap: spacing.sm
+  },
+  routeHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm
+  },
+  routeIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySofter,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  routeCopy: {
+    flex: 1
+  },
+  routeName: {
+    color: colors.text,
+    fontSize: 14.5,
+    fontWeight: '900'
+  },
+  routeDescription: {
+    marginTop: 3,
+    color: colors.muted,
+    fontSize: 11.2,
+    lineHeight: 16
+  },
+  routeStops: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: spacing.sm
+  },
+  routeStop: {
+    flexDirection: 'row',
+    gap: spacing.sm
+  },
+  routeStopMarker: {
+    width: 28,
+    alignItems: 'center'
+  },
+  routeStopNumber: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+    color: colors.onPrimary,
+    textAlign: 'center',
+    lineHeight: 24,
+    fontSize: 10,
+    fontWeight: '900'
+  },
+  routeStopLine: {
+    width: 2,
+    flex: 1,
+    minHeight: 18,
+    backgroundColor: colors.border
+  },
+  routeStopCopy: {
+    flex: 1,
+    paddingBottom: spacing.sm
+  },
+  routeStopName: {
+    color: colors.text,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '800'
+  },
+  routeStopNote: {
+    marginTop: 2,
+    color: colors.muted,
+    fontSize: 10.5,
+    lineHeight: 15
   },
   trailBody: {
     gap: spacing.xs
