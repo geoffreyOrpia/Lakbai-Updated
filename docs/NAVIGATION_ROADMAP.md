@@ -53,4 +53,6 @@ Road-only routing still returns `ferry-required` for cross-channel requests. Fer
 
 Continuous road → source-verified trail journeys are now implemented for walking targets with verified trail geometry. LakBai routes to the verified trail start, keeps one distance/progress/ETA timeline across the transition, announces the trail entry, suppresses road rerouting/wrong-way logic while on the trail leg, and only marks arrival at the verified mapped trail endpoint. Driving remains road-only and unverified trails are never composed into navigation.
 
-Next implementation priority: add alternative-route previews, then multi-stop journeys. Both must reuse the existing restriction/access policy and preserve ferry/trail journey semantics instead of bypassing them.
+Alternative-route previews are now implemented as an on-demand, bounded search over the same offline A* policy. LakBai keeps the primary route reversible, generates only sufficiently distinct practical candidates, and reuses the same one-way/access/barrier/turn-restriction enforcement. Continuous road→trail journeys may vary the road approach while preserving the exact verified trail leg. The fixed source-reviewed ferry transport leg does not advertise alternative ferry routes.
+
+Next implementation priority: multi-stop journeys that reuse the existing local Trips itinerary order, calculate one continuous offline journey through each stop, and preserve road/ferry/trail semantics between stops.

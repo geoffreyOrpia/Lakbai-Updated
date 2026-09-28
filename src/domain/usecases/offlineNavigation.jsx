@@ -215,6 +215,7 @@ export const calculateOfflineRoute = ({
   maxSnapDistanceKm = 1.5,
   targetLabel = 'destination',
   initialTurnState = [],
+  excludedEdgeKeys = null,
 }) => {
   if (graph.meta?.regionId && graph.meta?.samalBoundary) {
     const originRegion = regionForPosition(from, graph.meta);
@@ -249,7 +250,7 @@ export const calculateOfflineRoute = ({
     snapped.endId,
     mode,
     normalizedPreference,
-    { scenicOsmIds, initialTurnState: seededTurnState },
+    { scenicOsmIds, initialTurnState: seededTurnState, excludedEdgeKeys },
   );
   if (!path) {
     return {

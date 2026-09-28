@@ -18,6 +18,21 @@ const graph = {
   ],
 };
 
+const alternativeGraph = {
+  ...graph,
+  nodes: [
+    ...graph.nodes,
+    { id: 'alt', lat: 7.286, lng: 125.686 },
+  ],
+  edges: [
+    ...graph.edges,
+    { from: 'a', to: 'alt', distanceKm: 1.8, walk: true, drive: true, highway: 'secondary', name: 'Alternative North' },
+    { from: 'alt', to: 'c', distanceKm: 1.65, walk: true, drive: true, highway: 'secondary', name: 'Alternative South' },
+    { from: 'c', to: 'alt', distanceKm: 1.65, walk: true, drive: true, highway: 'secondary', name: 'Alternative South' },
+    { from: 'alt', to: 'a', distanceKm: 1.8, walk: true, drive: true, highway: 'secondary', name: 'Alternative North' },
+  ],
+};
+
 const ferryMainlandGraph = {
   meta: { id: 'ferry-mainland-fixture' },
   nodes: [
@@ -373,6 +388,30 @@ describe('NavigationViewModel', () => {
       id: 'spot-city-park',
     }));
     expect(vm.state.preview).toBe(false);
+  });
+
+  test('finds and selects a distinct alternative while preserving the verified trail leg', async () => {
+    const { vm } = createVm({ graphValue: alternativeGraph });
+    await vm.load();
+    await vm.startFromGps();
+
+    await vm.findAlternatives();
+
+    expect(vm.state.alternativeRoutes.length).toBeGreaterThan(0);
+    expect(vm.state.alternativeBaseRoute?.type).toBe('road-trail-journey');
+    const alternative = vm.state.alternativeRoutes[0];
+    expect(alternative.type).toBe('road-trail-journey');
+    expect(alternative.trailLeg.geometry).toEqual(vm.state.trailPreview.geometry);
+
+    vm.selectAlternative(alternative.alternativeId);
+
+    expect(vm.state.route.alternativeId).toBe(alternative.alternativeId);
+    expect(vm.state.selectedAlternativeId).toBe(alternative.alternativeId);
+    expect(vm.state.route.maneuvers.some(maneuver => maneuver.kind === 'trail-enter')).toBe(true);
+
+    vm.selectAlternative('primary');
+    expect(vm.state.selectedAlternativeId).toBeNull();
+    expect(vm.state.route).toBe(vm.state.alternativeBaseRoute);
   });
 
   test('keeps the selected exploration preference in route calculation', async () => {

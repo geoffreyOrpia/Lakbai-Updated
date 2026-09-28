@@ -277,6 +277,51 @@ export const NavigationScreen = ({ viewModel }) => {
             />
           </View>
 
+          {!state.tracking && !state.arrived && state.route?.type !== 'ferry-journey' ? <View style={[styles.journeyCard, shadows.soft]}>
+              <View style={styles.journeyHeader}>
+                <View style={styles.journeyIcon}>
+                  <Ionicons name="git-branch-outline" size={19} color={colors.primary} />
+                </View>
+                <View style={styles.journeyCopy}>
+                  <Text style={styles.journeyEyebrow}>ALTERNATIVE ROUTES</Text>
+                  <Text style={styles.journeyTitle}>Compare another legal path before you start</Text>
+                </View>
+              </View>
+              <Text style={styles.journeyNote}>
+                Alternatives reuse the same one-way, access, barrier and turn-restriction rules. LakBai only shows distinct routes within a practical distance range.
+              </Text>
+              <SecondaryButton
+                label={state.alternativesLoading
+                  ? 'Finding alternatives…'
+                  : state.alternativeRoutes.length
+                  ? 'Refresh alternatives'
+                  : 'Find alternatives'}
+                icon="git-branch-outline"
+                disabled={state.alternativesLoading}
+                onPress={() => void viewModel.findAlternatives()}
+              />
+              {state.alternativeBaseRoute ? <View style={styles.alternativeList}>
+                  <AlternativeRouteOption
+                    label="Primary route"
+                    route={state.alternativeBaseRoute}
+                    selected={!state.selectedAlternativeId}
+                    onPress={() => viewModel.selectAlternative('primary')}
+                  />
+                  {state.alternativeRoutes.map((candidate, index) => <AlternativeRouteOption
+                    key={candidate.alternativeId}
+                    label={`Alternative ${index + 1}`}
+                    route={candidate}
+                    selected={state.selectedAlternativeId === candidate.alternativeId}
+                    onPress={() => viewModel.selectAlternative(candidate.alternativeId)}
+                    deltaKm={candidate.distanceDeltaKm}
+                    deltaMin={candidate.durationDeltaMin}
+                  />)}
+                  {!state.alternativeRoutes.length ? <Text style={styles.alternativeEmpty}>
+                      No sufficiently distinct legal alternative was found for this route.
+                    </Text> : null}
+                </View> : null}
+            </View> : null}
+
           {state.preview ? <InfoBanner
             tone="warn"
             text="Preview mode starts from a fixed point inside this routing coverage for demonstration only. Clear the preview and use your GPS before real navigation."
@@ -503,6 +548,40 @@ const JourneyStep = ({ icon, label, detail }) => (
   </View>
 );
 
+const AlternativeRouteOption = ({
+  label,
+  route,
+  selected,
+  onPress,
+  deltaKm = null,
+  deltaMin = null,
+}) => (
+  <Pressable
+    accessibilityRole="radio"
+    accessibilityState={{ checked: selected }}
+    accessibilityLabel={`${label}, ${formatKm(route.distanceKm)}, ${formatDurationMinutes(route.durationMin)}`}
+    onPress={onPress}
+    style={({ pressed }) => [
+      styles.alternativeRow,
+      selected && styles.alternativeRowSelected,
+      pressed && styles.preferenceOptionPressed,
+    ]}
+  >
+    <View style={[styles.alternativeRadio, selected && styles.alternativeRadioSelected]}>
+      {selected ? <View style={styles.alternativeRadioDot} /> : null}
+    </View>
+    <View style={styles.alternativeCopy}>
+      <Text style={styles.alternativeTitle}>{label}</Text>
+      <Text style={styles.alternativeMeta}>
+        {formatKm(route.distanceKm)} · {formatDurationMinutes(route.durationMin)}
+        {deltaKm != null && deltaKm > 0.01 ? ` · +${formatKm(deltaKm)}` : ''}
+        {deltaMin != null && deltaMin > 0.4 ? ` · +${Math.round(deltaMin)} min` : ''}
+      </Text>
+    </View>
+    <Ionicons name={selected ? 'checkmark-circle' : 'chevron-forward'} size={18} color={colors.primary} />
+  </Pressable>
+);
+
 const ModeOption = ({ icon, label, selected, onPress }) => (
   <Pressable
     accessibilityRole="radio"
@@ -695,6 +774,64 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+  },
+  alternativeList: {
+    gap: spacing.xs,
+  },
+  alternativeRow: {
+    minHeight: 58,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.white,
+  },
+  alternativeRowSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySofter,
+  },
+  alternativeRadio: {
+    width: 18,
+    height: 18,
+    borderWidth: 2,
+    borderColor: colors.border,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alternativeRadioSelected: {
+    borderColor: colors.primary,
+  },
+  alternativeRadioDot: {
+    width: 8,
+    height: 8,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+  },
+  alternativeCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  alternativeTitle: {
+    color: colors.text,
+    fontSize: 12.5,
+    fontWeight: '900',
+  },
+  alternativeMeta: {
+    marginTop: 2,
+    color: colors.muted,
+    fontSize: 10.2,
+    lineHeight: 14,
+  },
+  alternativeEmpty: {
+    color: colors.muted,
+    fontSize: 10.5,
+    lineHeight: 15,
+    textAlign: 'center',
+    paddingVertical: spacing.xs,
   },
   journeyIcon: {
     width: 36,

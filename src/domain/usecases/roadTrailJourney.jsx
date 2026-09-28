@@ -52,6 +52,7 @@ export const calculateOfflineRoadTrailJourney = ({
   routeAttractors = [],
   maxSnapDistanceKm = 1,
   initialTurnState = [],
+  roadRoute = null,
 }) => {
   if (!trail?.routeVerified || !trail?.geometry?.coordinates?.length) {
     return { ok: false, reason: 'trail-unverified' };
@@ -62,33 +63,35 @@ export const calculateOfflineRoadTrailJourney = ({
   const trailStart = trail.start ?? trailPoints[0];
   const trailEnd = trailPoints.at(-1);
   const trailDistanceKm = totalDistanceKm(trailPoints);
-  const roadRoute = calculateOfflineRoute({
-    graph,
-    from,
-    to: trailStart,
-    mode: 'walk',
-    preference,
-    routeAttractors,
-    maxSnapDistanceKm,
-    targetLabel: trailStart.name ?? trail.name,
-    initialTurnState,
-  });
-  if (!roadRoute.ok) {
+  const approachRoute = roadRoute?.ok
+    ? roadRoute
+    : calculateOfflineRoute({
+      graph,
+      from,
+      to: trailStart,
+      mode: 'walk',
+      preference,
+      routeAttractors,
+      maxSnapDistanceKm,
+      targetLabel: trailStart.name ?? trail.name,
+      initialTurnState,
+    });
+  if (!approachRoute.ok) {
     return {
       ok: false,
       reason: 'trail-approach-route-failed',
-      routeReason: roadRoute.reason,
+      routeReason: approachRoute.reason,
     };
   }
 
-  const roadEndKm = roadRoute.distanceKm;
+  const roadEndKm = approachRoute.distanceKm;
   const totalDistanceKmValue = roadEndKm + trailDistanceKm;
   const geometryCoordinates = [];
-  appendCoordinates(geometryCoordinates, roadRoute.geometry.coordinates);
+  appendCoordinates(geometryCoordinates, approachRoute.geometry.coordinates);
   appendCoordinates(geometryCoordinates, trail.geometry.coordinates);
 
   const maneuvers = [
-    ...offsetRoadManeuvers(roadRoute.maneuvers),
+    ...offsetRoadManeuvers(approachRoute.maneuvers),
     {
       id: 'trail-enter',
       kind: 'trail-enter',
@@ -112,16 +115,16 @@ export const calculateOfflineRoadTrailJourney = ({
     ok: true,
     type: 'road-trail-journey',
     mode: 'walk',
-    preference: roadRoute.preference,
-    routingPolicy: roadRoute.routingPolicy,
-    scenicAnchorCount: roadRoute.scenicAnchorCount,
-    initialTurnState: roadRoute.initialTurnState,
-    startSnap: roadRoute.startSnap,
-    endSnap: roadRoute.endSnap,
+    preference: approachRoute.preference,
+    routingPolicy: approachRoute.routingPolicy,
+    scenicAnchorCount: approachRoute.scenicAnchorCount,
+    initialTurnState: approachRoute.initialTurnState,
+    startSnap: approachRoute.startSnap,
+    endSnap: approachRoute.endSnap,
     geometry: { type: 'LineString', coordinates: geometryCoordinates },
     maneuvers,
     distanceKm: totalDistanceKmValue,
-    durationMin: roadRoute.durationMin + (trail.durationMin ?? 0),
+    durationMin: approachRoute.durationMin + (trail.durationMin ?? 0),
     finalTarget: {
       label: trail.waypoints?.find(waypoint => waypoint.type === 'end')?.name
         ?? `${trail.name} end`,
@@ -142,7 +145,7 @@ export const calculateOfflineRoadTrailJourney = ({
       kind: 'road',
       startKm: 0,
       endKm: roadEndKm,
-      route: roadRoute,
+      route: approachRoute,
     }, {
       kind: 'trail',
       startKm: roadEndKm,

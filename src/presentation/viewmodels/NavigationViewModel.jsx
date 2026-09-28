@@ -22,6 +22,7 @@ import {
   isOnTrailLeg,
   remainingRoadTrailDurationMin,
 } from "../../domain/usecases/roadTrailJourney.jsx";
+import { calculateOfflineRouteAlternatives } from "../../domain/usecases/routeAlternatives.jsx";
 import { routingRegionFor } from "../../data/assets/routingRegionAssets.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 
@@ -132,6 +133,10 @@ export class NavigationViewModel extends ViewModel {
       distanceToNextManeuverKm: null,
       voiceGuidance: true,
       rerouteCount: 0,
+      alternativeRoutes: [],
+      alternativeBaseRoute: null,
+      alternativesLoading: false,
+      selectedAlternativeId: null,
       journeyPhase: null,
       wrongWay: false,
       arrived: false,
@@ -359,6 +364,9 @@ export class NavigationViewModel extends ViewModel {
       fix: from,
       accuracyM: from.accuracy ?? null,
       route: result,
+      alternativeRoutes: [],
+      alternativeBaseRoute: null,
+      selectedAlternativeId: null,
       coverage: result.type === 'ferry-journey'
         ? 'Davao del Norte ↔ Samal via source-reviewed ferry link'
         : this.state.coverage,
@@ -385,6 +393,100 @@ export class NavigationViewModel extends ViewModel {
     });
     if (!preview) this.applyFix(from);
     return result;
+  };
+
+  findAlternatives = async () => {
+    const route = this.state.route;
+    const from = this.state.fix;
+    if (!route?.ok || !from || this.state.tracking || this.state.alternativesLoading) return;
+    if (route.type === 'ferry-journey') {
+      this.setState({
+        alternativeRoutes: [],
+        error: 'Alternative road previews are not offered across the fixed ferry transport leg.',
+      });
+      return;
+    }
+
+    this.setState({ alternativesLoading: true, error: null });
+    try {
+      const primaryRoadRoute = route.type === 'road-trail-journey'
+        ? route.legs?.find(leg => leg.kind === 'road')?.route
+        : route;
+      const target = route.type === 'road-trail-journey'
+        ? route.trailLeg?.start
+        : this.state.target;
+      if (!primaryRoadRoute?.ok || !target) {
+        this.setState({ alternativeRoutes: [] });
+        return;
+      }
+      const result = calculateOfflineRouteAlternatives({
+        graph: this.state.graph,
+        from,
+        to: target,
+        mode: this.state.mode,
+        preference: this.state.preference,
+        routeAttractors: this.state.scenicPois,
+        maxSnapDistanceKm: 1,
+        targetLabel: target.name ?? target.label ?? this.state.destinationName,
+        primaryRoute: primaryRoadRoute,
+        limit: 2,
+      });
+      const alternatives = route.type === 'road-trail-journey'
+        ? result.alternatives.map(candidate => ({
+          ...calculateOfflineRoadTrailJourney({
+            graph: this.state.graph,
+            from,
+            trail: this.state.trailPreview,
+            mode: 'walk',
+            preference: this.state.preference,
+            routeAttractors: this.state.scenicPois,
+            maxSnapDistanceKm: 1,
+            roadRoute: candidate,
+          }),
+          alternativeId: candidate.alternativeId,
+          distanceDeltaKm: candidate.distanceDeltaKm,
+          durationDeltaMin: candidate.durationDeltaMin,
+        })).filter(candidate => candidate.ok)
+        : result.alternatives;
+      this.setState({
+        alternativeRoutes: alternatives,
+        alternativeBaseRoute: route,
+        selectedAlternativeId: null,
+      });
+    } finally {
+      this.setState({ alternativesLoading: false });
+    }
+  };
+
+  selectAlternative = alternativeId => {
+    if (this.state.tracking) return;
+    const route = alternativeId === 'primary'
+      ? this.state.alternativeBaseRoute
+      : this.state.alternativeRoutes.find(candidate => (
+        candidate.alternativeId === alternativeId
+      ));
+    if (!route?.ok) return;
+    this.resetSpokenGuidance();
+    this.resetNavigationEvidence();
+    this.setState({
+      route,
+      selectedAlternativeId: alternativeId === 'primary' ? null : alternativeId,
+      progressPct: 0,
+      distanceAlongKm: 0,
+      remainingKm: route.distanceKm,
+      remainingMin: route.type === 'road-trail-journey'
+        ? remainingRoadTrailDurationMin(route, 0)
+        : route.durationMin,
+      usingLiveEta: false,
+      offRouteM: null,
+      nextManeuver: route.maneuvers?.[1] ?? route.maneuvers?.[0] ?? null,
+      distanceToNextManeuverKm: route.maneuvers?.[1]?.distanceAlongKm ?? null,
+      routePois: placesAlongRoute(route, this.state.offlinePois),
+      journeyPhase: route.type === 'road-trail-journey' ? 'road' : null,
+      wrongWay: false,
+      arrived: false,
+      error: null,
+    });
   };
 
   startNavigation = async () => {
@@ -448,7 +550,11 @@ export class NavigationViewModel extends ViewModel {
 
   setPreference = preference => {
     if (this.state.tracking || this.state.calculating) return;
-    this.setState({ preference: normalizeRoutePreference(preference) });
+    this.setState({
+      preference: normalizeRoutePreference(preference),
+      alternativeRoutes: [],
+      selectedAlternativeId: null,
+    });
   };
 
   setMode = mode => {
@@ -457,6 +563,8 @@ export class NavigationViewModel extends ViewModel {
     this.setState({
       mode,
       preference: mode === 'walk' ? this.state.preference : 'direct',
+      alternativeRoutes: [],
+      selectedAlternativeId: null,
     });
   };
 
@@ -825,6 +933,9 @@ export class NavigationViewModel extends ViewModel {
       this.resetNavigationEvidence({ preserveRerouteCooldown: true });
       this.setState(previous => ({
         route: result,
+        alternativeRoutes: [],
+        alternativeBaseRoute: null,
+        selectedAlternativeId: null,
         journeyPhase: (
           result.type === 'ferry-journey'
           || result.type === 'road-trail-journey'
@@ -858,6 +969,10 @@ export class NavigationViewModel extends ViewModel {
       fix: null,
       accuracyM: null,
       route: null,
+      alternativeRoutes: [],
+      alternativeBaseRoute: null,
+      alternativesLoading: false,
+      selectedAlternativeId: null,
       preview: false,
       tracking: false,
       progressPct: 0,

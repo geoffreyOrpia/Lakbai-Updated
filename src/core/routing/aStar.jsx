@@ -108,6 +108,7 @@ export const aStarRoute = (
     const currentCost = current.cost;
     for (const edge of index.adjacency.get(current.id) ?? []) {
       if (!edgeSupportsMode(edge, mode)) continue;
+      if (context.excludedEdgeKeys?.has(edge._turnKey)) continue;
       const active = hasTurns ? advanceTurnState(turnPolicy, current.active, edge._turnKey) : [];
       if (active === null) continue;
       const key = active.length ? JSON.stringify([edge.to, active]) : edge.to;

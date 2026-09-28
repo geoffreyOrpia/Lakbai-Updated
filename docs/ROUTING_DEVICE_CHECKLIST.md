@@ -39,6 +39,16 @@ Offline Discovery uses bundled catalog content plus a generated street-name inde
 - Search an alias such as a local/alternate road name and confirm the canonical OSM road name is shown. Record duplicate or ambiguous road-name results rather than assuming one representative point identifies the whole road.
 - Verify recent destinations remain device-local and bounded; removing a dropped pin must not remove destination packs, favorites or itineraries.
 
+## Alternative-route preview gate — device pending
+
+Automated tests cover distinct alternative generation, no-alternative graphs, reversible primary-route selection and preservation of verified trail geometry. Alternatives use the normal restriction/access engine; they are not a separate permissive router.
+
+- On routes with known parallel or branching roads, request alternatives before navigation and confirm every preview remains physically legal and reaches the same target.
+- Switch between the primary route and each alternative several times. Confirm the map, total distance/time, directions list and eventual live-navigation start all use the selected route.
+- For a road→verified-trail journey, confirm alternatives change only the road approach and keep the same verified trail geometry and endpoint.
+- Confirm a route with no genuinely distinct practical option reports no alternative rather than showing a near-duplicate.
+- Ferry journeys should keep the reviewed ferry transport leg fixed; do not interpret absence of ferry alternatives as live service availability information.
+
 ## Mainland–Samal ferry journey gate — device pending
 
 Automated tests cover mainland→Samal and Samal→mainland road-ferry-road composition, reverse ferry geometry, missing regional graphs, ferry-phase reroute suppression, and preservation of the existing road-only cross-channel rejection. These tests do not establish that the terminals, queues, schedules or service are correct on the day of travel.
