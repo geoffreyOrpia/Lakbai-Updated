@@ -1,5 +1,6 @@
 import { destinations } from "./destinations.jsx";
 import { packs } from "./packs.jsx";
+import { routingRegionFor, ROUTING_MANIFEST } from "../../assets/routingRegionAssets.jsx";
 import { verificationForDestination } from "./contentVerification.jsx";
 const REGION_PROVINCE = 'Davao del Norte';
 const sizeInKb = value => Math.max(1, Math.round(JSON.stringify(value).length / 1024));
@@ -35,8 +36,20 @@ const regionPacks = packs
 const packById = new Map(regionPacks.map(pack => [pack.id, pack]));
 export const seedDestinations = regionDestinations.map(destination => {
   const pack = packById.get(destination.id);
+  const region = routingRegionFor(destination.id);
+  const firstPlace = pack?.spots?.find(spot => Number.isFinite(spot.lat) && Number.isFinite(spot.lng));
+  const previewPlace = pack?.spots?.find(spot => Number.isFinite(spot.lat) && Number.isFinite(spot.lng) && spot.id !== firstPlace?.id);
+  const oldNavigation = destination.offlineNavigation;
+  const target = oldNavigation?.target ?? (firstPlace ? { label: firstPlace.name, lat: firstPlace.lat, lng: firstPlace.lng } : null);
   return {
     ...destination,
+    ...(region && target ? { offlineNavigation: {
+      graphId: 'davao-del-norte-' + region, mode: 'walk', regionId: region,
+      coverage: ROUTING_MANIFEST.regions[region].name,
+      target,
+      // Preview uses a labeled catalog place, never a simulated GPS fix.
+      previewStart: oldNavigation?.previewStart ?? { lat: previewPlace?.lat ?? target.lat, lng: previewPlace?.lng ?? target.lng },
+    } } : {}),
     verification: verificationForDestination(destination.id),
     version: pack?.version ?? 0,
     sizeKb: pack ? sizeInKb(pack) : null,

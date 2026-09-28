@@ -8,6 +8,7 @@ export const buildOfflinePackFiles = (
   savedAt = Date.now(),
   photoFiles = [],
   routingGraph = null,
+  sharedRouting = null,
 ) => {
   const map = createDestinationMapData(pack);
   const contextMap = createOfflineContextMapData(pack);
@@ -19,7 +20,8 @@ export const buildOfflinePackFiles = (
     version: pack.version,
     updatedAt: pack.updatedAt,
     savedAt,
-    format: 3,
+    format: sharedRouting ? 4 : 3,
+    ...(sharedRouting ? { sharedRouting } : {}),
     files: {
       guide: 'pack.json',
       map: 'places.geojson',

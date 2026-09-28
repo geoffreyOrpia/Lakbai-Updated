@@ -2,8 +2,8 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
-if (!config.resolver.assetExts.includes('pmtiles')) {
-  config.resolver.assetExts.push('pmtiles');
+for (const extension of ['pmtiles', 'routing']) {
+  if (!config.resolver.assetExts.includes(extension)) config.resolver.assetExts.push(extension);
 }
 
 module.exports = config;

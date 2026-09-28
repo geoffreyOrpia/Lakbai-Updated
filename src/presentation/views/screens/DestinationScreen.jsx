@@ -183,7 +183,7 @@ export const DestinationScreen = ({
           {destination.offlineNavigation ? <>
               <View style={styles.routingPilotBadge}>
                 <Ionicons name="cloud-offline-outline" size={13} color={colors.primary} />
-                <Text style={styles.routingPilotText}>OFFLINE ROUTING PILOT · {destination.offlineNavigation.coverage}</Text>
+                <Text style={styles.routingPilotText}>OFFLINE ROUTING · {destination.offlineNavigation.coverage}</Text>
               </View>
               <Pressable
                 accessibilityRole="button"

@@ -126,7 +126,7 @@ export const destinations = [{
   navigation: {
     label: 'J.P. Laurel Mangrove Reforestation Area',
     query: 'J.P. Laurel Mangrove Reforestation Area, Panabo City, Davao del Norte, Philippines',
-    note: 'LakBai has offline walking-route coverage for the Panabo pilot area. External Maps remains optional for road-arrival comparison.'
+    note: 'LakBai supports offline walking and driving on mapped mainland roads. External Maps remains optional for road-arrival comparison.'
   },
   offlineNavigation: {
     graphId: 'panabo-routing-pilot',

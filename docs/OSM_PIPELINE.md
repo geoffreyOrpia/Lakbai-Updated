@@ -42,11 +42,11 @@ The builder applies basic mode access and directional rules, including mode-spec
 
 ## Release limits
 
-Generated data is an **unverified candidate**, not automatically registered or shipped. Road presence in all municipalities does not prove complete coverage. The engine now enforces supported turn restrictions and node passage rules. Incomplete relations remain explicit validation failures; see the restriction audit below. Ferry ways are excluded from the road network. Conditional timing and country-specific defaults need further work.
+Raw generated data is an **unverified candidate**, not automatically registered or shipped. The reviewed regional assets described below are now enabled for device verification. Road presence in all municipalities does not prove complete coverage. The engine now enforces supported turn restrictions and node passage rules. Incomplete relations remain explicit validation failures; see the restriction audit below. Ferry ways are excluded from the road network. Conditional timing and country-specific defaults need further work.
 
 The geographic audit reports road-node counts, weak components, directed reachability between automatically selected anchors, source fingerprints, and graph size. Weak connectivity alone ignores travel direction. Anchors are test coordinates on the graph, not verified destination entrances. The runtime audit executes the actual JS routing engine on walking and driving samples within all 11 municipalities, representative mainland pairs, and a mainland-to-Samal pair. It checks the graph fingerprint and records the working-tree routing source fingerprints; this audit includes the pending navigation edits. Timing and memory are desktop measurements, not mobile performance claims.
 
-Same-road snap matching now distinguishes imported segment IDs so parallel sections of one OSM way remain distinct. Do not activate the provincial candidate until unresolved source restrictions, shared storage, mobile memory and route latency, coverage failures, and real-device offline behavior have been addressed. Keep the shipped Panabo data available during that transition.
+Same-road snap matching distinguishes imported segment IDs so parallel sections of one OSM way remain distinct. Shared storage and conservative source exclusions now pass automated checks. Mobile memory, route latency, coverage completeness and real-device offline behavior remain unverified. The legacy Panabo data stays available during migration.
 
 ## Compact storage and memory audit
 
@@ -76,7 +76,7 @@ Each audit runs in a fresh Node process using identical working-tree routing sou
 
 Peak memory includes parsing, Babel, routing and the audit harness. The older geographic audit used a different harness that retained the raw source buffer, so its RSS number is not the comparison baseline. Measurements are observations from this Windows/Node run, not mobile limits or guaranteed speedups. See [the memory comparison](data/davao-del-norte-memory-audit.json) for fingerprints and per-route timings.
 
-Compact graphs still load the whole province. Selective regional loading, shared provincial pack storage, unresolved source restrictions, and device validation remain release gates. The candidate is still ignored under `.tmp-routing/osm/`, with no provincial runtime registration. Use [the device checklist](ROUTING_DEVICE_CHECKLIST.md) for current shipped-pack regressions and the later provincial gate.
+The historical comparison loads the whole province. The current pack integration below loads mainland or Samal separately and shares installed data between packs. The full build candidate remains ignored under `.tmp-routing/osm/`; the selected regional assets are registered in the runtime. Device validation remains pending; use [the device checklist](ROUTING_DEVICE_CHECKLIST.md).
 
 ## Turn restrictions and node passage
 
@@ -84,7 +84,7 @@ Routing search now retains restriction progress as part of its search state. Rea
 
 Supported values are `no_left_turn`, `no_right_turn`, `no_u_turn`, `no_straight_on`, `only_left_turn`, `only_right_turn`, `only_straight_on`, `only_u_turn`, `no_entry` and `no_exit`. Mode-specific keys/types and semicolon-separated exceptions select the applicable rules. Walking does not inherit generic vehicle turn restrictions. Source references: [OSM restriction relations](https://wiki.openstreetmap.org/wiki/Relation:restriction), [access](https://wiki.openstreetmap.org/wiki/Key:access), and [barriers](https://wiki.openstreetmap.org/wiki/Key:barrier).
 
-Conditional turn prohibitions/obligations are conservatively applied all day; there is no schedule evaluator. Conditional access does not establish permission. Malformed, disconnected or excessively complex relation paths are recorded in `routingPolicy.unresolved`, not guessed. Compilation caps at 256 path edges, 256 alternatives and 10,000 traversal visits per applicable rule. Unresolved records remain a provincial release gate.
+Conditional turn prohibitions/obligations are conservatively applied all day; there is no schedule evaluator. Conditional access does not establish permission. Malformed, disconnected or excessively complex relation paths are recorded in `routingPolicy.unresolved`, not guessed. Compilation caps at 256 path edges, 256 alternatives and 10,000 traversal visits per applicable rule. Unresolved records must be resolved or conservatively excluded before shipping a generated dataset.
 
 Node policy uses `foot` for walking, and `motorcar`, `motor_vehicle`, then `vehicle` for driving, ahead of general `access`. Private/destination/customer-only or unknown access is excluded from public through-routing. Bollards and common pedestrian-passable barriers allow walking but block driving unless explicit mode permission establishes passage. Gates require mapped public permission; locked gates block passage. Unknown barriers, fences and walls block passage by default. A generic `access=yes` does not make a physical bollard passable by car. These are deliberately conservative app defaults, not assertions about unmapped real-world gate access. Vehicle dimensions, permits, opening hours and live gate status are not modeled.
 
@@ -98,7 +98,7 @@ The audit identifies 3,971 tagged barrier nodes. Passage is blocked at 3,196 nod
 node --expose-gc --max-old-space-size=4096 scripts/audit-routing-runtime.cjs --graph=.tmp-routing/osm/davaoDelNorteRoutingGraph.compact.json --report=docs/data/davao-del-norte-routing-audit.json --output=docs/data/davao-del-norte-restriction-audit.json
 ```
 
-The candidate remains disabled pending source cleanup, pack integration and device validation.
+The full candidate is retained for reproducible builds. Its two regional derivatives below are enabled, with device validation pending.
 
 ## Checks
 
@@ -108,3 +108,28 @@ npm run check
 ```
 
 The Python fixture writes and reads a real miniature PBF to check preservation of node identities, tags and relation members. The JS builder fixtures check checksum rejection, separate coincident nodes, access rules, one-way direction, province extent, and legacy input compatibility.
+
+## Shared regional pack integration
+
+Rebuild after the import and compaction steps above:
+
+```powershell
+node --max-old-space-size=4096 scripts/prepare-routing-regions.cjs --source=.tmp-routing/osm/davaoDelNorteRoutingGraph.compact.json --output=src/data/assets/routing
+node --max-old-space-size=4096 scripts/audit-routing-regions.cjs
+npx expo export --platform android --output-dir .tmp-routing/pack-work/android-export
+npm run check
+```
+
+The build partitions weakly connected road components into mainland and Samal; it refuses a component that connects both administrative land areas. It preserves whole components and neighboring context so municipal borders do not sever routes. A small sample of partitioned road nodes corrects coarse administrative polygons near the Samal coast when choosing a region. This selector is not a ferry or coastline model.
+
+The six incomplete relations (`15471384`, `15471385`, `15471386`, `15471387`, `15471388`, `15574199`) remain in the manifest with full member lists and an exclusion policy. Driving is disabled on their known approach ways (`1144654490`, `1152349942`, `732013629`). Walking permissions remain subject to ordinary access rules. The removed relations cannot be silently bypassed by driving through their approach roads. The build fails if either shipped region still has unresolved turn records; it does not fabricate missing members. These conservative exclusions may prevent otherwise legitimate journeys until source data is verified.
+
+`src/data/assets/routing/manifest.json` records source identity, license, dataset version, exclusions, bytes, MD5 and SHA-256. Metro packages the `.routing` payloads as file assets, avoiding eager JavaScript parsing of the full province. The current files are **39,464,684 bytes mainland** and **1,924,218 bytes Samal**. Git marks them binary to preserve checksum-stable bytes. Original curve geometry is retained.
+
+The five available guide packs now reference those files using manifest format 4. Their versions increase once for migration. Pack saves materialize a region once under `lakbaylokal/routing/<version>/`; concurrent saves share that operation. Runtime selection uses the actual target coordinates. Only the selected regional graph is parsed, and the repository caches one graph. The mainland remains a single large graph; finer partitions and mobile performance improvements may still be needed after measurement.
+
+MD5 and size are checked before using or promoting an installed file; SHA-256 is also checked in the build audit. A failed new copy cannot overwrite the previous version. An existing pack may use its older shared reference only after checksum verification, and legacy per-pack JSON graphs remain readable. Interrupted pack promotion restores its backup. Removing a destination keeps shared files, including older versions retained for rollback. Automatic shared-file garbage collection is deferred. A release build embeds the data; development asset downloads can require Metro until saved.
+
+[The pack audit](data/davao-del-norte-pack-audit.json) records 34 successful walking/driving samples covering all 11 municipalities and six mainland pairs, plus four rejected cross-channel cases. The ten catalog previews are also recorded: nine pass; driving to Panabo's boardwalk returns no connected permitted route. This is not corrected by relaxing road access. Existing catalog coordinates are not verified entrances.
+
+Storage tests cover concurrent destination saves, checksum rejection/repair, cold reuse, interrupted dataset copying, failed pack promotion, backup recovery, old-version fallback and pack deletion. Android export verifies both assets are included. All device, GPS, memory and real-road checks remain pending. Samal local routing is available; ferry journeys remain unsupported.

@@ -10,6 +10,8 @@ import { buildRouteManeuvers } from "../../core/routing/maneuvers.jsx";
 import { normalizeRoutePreference } from "../../core/routing/routingProfiles.jsx";
 import { RoutingMapOverlay } from "../../core/routing/routingMapOverlay.jsx";
 
+import { regionForPosition } from "../../core/routing/regionCoverage.jsx";
+
 const indexCache = new WeakMap();
 
 const routingIndexFor = graph => {
@@ -212,6 +214,12 @@ export const calculateOfflineRoute = ({
   maxSnapDistanceKm = 1.5,
   targetLabel = 'destination',
 }) => {
+  if (graph.meta?.regionId && graph.meta?.samalBoundary) {
+    const originRegion = regionForPosition(from, graph.meta);
+    const targetRegion = regionForPosition(to, graph.meta);
+    if (!originRegion || !targetRegion) return { ok: false, reason: 'outside-coverage' };
+    if (originRegion !== graph.meta.regionId || targetRegion !== graph.meta.regionId) return { ok: false, reason: 'ferry-required' };
+  }
   const normalizedPreference = mode === 'walk'
     ? normalizeRoutePreference(preference)
     : 'direct';

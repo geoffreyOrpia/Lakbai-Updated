@@ -12,7 +12,7 @@ const NATIONAL_EMERGENCY_CONTACT = {
 
 export const packs = [{
   id: 'samal',
-  version: 6,
+  version: 7,
   updatedAt: '2026-09-28T08:00:00.000Z',
   trails: [{
     id: 'samal-kaputian-coastal',
@@ -131,7 +131,7 @@ export const packs = [{
   }
 }, {
   id: 'hagimit-falls',
-  version: 4,
+  version: 5,
   updatedAt: '2026-09-28T08:00:00.000Z',
   trails: [{
     id: 'hagimit-nature-trail',
@@ -217,7 +217,7 @@ export const packs = [{
   }
 }, {
   id: 'monfort-bat-sanctuary',
-  version: 3,
+  version: 4,
   updatedAt: '2026-09-28T08:00:00.000Z',
   trails: [{
     id: 'monfort-sanctuary-path',
@@ -296,7 +296,7 @@ export const packs = [{
   }
 }, {
   id: 'tagum',
-  version: 4,
+  version: 5,
   updatedAt: '2026-09-28T08:00:00.000Z',
   trails: [{
     id: 'tagum-heritage-walk',
@@ -406,7 +406,7 @@ export const packs = [{
   }
 }, {
   id: 'panabo',
-  version: 5,
+  version: 6,
   updatedAt: '2026-09-28T11:00:00.000Z',
   trails: [{
     id: 'panabo-mangrove-boardwalk',

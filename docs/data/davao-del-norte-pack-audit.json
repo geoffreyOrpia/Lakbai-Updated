@@ -1,0 +1,608 @@
+{
+  "datasetVersion": "osm-20260927-fd48632e7c-q1",
+  "status": "enabled-device-verification-pending",
+  "source": "OpenStreetMap contributors / Geofabrik",
+  "sourceExportedAt": "2026-09-27T20:23:36Z",
+  "excludedDrivingWays": [
+    "1144654490",
+    "1152349942",
+    "732013629"
+  ],
+  "regions": {
+    "mainland": {
+      "id": "mainland",
+      "name": "Davao del Norte mainland roads",
+      "filename": "mainland.routing",
+      "bytes": 39464684,
+      "md5": "45f9e8715df8e433620f9412ecc51468",
+      "sha256": "d69cd66db0eaac70908f465c487f9912094c134ba1ffa06edf0349dc62509b73",
+      "bounds": [
+        125.3050911,
+        6.8741072,
+        125.9588973,
+        8.0223228
+      ],
+      "nodes": 100544,
+      "edges": 245061,
+      "compiledRestrictions": {
+        "walk": 0,
+        "drive": 321
+      },
+      "routingPolicy": {
+        "relations": 322,
+        "compiled": {
+          "walk": 0,
+          "drive": 321
+        },
+        "conservativeConditional": [
+          {
+            "id": "14353562",
+            "mode": "drive",
+            "value": "no_left_turn"
+          },
+          {
+            "id": "15332734",
+            "mode": "drive",
+            "value": "no_left_turn"
+          },
+          {
+            "id": "16288206",
+            "mode": "drive",
+            "value": "no_left_turn"
+          },
+          {
+            "id": "17126972",
+            "mode": "drive",
+            "value": "no_left_turn"
+          },
+          {
+            "id": "18806461",
+            "mode": "drive",
+            "value": "no_left_turn"
+          },
+          {
+            "id": "19212720",
+            "mode": "drive",
+            "value": "no_left_turn"
+          },
+          {
+            "id": "19767266",
+            "mode": "drive",
+            "value": "no_left_turn"
+          },
+          {
+            "id": "19775845",
+            "mode": "drive",
+            "value": "only_right_turn"
+          },
+          {
+            "id": "19794303",
+            "mode": "drive",
+            "value": "no_right_turn"
+          },
+          {
+            "id": "19854669",
+            "mode": "drive",
+            "value": "no_left_turn"
+          },
+          {
+            "id": "19854670",
+            "mode": "drive",
+            "value": "no_left_turn"
+          },
+          {
+            "id": "19976815",
+            "mode": "drive",
+            "value": "no_left_turn"
+          },
+          {
+            "id": "20277752",
+            "mode": "drive",
+            "value": "no_left_turn"
+          }
+        ],
+        "unresolved": []
+      }
+    },
+    "samal": {
+      "id": "samal",
+      "name": "Samal island roads",
+      "filename": "samal.routing",
+      "bytes": 1924218,
+      "md5": "bd7f474c4cd9c76b2b0a9931c82a2b3e",
+      "sha256": "fab8cfdec05ef7280886a8d250b908ae37436c3b48385a8463190c90670edea9",
+      "bounds": [
+        125.6627329,
+        6.8980237,
+        125.7969949,
+        7.1970395
+      ],
+      "nodes": 4658,
+      "edges": 11302,
+      "compiledRestrictions": {
+        "walk": 0,
+        "drive": 0
+      },
+      "routingPolicy": {
+        "relations": 0,
+        "compiled": {
+          "walk": 0,
+          "drive": 0
+        },
+        "conservativeConditional": [],
+        "unresolved": []
+      }
+    }
+  },
+  "routes": [
+    {
+      "region": "mainland",
+      "mode": "walk",
+      "from": "Asuncion",
+      "to": "Asuncion",
+      "ok": true,
+      "distanceKm": 28.61568147574056,
+      "desktopMs": 1523
+    },
+    {
+      "region": "mainland",
+      "mode": "walk",
+      "from": "Carmen",
+      "to": "Carmen",
+      "ok": true,
+      "distanceKm": 12.221452644168037,
+      "desktopMs": 5
+    },
+    {
+      "region": "mainland",
+      "mode": "walk",
+      "from": "Kapalong",
+      "to": "Kapalong",
+      "ok": true,
+      "distanceKm": 48.62465731398139,
+      "desktopMs": 5
+    },
+    {
+      "region": "mainland",
+      "mode": "walk",
+      "from": "New Corella",
+      "to": "New Corella",
+      "ok": true,
+      "distanceKm": 19.53589646527906,
+      "desktopMs": 5
+    },
+    {
+      "region": "mainland",
+      "mode": "walk",
+      "from": "City of Panabo",
+      "to": "City of Panabo",
+      "ok": true,
+      "distanceKm": 20.769649697591476,
+      "desktopMs": 8
+    },
+    {
+      "region": "mainland",
+      "mode": "walk",
+      "from": "Santo Tomas",
+      "to": "Santo Tomas",
+      "ok": true,
+      "distanceKm": 16.65434027018571,
+      "desktopMs": 3
+    },
+    {
+      "region": "mainland",
+      "mode": "walk",
+      "from": "City of Tagum",
+      "to": "City of Tagum",
+      "ok": true,
+      "distanceKm": 16.815275790606428,
+      "desktopMs": 9
+    },
+    {
+      "region": "mainland",
+      "mode": "walk",
+      "from": "Talaingod",
+      "to": "Talaingod",
+      "ok": true,
+      "distanceKm": 111.61587090558184,
+      "desktopMs": 49
+    },
+    {
+      "region": "mainland",
+      "mode": "walk",
+      "from": "Braulio E. Dujali",
+      "to": "Braulio E. Dujali",
+      "ok": true,
+      "distanceKm": 12.780947356229225,
+      "desktopMs": 3
+    },
+    {
+      "region": "mainland",
+      "mode": "walk",
+      "from": "San Isidro",
+      "to": "San Isidro",
+      "ok": true,
+      "distanceKm": 17.039364400792458,
+      "desktopMs": 3
+    },
+    {
+      "region": "mainland",
+      "mode": "walk",
+      "from": "City of Panabo",
+      "to": "City of Tagum",
+      "ok": true,
+      "distanceKm": 25.084877049900705,
+      "desktopMs": 24
+    },
+    {
+      "region": "mainland",
+      "mode": "walk",
+      "from": "City of Tagum",
+      "to": "Talaingod",
+      "ok": true,
+      "distanceKm": 71.25515395653836,
+      "desktopMs": 122
+    },
+    {
+      "region": "mainland",
+      "mode": "walk",
+      "from": "Asuncion",
+      "to": "New Corella",
+      "ok": true,
+      "distanceKm": 17.356969458451236,
+      "desktopMs": 2
+    },
+    {
+      "region": "mainland",
+      "mode": "walk",
+      "from": "Santo Tomas",
+      "to": "Kapalong",
+      "ok": true,
+      "distanceKm": 42.53619995949627,
+      "desktopMs": 17
+    },
+    {
+      "region": "mainland",
+      "mode": "walk",
+      "from": "Carmen",
+      "to": "Braulio E. Dujali",
+      "ok": true,
+      "distanceKm": 14.288134997968045,
+      "desktopMs": 4
+    },
+    {
+      "region": "mainland",
+      "mode": "walk",
+      "from": "San Isidro",
+      "to": "City of Tagum",
+      "ok": true,
+      "distanceKm": 49.22929870335179,
+      "desktopMs": 25
+    },
+    {
+      "region": "mainland",
+      "mode": "drive",
+      "from": "Asuncion",
+      "to": "Asuncion",
+      "ok": true,
+      "distanceKm": 31.419227498865997,
+      "desktopMs": 70
+    },
+    {
+      "region": "mainland",
+      "mode": "drive",
+      "from": "Carmen",
+      "to": "Carmen",
+      "ok": true,
+      "distanceKm": 12.751792887699251,
+      "desktopMs": 15
+    },
+    {
+      "region": "mainland",
+      "mode": "drive",
+      "from": "Kapalong",
+      "to": "Kapalong",
+      "ok": true,
+      "distanceKm": 34.18562542766503,
+      "desktopMs": 7
+    },
+    {
+      "region": "mainland",
+      "mode": "drive",
+      "from": "New Corella",
+      "to": "New Corella",
+      "ok": true,
+      "distanceKm": 21.10364034718703,
+      "desktopMs": 10
+    },
+    {
+      "region": "mainland",
+      "mode": "drive",
+      "from": "City of Panabo",
+      "to": "City of Panabo",
+      "ok": true,
+      "distanceKm": 21.362231135117423,
+      "desktopMs": 39
+    },
+    {
+      "region": "mainland",
+      "mode": "drive",
+      "from": "Santo Tomas",
+      "to": "Santo Tomas",
+      "ok": true,
+      "distanceKm": 16.61661619864118,
+      "desktopMs": 13
+    },
+    {
+      "region": "mainland",
+      "mode": "drive",
+      "from": "City of Tagum",
+      "to": "City of Tagum",
+      "ok": true,
+      "distanceKm": 15.640850864532357,
+      "desktopMs": 52
+    },
+    {
+      "region": "mainland",
+      "mode": "drive",
+      "from": "Talaingod",
+      "to": "Talaingod",
+      "ok": true,
+      "distanceKm": 92.08903487043386,
+      "desktopMs": 54
+    },
+    {
+      "region": "mainland",
+      "mode": "drive",
+      "from": "Braulio E. Dujali",
+      "to": "Braulio E. Dujali",
+      "ok": true,
+      "distanceKm": 12.784022022216595,
+      "desktopMs": 4
+    },
+    {
+      "region": "mainland",
+      "mode": "drive",
+      "from": "San Isidro",
+      "to": "San Isidro",
+      "ok": true,
+      "distanceKm": 22.48805863748508,
+      "desktopMs": 5
+    },
+    {
+      "region": "mainland",
+      "mode": "drive",
+      "from": "City of Panabo",
+      "to": "City of Tagum",
+      "ok": true,
+      "distanceKm": 25.11916762358209,
+      "desktopMs": 39
+    },
+    {
+      "region": "mainland",
+      "mode": "drive",
+      "from": "City of Tagum",
+      "to": "Talaingod",
+      "ok": true,
+      "distanceKm": 58.299648551549794,
+      "desktopMs": 181
+    },
+    {
+      "region": "mainland",
+      "mode": "drive",
+      "from": "Asuncion",
+      "to": "New Corella",
+      "ok": true,
+      "distanceKm": 17.45336048339493,
+      "desktopMs": 13
+    },
+    {
+      "region": "mainland",
+      "mode": "drive",
+      "from": "Santo Tomas",
+      "to": "Kapalong",
+      "ok": true,
+      "distanceKm": 44.77370642113546,
+      "desktopMs": 51
+    },
+    {
+      "region": "mainland",
+      "mode": "drive",
+      "from": "Carmen",
+      "to": "Braulio E. Dujali",
+      "ok": true,
+      "distanceKm": 15.401861337664727,
+      "desktopMs": 24
+    },
+    {
+      "region": "mainland",
+      "mode": "drive",
+      "from": "San Isidro",
+      "to": "City of Tagum",
+      "ok": true,
+      "distanceKm": 50.74869809551181,
+      "desktopMs": 37
+    },
+    {
+      "region": "samal",
+      "mode": "walk",
+      "from": "Island Garden City of Samal",
+      "to": "Island Garden City of Samal",
+      "ok": true,
+      "distanceKm": 21.51584752700816,
+      "desktopMs": 81
+    },
+    {
+      "region": "samal",
+      "mode": "drive",
+      "from": "Island Garden City of Samal",
+      "to": "Island Garden City of Samal",
+      "ok": true,
+      "distanceKm": 21.85358534822571,
+      "desktopMs": 10
+    }
+  ],
+  "catalogRoutes": [
+    {
+      "pack": "tagum",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "target": {
+        "label": "Christ the King Cathedral",
+        "lat": 7.4477,
+        "lng": 125.8071
+      },
+      "previewStart": {
+        "lat": 7.4496,
+        "lng": 125.8072
+      },
+      "distanceKm": 0.7408949862889019
+    },
+    {
+      "pack": "tagum",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "target": {
+        "label": "Christ the King Cathedral",
+        "lat": 7.4477,
+        "lng": 125.8071
+      },
+      "previewStart": {
+        "lat": 7.4496,
+        "lng": 125.8072
+      },
+      "distanceKm": 0.5350801040632843
+    },
+    {
+      "pack": "panabo",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "target": {
+        "label": "Panabo Mangrove Park",
+        "lat": 7.272383,
+        "lng": 125.680829
+      },
+      "previewStart": {
+        "lat": 7.2999,
+        "lng": 125.6807
+      },
+      "distanceKm": 3.9342007922313305
+    },
+    {
+      "pack": "panabo",
+      "mode": "drive",
+      "ok": false,
+      "reason": "no-route",
+      "target": {
+        "label": "Panabo Mangrove Park",
+        "lat": 7.272383,
+        "lng": 125.680829
+      },
+      "previewStart": {
+        "lat": 7.2999,
+        "lng": 125.6807
+      },
+      "distanceKm": null
+    },
+    {
+      "pack": "samal",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "target": {
+        "label": "Port of Babak",
+        "lat": 7.1336203,
+        "lng": 125.6847488
+      },
+      "previewStart": {
+        "lat": 6.987,
+        "lng": 125.7213
+      },
+      "distanceKm": 21.542796978695772
+    },
+    {
+      "pack": "samal",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "target": {
+        "label": "Port of Babak",
+        "lat": 7.1336203,
+        "lng": 125.6847488
+      },
+      "previewStart": {
+        "lat": 6.987,
+        "lng": 125.7213
+      },
+      "distanceKm": 23.51041494459836
+    },
+    {
+      "pack": "hagimit-falls",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "target": {
+        "label": "Hagimit Entrance Gate",
+        "lat": 7.1172,
+        "lng": 125.6965
+      },
+      "previewStart": {
+        "lat": 7.1201,
+        "lng": 125.6921
+      },
+      "distanceKm": 2.656509185692606
+    },
+    {
+      "pack": "hagimit-falls",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "target": {
+        "label": "Hagimit Entrance Gate",
+        "lat": 7.1172,
+        "lng": 125.6965
+      },
+      "previewStart": {
+        "lat": 7.1201,
+        "lng": 125.6921
+      },
+      "distanceKm": 2.656509185692606
+    },
+    {
+      "pack": "monfort-bat-sanctuary",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "target": {
+        "label": "Sanctuary Visitor Center",
+        "lat": 7.1259,
+        "lng": 125.6776
+      },
+      "previewStart": {
+        "lat": 7.1281,
+        "lng": 125.6796
+      },
+      "distanceKm": 0.22093919162880477
+    },
+    {
+      "pack": "monfort-bat-sanctuary",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "target": {
+        "label": "Sanctuary Visitor Center",
+        "lat": 7.1259,
+        "lng": 125.6776
+      },
+      "previewStart": {
+        "lat": 7.1281,
+        "lng": 125.6796
+      },
+      "distanceKm": 0.22093919162880477
+    }
+  ],
+  "crossChannelSamplesRejected": 4
+}

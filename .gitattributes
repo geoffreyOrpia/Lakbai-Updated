@@ -1,0 +1,2 @@
+# Routing payloads are binary assets to Metro; do not normalize their bytes.
+src/data/assets/routing/*.routing binary

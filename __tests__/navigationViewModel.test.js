@@ -131,6 +131,8 @@ describe('NavigationViewModel', () => {
     expect(routingDeps.routingGraphRepository.getForDestination).toHaveBeenCalledWith(
       'panabo',
       'file:///packs/panabo/routing.graph.json',
+      vm.state.target,
+      null,
     );
   });
 

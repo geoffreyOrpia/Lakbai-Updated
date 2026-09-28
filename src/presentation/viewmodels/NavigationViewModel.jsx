@@ -124,6 +124,8 @@ export class NavigationViewModel extends ViewModel {
       const graph = await this.routingDeps.routingGraphRepository.getForDestination(
         this.state.destinationId,
         bundle?.routingGraphUri ?? null,
+        this.state.target,
+        bundle?.sharedRouting ?? null,
       );
       const trailPreview = this.state.trailId
         ? savedPack?.trails?.find(trail => (
@@ -139,6 +141,7 @@ export class NavigationViewModel extends ViewModel {
       this.setState({
         graph,
         graphMeta: graph?.meta ?? null,
+        coverage: graph?.meta?.name ?? this.state.coverage,
         trailPreview,
         offlinePois,
         scenicPois,
@@ -246,7 +249,9 @@ export class NavigationViewModel extends ViewModel {
         remainingMin: null,
         nextManeuver: null,
         distanceToNextManeuverKm: null,
-        error: result.reason === 'outside-coverage'
+        error: result.reason === 'ferry-required'
+          ? 'Mainland and Samal road networks are separate. Ferry navigation is not available; start road navigation after arriving on the same island or mainland as your destination.'
+          : result.reason === 'outside-coverage'
           ? `Your position is outside the current ${this.state.coverage ?? 'offline-routing coverage'}.`
           : 'No connected offline route could be found from this position.',
       });
