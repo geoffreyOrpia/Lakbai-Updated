@@ -259,20 +259,167 @@ describe('NavigationViewModel', () => {
     expect(vm.state.gpsError).toContain('paused');
   });
 
-  test('waits for three reliable off-route fixes before rerouting', async () => {
-    const { vm } = createVm();
+  test('confirms a missed-turn trace before rerouting', async () => {
+    const { vm } = createVm({
+      fix: { lat: 7.2999, lng: 125.6801, accuracy: 5, timestamp: 1_000 },
+    });
     await vm.load();
     await vm.startFromGps();
     vm.setState({ tracking: true });
     const reroute = jest.spyOn(vm, 'rerouteFrom').mockResolvedValue();
 
-    const offRouteFix = { lat: 7.2999, lng: 125.6815, accuracy: 5 };
-    vm.applyFix(offRouteFix);
-    vm.applyFix(offRouteFix);
+    const missedTurnTrace = [
+      { lat: 7.2999, lng: 125.6815, accuracy: 5, timestamp: 3_000 },
+      { lat: 7.2998, lng: 125.6815, accuracy: 5, timestamp: 5_000 },
+      { lat: 7.2997, lng: 125.6815, accuracy: 5, timestamp: 7_000 },
+    ];
+    missedTurnTrace.slice(0, 2).forEach(fix => vm.applyFix(fix));
     expect(reroute).not.toHaveBeenCalled();
 
-    vm.applyFix(offRouteFix);
+    vm.applyFix(missedTurnTrace[2]);
     expect(reroute).toHaveBeenCalledTimes(1);
+  });
+
+  test('advances consistently on a correct deterministic GPS trace', async () => {
+    const { vm, emitFix } = createVm({
+      fix: { lat: 7.2999, lng: 125.6801, accuracy: 5, timestamp: 1_000 },
+    });
+    await vm.load();
+    await vm.startFromGps();
+    await vm.startNavigation();
+
+    const progress = [];
+    [
+      { lat: 7.296, lng: 125.6802, accuracy: 5, speed: 1.4, heading: 0, timestamp: 3_000 },
+      { lat: 7.291, lng: 125.68035, accuracy: 5, speed: 1.5, heading: 180, timestamp: 5_000 },
+      { lat: 7.285, lng: 125.6805, accuracy: 5, speed: 1.5, heading: 180, timestamp: 7_000 },
+    ].forEach(fix => {
+      emitFix(fix);
+      progress.push(vm.state.distanceAlongKm);
+    });
+
+    expect(progress[1]).toBeGreaterThan(progress[0]);
+    expect(progress[2]).toBeGreaterThan(progress[1]);
+    expect(vm.state.wrongWay).toBe(false);
+    expect(vm.state.gpsError).toBeNull();
+  });
+
+  test('holds progress and guidance steady through stationary GPS jitter', async () => {
+    const { vm, speechService, emitFix } = createVm({
+      fix: { lat: 7.2999, lng: 125.6801, accuracy: 6, timestamp: 1_000 },
+    });
+    await vm.load();
+    await vm.startFromGps();
+    await vm.startNavigation();
+    const before = {
+      distanceAlongKm: vm.state.distanceAlongKm,
+      remainingKm: vm.state.remainingKm,
+      maneuverId: vm.state.nextManeuver?.id,
+      spoken: speechService.speak.mock.calls.length,
+    };
+
+    [
+      { lat: 7.299904, lng: 125.680103, accuracy: 6, speed: 0, timestamp: 3_000 },
+      { lat: 7.299896, lng: 125.680097, accuracy: 7, speed: 0, timestamp: 5_000 },
+      { lat: 7.299902, lng: 125.680099, accuracy: 6, speed: 0, timestamp: 7_000 },
+    ].forEach(fix => emitFix(fix));
+
+    expect(vm.state.distanceAlongKm).toBe(before.distanceAlongKm);
+    expect(vm.state.remainingKm).toBe(before.remainingKm);
+    expect(vm.state.nextManeuver?.id).toBe(before.maneuverId);
+    expect(speechService.speak).toHaveBeenCalledTimes(before.spoken);
+  });
+
+  test('uses sustained reverse movement instead of one heading reading for wrong-way rerouting', async () => {
+    const { vm, emitFix } = createVm({
+      fix: { lat: 7.2999, lng: 125.6801, accuracy: 5, timestamp: 1_000 },
+    });
+    await vm.load();
+    await vm.startFromGps();
+    await vm.startNavigation();
+    const reroute = jest.spyOn(vm, 'rerouteFrom').mockResolvedValue();
+
+    emitFix({ lat: 7.296, lng: 125.6802, accuracy: 5, speed: 1.5, heading: 0, timestamp: 3_000 });
+    expect(reroute).not.toHaveBeenCalled();
+
+    emitFix({ lat: 7.29606, lng: 125.6802, accuracy: 5, speed: 1.4, heading: 0, timestamp: 5_000 });
+    emitFix({ lat: 7.29612, lng: 125.6802, accuracy: 5, speed: 1.4, heading: 0, timestamp: 7_000 });
+    expect(reroute).not.toHaveBeenCalled();
+    emitFix({ lat: 7.29618, lng: 125.6802, accuracy: 5, speed: 1.4, heading: 0, timestamp: 9_000 });
+
+    expect(reroute).toHaveBeenCalledTimes(1);
+  });
+
+  test('rejects stale and out-of-order fixes without rewinding navigation state', async () => {
+    const { vm, speechService, emitFix } = createVm({
+      fix: { lat: 7.2999, lng: 125.6801, accuracy: 5, timestamp: 1_000 },
+    });
+    await vm.load();
+    await vm.startFromGps();
+    await vm.startNavigation();
+
+    emitFix({ lat: 7.291, lng: 125.68035, accuracy: 5, speed: 1.5, timestamp: 5_000 });
+    const before = {
+      fix: vm.state.fix,
+      distanceAlongKm: vm.state.distanceAlongKm,
+      remainingKm: vm.state.remainingKm,
+      spoken: speechService.speak.mock.calls.length,
+    };
+
+    emitFix({ lat: 7.2725, lng: 125.6808, accuracy: 4, speed: 1.5, timestamp: 4_000 });
+
+    expect(vm.state.fix).toBe(before.fix);
+    expect(vm.state.distanceAlongKm).toBe(before.distanceAlongKm);
+    expect(vm.state.remainingKm).toBe(before.remainingKm);
+    expect(speechService.speak).toHaveBeenCalledTimes(before.spoken);
+  });
+
+  test('pauses for poor accuracy and resumes cleanly after GPS loss', async () => {
+    const { vm, emitFix, emitLocationError } = createVm({
+      fix: { lat: 7.2999, lng: 125.6801, accuracy: 5, timestamp: 1_000 },
+    });
+    await vm.load();
+    await vm.startFromGps();
+    await vm.startNavigation();
+
+    emitFix({ lat: 7.296, lng: 125.6802, accuracy: 5, speed: 1.4, timestamp: 3_000 });
+    const beforePoorFix = vm.state.distanceAlongKm;
+    emitFix({ lat: 7.285, lng: 125.6805, accuracy: 140, speed: 1.4, timestamp: 5_000 });
+    expect(vm.state.distanceAlongKm).toBe(beforePoorFix);
+    expect(vm.state.gpsError).toContain('paused');
+
+    emitLocationError('GPS signal unavailable');
+    expect(vm.state.gpsError).toBe('GPS signal unavailable');
+    emitFix({ lat: 7.291, lng: 125.68035, accuracy: 6, speed: 1.4, timestamp: 9_000 });
+
+    expect(vm.state.distanceAlongKm).toBeGreaterThan(beforePoorFix);
+    expect(vm.state.gpsError).toBeNull();
+    expect(vm.state.wrongWay).toBe(false);
+  });
+
+  test('enforces a reroute cooldown after a confirmed deviation', async () => {
+    const { vm } = createVm({
+      fix: { lat: 7.2999, lng: 125.6801, accuracy: 5, timestamp: 1_000 },
+    });
+    await vm.load();
+    await vm.startFromGps();
+    vm.setState({ tracking: true });
+    const reroute = jest.spyOn(vm, 'rerouteFrom').mockResolvedValue();
+
+    const offRouteFix = timestamp => ({
+      lat: 7.2999 - timestamp / 1_000_000,
+      lng: 125.6815,
+      accuracy: 5,
+      timestamp,
+    });
+    [3_000, 5_000, 7_000].forEach(timestamp => vm.applyFix(offRouteFix(timestamp)));
+    expect(reroute).toHaveBeenCalledTimes(1);
+
+    [9_000, 11_000, 13_000].forEach(timestamp => vm.applyFix(offRouteFix(timestamp)));
+    expect(reroute).toHaveBeenCalledTimes(1);
+
+    vm.applyFix(offRouteFix(19_000));
+    expect(reroute).toHaveBeenCalledTimes(2);
   });
 
   test('marks arrival, stops tracking, and can hand off to the verified trail', async () => {

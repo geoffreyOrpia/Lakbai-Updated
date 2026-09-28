@@ -1,5 +1,6 @@
 import { haversineKm } from "../utils/geo.jsx";
 import { coordinatePoint, edgeCoordinates } from "./edgeGeometry.jsx";
+import { edgeSupportsMode } from "./graph.jsx";
 
 const toRad = value => value * Math.PI / 180;
 const toDeg = value => value * 180 / Math.PI;
@@ -53,7 +54,28 @@ const instructionFor = (kind, streetName) => {
 
 const normalizedName = edge => edge?.name?.trim() || null;
 
-export const buildRouteManeuvers = (index, path, targetLabel = 'destination') => {
+const junctionRequiresChoice = (
+  index,
+  junctionId,
+  previousNodeId,
+  nextNodeId,
+  mode,
+) => {
+  const outgoing = (index.adjacency.get(String(junctionId)) ?? [])
+    .filter(edge => edgeSupportsMode(edge, mode))
+    .filter(edge => String(edge.to) !== String(previousNodeId));
+  if (outgoing.length < 2) return false;
+
+  const uniqueDestinations = new Set(outgoing.map(edge => String(edge.to)));
+  return uniqueDestinations.size >= 2 && uniqueDestinations.has(String(nextNodeId));
+};
+
+export const buildRouteManeuvers = (
+  index,
+  path,
+  targetLabel = 'destination',
+  mode = 'walk',
+) => {
   if (!path?.nodeIds?.length) return [];
   const firstEdge = path.edges[0];
   const firstName = normalizedName(firstEdge);
@@ -87,8 +109,17 @@ export const buildRouteManeuvers = (index, path, targetLabel = 'destination') =>
     const nextName = normalizedName(nextEdge);
     const nameChanged = Boolean(nextName && nextName !== previousName);
     const significantTurn = Math.abs(delta) >= (nameChanged ? 25 : 55);
+    const forkDecision = Math.abs(delta) >= 20
+      && Math.abs(delta) < 55
+      && junctionRequiresChoice(
+        index,
+        path.nodeIds[indexInPath],
+        path.nodeIds[indexInPath - 1],
+        path.nodeIds[indexInPath + 1],
+        mode,
+      );
 
-    if (!nameChanged && !significantTurn) continue;
+    if (!nameChanged && !significantTurn && !forkDecision) continue;
     if (previousAddedAtKm >= 0 && cumulativeKm - previousAddedAtKm < 0.015 && !significantTurn) continue;
 
     const kind = classifyTurn(delta);

@@ -6,13 +6,40 @@ const routePoints = route => (
   (route?.geometry?.coordinates ?? []).map(([lng, lat]) => ({ lat, lng }))
 );
 
+const normalizedHeading = value => (
+  Number.isFinite(value) ? ((value % 360) + 360) % 360 : null
+);
+
+export const headingDifferenceDeg = (a, b) => {
+  const first = normalizedHeading(a);
+  const second = normalizedHeading(b);
+  if (first == null || second == null) return null;
+  const difference = Math.abs(first - second);
+  return Math.min(difference, 360 - difference);
+};
+
+export const bearingBetween = (from, to) => {
+  if (!from || !to) return null;
+  const lat1 = from.lat * Math.PI / 180;
+  const lat2 = to.lat * Math.PI / 180;
+  const deltaLng = (to.lng - from.lng) * Math.PI / 180;
+  const y = Math.sin(deltaLng) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2)
+    - Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
+  return normalizedHeading(Math.atan2(y, x) * 180 / Math.PI);
+};
+
 export const projectPositionOntoRoute = (
   route,
   position,
   {
     previousDistanceAlongKm = null,
     maxBacktrackKm = 0.04,
+    maxAdvanceKm = null,
     progressPreferenceSlackM = 20,
+    headingDeg = null,
+    headingPreferenceSlackM = 18,
+    headingPenaltyM = 36,
   } = {},
 ) => {
   const points = routePoints(route);
@@ -36,8 +63,11 @@ export const projectPositionOntoRoute = (
   let best = {
     distanceToRouteM: Number.POSITIVE_INFINITY,
     distanceAlongKm: 0,
+    segmentIndex: 0,
+    segmentBearingDeg: null,
+    headingDifferenceDeg: null,
   };
-  let bestProgressive = null;
+  let bestPreferred = null;
 
   for (let index = 0; index < points.length - 1; index += 1) {
     const start = points[index];
@@ -54,27 +84,44 @@ export const projectPositionOntoRoute = (
     const projectedY = a.y + t * dy;
     const distanceM = Math.hypot(projectedX, projectedY);
     const segmentKm = haversineKm(start, end);
+    const segmentBearingDeg = bearingBetween(start, end);
+    const headingDelta = headingDifferenceDeg(headingDeg, segmentBearingDeg);
+    const headingCostM = headingDelta == null
+      ? 0
+      : Math.min(1, headingDelta / 90) * headingPenaltyM;
 
     const candidate = {
       distanceToRouteM: distanceM,
       distanceAlongKm: cumulativeKm + segmentKm * t,
+      segmentIndex: index,
+      segmentBearingDeg,
+      headingDifferenceDeg: headingDelta,
+      matchScoreM: distanceM + headingCostM,
     };
     if (distanceM < best.distanceToRouteM) best = candidate;
     if (
-      Number.isFinite(previousDistanceAlongKm)
-      && candidate.distanceAlongKm >= previousDistanceAlongKm - maxBacktrackKm
-      && (!bestProgressive || distanceM < bestProgressive.distanceToRouteM)
+      (
+        !Number.isFinite(previousDistanceAlongKm)
+        || candidate.distanceAlongKm >= previousDistanceAlongKm - maxBacktrackKm
+      )
+      && (
+        !Number.isFinite(maxAdvanceKm)
+        || candidate.distanceAlongKm <= maxAdvanceKm
+      )
+      && (!bestPreferred || candidate.matchScoreM < bestPreferred.matchScoreM)
     ) {
-      bestProgressive = candidate;
+      bestPreferred = candidate;
     }
     cumulativeKm += segmentKm;
   }
 
+  const preferenceSlackM = progressPreferenceSlackM
+    + (normalizedHeading(headingDeg) == null ? 0 : headingPreferenceSlackM);
   if (
-    bestProgressive
-    && bestProgressive.distanceToRouteM <= best.distanceToRouteM + progressPreferenceSlackM
+    bestPreferred
+    && bestPreferred.distanceToRouteM <= best.distanceToRouteM + preferenceSlackM
   ) {
-    best = bestProgressive;
+    best = bestPreferred;
   }
 
   const totalDistanceKm = route.distanceKm || cumulativeKm;
@@ -97,6 +144,27 @@ export const nextRouteManeuver = (route, distanceAlongKm) => {
     maneuver: next,
     distanceKm: next ? Math.max(0, next.distanceAlongKm - distanceAlongKm) : null,
   };
+};
+
+export const upcomingRouteManeuvers = (
+  route,
+  distanceAlongKm = 0,
+  maxResults = 5,
+) => {
+  const maneuvers = route?.maneuvers ?? [];
+  const thresholdKm = Math.max(0, distanceAlongKm - 0.005);
+
+  return maneuvers
+    .filter(maneuver => (
+      maneuver.kind === 'depart'
+        ? distanceAlongKm <= 0.005
+        : maneuver.distanceAlongKm >= thresholdKm
+    ))
+    .map(maneuver => ({
+      ...maneuver,
+      distanceAheadKm: Math.max(0, maneuver.distanceAlongKm - distanceAlongKm),
+    }))
+    .slice(0, Math.max(0, maxResults));
 };
 
 export const remainingDurationMin = (route, remainingKm, speedMps = null) => {

@@ -11,6 +11,7 @@ import {
   placesAlongRoute,
   projectPositionOntoRoute,
   remainingDurationMin,
+  upcomingRouteManeuvers,
 } from '../src/core/routing/routeProgress.jsx';
 import { calculateOfflineRoute } from '../src/domain/usecases/offlineNavigation.jsx';
 
@@ -63,6 +64,24 @@ const preferenceGraph = {
     { from: 'road', to: 'end', distanceKm: 1.2, walk: true, highway: 'residential', name: 'Local Road', osmId: 'road-way' },
     { from: 'start', to: 'path', distanceKm: 1.3, walk: true, highway: 'path', surface: 'ground', name: 'Forest Path', osmId: 'scenic-way' },
     { from: 'path', to: 'end', distanceKm: 1.3, walk: true, highway: 'path', surface: 'ground', name: 'Forest Path', osmId: 'scenic-way' },
+  ],
+};
+
+const forkGraph = {
+  meta: { id: 'fork-fixture' },
+  nodes: [
+    { id: 'a', lat: 7, lng: 125 },
+    { id: 'b', lat: 7, lng: 125.01 },
+    { id: 'c', lat: 6.995, lng: 125.02 },
+    { id: 'd', lat: 7.005, lng: 125.02 },
+  ],
+  edges: [
+    { from: 'a', to: 'b', distanceKm: 1, walk: true, drive: true, highway: 'residential', name: 'Fork Road' },
+    { from: 'b', to: 'a', distanceKm: 1, walk: true, drive: true, highway: 'residential', name: 'Fork Road' },
+    { from: 'b', to: 'c', distanceKm: 1.1, walk: true, drive: true, highway: 'residential', name: 'Fork Road' },
+    { from: 'c', to: 'b', distanceKm: 1.1, walk: true, drive: true, highway: 'residential', name: 'Fork Road' },
+    { from: 'b', to: 'd', distanceKm: 1.1, walk: true, drive: true, highway: 'residential', name: 'Fork Road' },
+    { from: 'd', to: 'b', distanceKm: 1.1, walk: true, drive: true, highway: 'residential', name: 'Fork Road' },
   ],
 };
 
@@ -183,6 +202,26 @@ describe('offline routing core', () => {
     expect(remainingDurationMin(route, 2, 2)).toBe(22);
   });
 
+  test('returns a bounded list of upcoming turn-by-turn steps', () => {
+    const route = {
+      maneuvers: [
+        { id: 'depart', kind: 'depart', instruction: 'Start', distanceAlongKm: 0 },
+        { id: 'one', kind: 'right', instruction: 'Turn right', distanceAlongKm: 0.4 },
+        { id: 'two', kind: 'left', instruction: 'Turn left', distanceAlongKm: 0.9 },
+        { id: 'arrive', kind: 'arrive', instruction: 'Arrive', distanceAlongKm: 1.2 },
+      ],
+    };
+
+    expect(upcomingRouteManeuvers(route, 0, 2)).toEqual([
+      expect.objectContaining({ id: 'depart', distanceAheadKm: 0 }),
+      expect.objectContaining({ id: 'one', distanceAheadKm: 0.4 }),
+    ]);
+    expect(upcomingRouteManeuvers(route, 0.5, 5).map(step => step.id)).toEqual([
+      'two',
+      'arrive',
+    ]);
+  });
+
   test('routes between projected points instead of jumping to the nearest junctions', () => {
     const result = calculateOfflineRoute({
       graph,
@@ -249,6 +288,23 @@ describe('offline routing core', () => {
     expect(classifyTurn(-90)).toBe('left');
   });
 
+  test('adds slight-turn guidance when a same-name road forks', () => {
+    const result = calculateOfflineRoute({
+      graph: forkGraph,
+      from: { lat: 7, lng: 125 },
+      to: { lat: 6.995, lng: 125.02 },
+      mode: 'walk',
+      maxSnapDistanceKm: 0.2,
+      targetLabel: 'Fork destination',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.maneuvers.some(maneuver => (
+      maneuver.kind === 'slight-right'
+      && maneuver.instruction === 'Keep slightly right onto Fork Road'
+    ))).toBe(true);
+  });
+
   test('projects live position onto a route and advances to the next maneuver', () => {
     const route = calculateOfflineRoute({
       graph,
@@ -296,6 +352,30 @@ describe('offline routing core', () => {
     expect(nearestOnly.distanceAlongKm).toBeLessThan(1);
     expect(progressAware.distanceAlongKm).toBeGreaterThan(1.5);
     expect(progressAware.distanceToRouteM).toBeLessThan(15);
+  });
+
+  test('uses travel heading to distinguish opposite parallel route legs', () => {
+    const route = {
+      distanceKm: 2.3,
+      durationMin: 30,
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+          [125, 7],
+          [125.01, 7],
+          [125.01, 7.0003],
+          [125, 7.0003],
+        ],
+      },
+    };
+    const ambiguousFix = { lat: 7.00015, lng: 125.005 };
+
+    const eastbound = projectPositionOntoRoute(route, ambiguousFix, { headingDeg: 90 });
+    const westbound = projectPositionOntoRoute(route, ambiguousFix, { headingDeg: 270 });
+
+    expect(eastbound.segmentIndex).toBe(0);
+    expect(westbound.segmentIndex).toBe(2);
+    expect(westbound.distanceAlongKm).toBeGreaterThan(eastbound.distanceAlongKm + 1);
   });
 
   test('finds offline places ahead inside the route corridor', () => {

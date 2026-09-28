@@ -17,6 +17,17 @@ Provincial roads are enabled in the five available destination packs. Install a 
 
 For driving behavior, operate the app while parked or have a passenger handle it. Record unexpected instructions without following an unsafe or prohibited movement.
 
+## Dynamic navigation reliability gate — device pending
+
+Deterministic automated GPS-trace fixtures now exercise forward travel, stationary jitter, sustained reverse travel, parallel route legs, missed turns, poor accuracy, stale/out-of-order fixes, GPS loss/recovery and reroute cooldowns. These are recorded/simulated test inputs only; they do **not** count as live-GPS or phone verification.
+
+- While stationary outdoors, leave live navigation running for several minutes. Confirm normal GPS drift does not advance route progress, change the active maneuver, repeat voice prompts, or trigger rerouting.
+- Walk or drive a suitable route with close parallel roads and multi-leg intersections. Confirm matching stays on the traveled route leg and does not jump forward/backward at crossings. Record the raw GPS accuracy shown by the app.
+- Safely travel opposite the active route for long enough to establish sustained movement. Confirm one noisy compass/heading update does not reroute, but continued reverse movement is detected and recalculation occurs once appropriate.
+- Deliberately miss a safe turn and continue away from the route. Confirm LakBai waits for several reliable fixes, reroutes once, and does not repeatedly recalculate while the new route is settling.
+- Move through an area with degraded GPS or temporarily disable location services, then restore a good fix. Confirm progress, remaining distance/ETA and spoken guidance pause rather than jump, and resume from the recovered position without replaying obsolete instructions.
+- If device logs expose delayed or out-of-order location callbacks, confirm older timestamps are ignored. Do not treat simulator-injected coordinates as evidence for this device check.
+
 ## Provincial coverage and recovery gate
 
 This gate is ready for device testing. Do not mark it passed from Panabo results or the desktop audit. Six incomplete restriction relations are conservatively excluded by blocking driving on their known approach roads; no missing turn membership was guessed. The engine enforces supported restrictions and conservative barrier rules.

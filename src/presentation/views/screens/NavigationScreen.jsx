@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { upcomingRouteManeuvers } from "../../../core/routing/routeProgress.jsx";
 import { formatKm, formatDurationMinutes } from "../../../core/utils/format.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
 import { BackAction, PrimaryButton, SecondaryButton } from "../components/Buttons.jsx";
@@ -74,6 +75,15 @@ export const NavigationScreen = ({ viewModel }) => {
   const shownDurationMin = state.tracking || state.arrived
     ? state.remainingMin ?? state.route?.durationMin
     : state.route?.durationMin;
+  const routeSteps = state.route
+    ? upcomingRouteManeuvers(state.route, state.distanceAlongKm ?? 0, 5)
+    : [];
+  const remainingStepCount = state.route
+    ? Math.max(0, (state.route.maneuvers?.filter(maneuver => (
+      maneuver.kind !== 'depart'
+      && maneuver.distanceAlongKm >= (state.distanceAlongKm ?? 0) - 0.005
+    )).length ?? 0) - routeSteps.filter(step => step.kind !== 'depart').length)
+    : 0;
 
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <BackAction label={state.destinationName || 'Destination'} onPress={() => viewModel.back()} />
@@ -103,7 +113,11 @@ export const NavigationScreen = ({ viewModel }) => {
         tone="warn"
         text="No curated scenic POI is close enough to this routing graph to change the route, so Scenic currently behaves like Direct."
       /> : null}
-      {state.rerouting ? <InfoBanner tone="info" text="You left the active route. LakBai is recalculating another offline route from your current position." /> : null}
+      {state.rerouting ? <InfoBanner tone="info" text="LakBai confirmed a route deviation and is recalculating another offline route from your current position." /> : null}
+      {state.wrongWay && state.tracking && !state.rerouting ? <InfoBanner
+        tone="warn"
+        text="Your recent movement is consistently opposite the active route. LakBai waits for sustained movement before recalculating so one noisy heading reading cannot trigger a reroute."
+      /> : null}
       {viewModel.offRoute && state.tracking && !state.rerouting ? <InfoBanner
         tone="warn"
         text={`You are about ${Math.round(state.offRouteM ?? 0)} m from the active route. LakBai waits for several reliable GPS fixes before rerouting to avoid reacting to location drift.`}
@@ -247,6 +261,43 @@ export const NavigationScreen = ({ viewModel }) => {
                 icon={state.voiceGuidance ? 'volume-high-outline' : 'volume-mute-outline'}
                 onPress={() => viewModel.toggleVoiceGuidance()}
               />
+            </View> : null}
+
+          {routeSteps.length && !state.arrived ? <View style={[styles.routeStepsCard, shadows.soft]}>
+              <View style={styles.routeStepsHeader}>
+                <View>
+                  <Text style={styles.routeStepsEyebrow}>
+                    {state.tracking ? 'UPCOMING DIRECTIONS' : 'ROUTE OVERVIEW'}
+                  </Text>
+                  <Text style={styles.routeStepsTitle}>
+                    {state.tracking ? 'What comes next' : 'Turn-by-turn offline steps'}
+                  </Text>
+                </View>
+                <Ionicons name="list-outline" size={21} color={colors.primary} />
+              </View>
+              {routeSteps.map((step, index) => <View key={step.id} style={styles.routeStepRow}>
+                  <View style={[
+                    styles.routeStepIcon,
+                    index === 0 && styles.routeStepIconActive,
+                  ]}>
+                    <Ionicons
+                      name={maneuverIcon(step.kind)}
+                      size={16}
+                      color={index === 0 ? colors.onPrimary : colors.primary}
+                    />
+                  </View>
+                  <View style={styles.routeStepCopy}>
+                    <Text style={styles.routeStepInstruction}>{step.instruction}</Text>
+                    <Text style={styles.routeStepDistance}>
+                      {step.kind === 'depart' && step.distanceAheadKm <= 0.005
+                        ? 'Start here'
+                        : formatAhead(step.distanceAheadKm) + ' ahead'}
+                    </Text>
+                  </View>
+                </View>)}
+              {remainingStepCount > 0 ? <Text style={styles.routeStepsMore}>
+                  +{remainingStepCount} more step{remainingStepCount === 1 ? '' : 's'} on this route
+                </Text> : null}
             </View> : null}
 
           {state.arrived ? <View style={[styles.arrivalCard, shadows.card]}>
@@ -756,6 +807,73 @@ const styles = StyleSheet.create({
     color: colors.accentDark,
     fontSize: 11,
     fontWeight: '900',
+  },
+  routeStepsCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    backgroundColor: colors.white,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  routeStepsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  routeStepsEyebrow: {
+    color: colors.primary,
+    fontSize: 8.8,
+    fontWeight: '900',
+    letterSpacing: 0.6,
+  },
+  routeStepsTitle: {
+    marginTop: 1,
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  routeStepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  routeStepIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.primarySofter,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  routeStepIconActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
+  },
+  routeStepCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  routeStepInstruction: {
+    color: colors.text,
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '800',
+  },
+  routeStepDistance: {
+    marginTop: 1,
+    color: colors.muted,
+    fontSize: 9.5,
+    fontWeight: '700',
+  },
+  routeStepsMore: {
+    color: colors.muted,
+    fontSize: 9.5,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   progressMeta: {
     flexDirection: 'row',

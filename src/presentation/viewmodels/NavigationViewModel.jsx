@@ -1,5 +1,7 @@
 import { haversineKm } from "../../core/utils/geo.jsx";
 import {
+  bearingBetween,
+  headingDifferenceDeg,
   nextRouteManeuver,
   placesAlongRoute,
   projectPositionOntoRoute,
@@ -13,6 +15,17 @@ const MAX_NAVIGATION_ACCURACY_M = 60;
 const MAX_ROUTE_START_ACCURACY_M = 80;
 const BASE_OFF_ROUTE_M = 45;
 const OFF_ROUTE_CONFIRM_FIXES = 3;
+const WRONG_WAY_CONFIRM_FIXES = 3;
+const WRONG_WAY_HEADING_DEG = 120;
+const REROUTE_COOLDOWN_MS = 12_000;
+const MIN_MOVEMENT_M = Object.freeze({
+  walk: 4,
+  drive: 8,
+});
+const WRONG_WAY_DISTANCE_M = Object.freeze({
+  walk: 12,
+  drive: 30,
+});
 
 const SCENIC_POI_CATEGORIES = new Set([
   'attraction',
@@ -56,9 +69,15 @@ const spokenGuidance = (maneuver, distanceKm, stage) => {
 export class NavigationViewModel extends ViewModel {
   unwatch = null;
   offRouteSamples = 0;
+  wrongWaySamples = 0;
+  wrongWayDistanceM = 0;
   spokenManeuverId = null;
   spokenStage = null;
   speedSamples = [];
+  lastAcceptedFix = null;
+  lastFixTimestamp = null;
+  lastRerouteAtMs = null;
+  gpsLost = false;
 
   constructor(routingDeps, destinationDeps, locationService, route, nav) {
     super({
@@ -96,6 +115,7 @@ export class NavigationViewModel extends ViewModel {
       distanceToNextManeuverKm: null,
       voiceGuidance: true,
       rerouteCount: 0,
+      wrongWay: false,
       arrived: false,
       gpsError: null,
       error: null,
@@ -258,6 +278,7 @@ export class NavigationViewModel extends ViewModel {
       return null;
     }
 
+    this.resetNavigationEvidence();
     this.setState({
       fix: from,
       accuracyM: from.accuracy ?? null,
@@ -271,6 +292,7 @@ export class NavigationViewModel extends ViewModel {
       nextManeuver: result.maneuvers?.[1] ?? result.maneuvers?.[0] ?? null,
       distanceToNextManeuverKm: result.maneuvers?.[1]?.distanceAlongKm ?? null,
       routePois: placesAlongRoute(result, this.state.offlinePois),
+      wrongWay: false,
       arrived: false,
       error: null,
     });
@@ -297,15 +319,18 @@ export class NavigationViewModel extends ViewModel {
       gpsError: null,
       arrived: false,
     });
+    this.announceGuidance(
+      this.state.nextManeuver,
+      this.state.distanceToNextManeuverKm,
+      true,
+    );
 
     try {
       const currentFix = await this.locationService.getCurrentFix();
       if (currentFix) this.applyFix(currentFix);
       this.unwatch = await this.locationService.watchFix(
         fix => this.applyFix(fix),
-        message => this.setState({
-          gpsError: message || 'Live GPS updates are unavailable right now.',
-        }),
+        this.handleLocationError,
       );
     } catch {
       this.stopLocationWatch();
@@ -319,12 +344,12 @@ export class NavigationViewModel extends ViewModel {
   stopNavigation = () => {
     this.stopLocationWatch();
     this.stopSpeech();
-    this.speedSamples = [];
-    this.offRouteSamples = 0;
+    this.resetNavigationEvidence();
     this.setState({
       tracking: false,
       rerouting: false,
       usingLiveEta: false,
+      wrongWay: false,
       gpsError: null,
     });
   };
@@ -355,6 +380,29 @@ export class NavigationViewModel extends ViewModel {
   resetSpokenGuidance = () => {
     this.spokenManeuverId = null;
     this.spokenStage = null;
+  };
+
+  resetNavigationEvidence = ({ preserveRerouteCooldown = false } = {}) => {
+    this.speedSamples = [];
+    this.offRouteSamples = 0;
+    this.wrongWaySamples = 0;
+    this.wrongWayDistanceM = 0;
+    this.lastAcceptedFix = null;
+    this.lastFixTimestamp = null;
+    this.gpsLost = false;
+    if (!preserveRerouteCooldown) this.lastRerouteAtMs = null;
+  };
+
+  handleLocationError = message => {
+    this.gpsLost = true;
+    this.offRouteSamples = 0;
+    this.wrongWaySamples = 0;
+    this.wrongWayDistanceM = 0;
+    this.speedSamples = [];
+    this.setState({
+      wrongWay: false,
+      gpsError: message || 'Live GPS updates are unavailable right now. Route progress is paused until GPS recovers.',
+    });
   };
 
   announceGuidance = (maneuver, distanceKm, force = false) => {
@@ -412,34 +460,146 @@ export class NavigationViewModel extends ViewModel {
   applyFix = fix => {
     const route = this.state.route;
     const accuracyM = fix.accuracy ?? null;
+    const fixTimestamp = Number.isFinite(fix.timestamp) ? fix.timestamp : null;
+    if (
+      fixTimestamp != null
+      && this.lastFixTimestamp != null
+      && fixTimestamp <= this.lastFixTimestamp
+    ) {
+      return;
+    }
+    if (fixTimestamp != null) this.lastFixTimestamp = fixTimestamp;
+
     if (!route || this.state.preview) {
       this.setState({ fix, accuracyM });
       return;
     }
 
     if (accuracyM != null && accuracyM > MAX_NAVIGATION_ACCURACY_M) {
+      this.gpsLost = true;
       this.offRouteSamples = 0;
+      this.wrongWaySamples = 0;
+      this.wrongWayDistanceM = 0;
+      this.speedSamples = [];
       this.setState({
         fix,
         accuracyM,
+        wrongWay: false,
         gpsError: `GPS accuracy is about ${Math.round(accuracyM)} m. Route progress and rerouting are paused until accuracy improves.`,
       });
       return;
     }
 
+    const recoveredFromGpsLoss = this.gpsLost;
+    const previousFix = this.lastAcceptedFix;
+    const movementDistanceM = previousFix
+      ? haversineKm(previousFix, fix) * 1000
+      : null;
+    const minimumMovementM = MIN_MOVEMENT_M[this.state.mode] ?? MIN_MOVEMENT_M.walk;
+    const previousAccuracyM = previousFix?.accuracy ?? 0;
+    const jitterThresholdM = Math.max(
+      2.5,
+      Math.min(8, Math.max(accuracyM ?? 0, previousAccuracyM) * 0.35),
+    );
+    const lowMotionSpeed = !Number.isFinite(fix.speed)
+      || fix.speed < (this.state.mode === 'drive' ? 1 : 0.3);
+    const stationaryJitter = this.state.tracking
+      && movementDistanceM != null
+      && movementDistanceM < jitterThresholdM
+      && lowMotionSpeed;
+
+    if (stationaryJitter) {
+      this.gpsLost = false;
+      this.setState({
+        fix,
+        accuracyM,
+        gpsError: null,
+      });
+      return;
+    }
+
+    const movementHeading = (
+      previousFix
+      && movementDistanceM >= minimumMovementM
+    ) ? bearingBetween(previousFix, fix) : null;
+    const reportedHeading = (
+      Number.isFinite(fix.heading)
+      && fix.heading >= 0
+      && Number.isFinite(fix.speed)
+      && fix.speed >= (this.state.mode === 'drive' ? 1 : 0.5)
+    ) ? fix.heading : null;
+    const matchingHeading = movementHeading ?? reportedHeading;
+    const maxAdvanceKm = (
+      this.state.tracking
+      && movementDistanceM != null
+    ) ? this.state.distanceAlongKm + (
+      movementDistanceM + Math.max(20, (accuracyM ?? 0) * 1.5)
+    ) / 1000 : null;
     const projection = projectPositionOntoRoute(
       route,
       fix,
       this.state.tracking
-        ? { previousDistanceAlongKm: this.state.distanceAlongKm }
+        ? {
+          previousDistanceAlongKm: this.state.distanceAlongKm,
+          maxBacktrackKm: 0.008,
+          maxAdvanceKm,
+          headingDeg: matchingHeading,
+        }
         : undefined,
     );
-    const next = nextRouteManeuver(route, projection.distanceAlongKm);
+    const boundedDistanceAlongKm = (
+      this.state.tracking && Number.isFinite(maxAdvanceKm)
+    ) ? Math.min(maxAdvanceKm, projection.distanceAlongKm) : projection.distanceAlongKm;
+    const stableDistanceAlongKm = this.state.tracking
+      ? Math.max(this.state.distanceAlongKm, boundedDistanceAlongKm)
+      : boundedDistanceAlongKm;
+    const stableProjection = stableDistanceAlongKm === projection.distanceAlongKm
+      ? projection
+      : {
+        ...projection,
+        distanceAlongKm: stableDistanceAlongKm,
+        remainingKm: Math.max(0, route.distanceKm - stableDistanceAlongKm),
+        progress: route.distanceKm > 0
+          ? Math.min(1, stableDistanceAlongKm / route.distanceKm)
+          : 0,
+      };
+    const next = nextRouteManeuver(route, stableProjection.distanceAlongKm);
     const thresholdM = Math.max(BASE_OFF_ROUTE_M, (accuracyM ?? 0) * 1.8);
-    const offRoute = projection.distanceToRouteM > thresholdM;
+    const offRoute = stableProjection.distanceToRouteM > thresholdM;
     const targetDistanceM = haversineKm(fix, this.state.target) * 1000;
     const arrivalThresholdM = Math.max(35, (accuracyM ?? 0) * 1.5);
-    const arrived = projection.remainingKm <= 0.08 && targetDistanceM <= arrivalThresholdM;
+    const routeHeadingDifference = headingDifferenceDeg(
+      movementHeading,
+      stableProjection.segmentBearingDeg,
+    );
+    const wrongWaySample = (
+      !recoveredFromGpsLoss
+      && !offRoute
+      && movementDistanceM >= minimumMovementM
+      && routeHeadingDifference != null
+      && routeHeadingDifference >= WRONG_WAY_HEADING_DEG
+    );
+
+    if (wrongWaySample) {
+      this.wrongWaySamples += 1;
+      this.wrongWayDistanceM += movementDistanceM;
+    } else if (movementHeading != null) {
+      this.wrongWaySamples = 0;
+      this.wrongWayDistanceM = 0;
+    }
+    if (recoveredFromGpsLoss) {
+      this.offRouteSamples = 0;
+      this.wrongWaySamples = 0;
+      this.wrongWayDistanceM = 0;
+      this.speedSamples = [];
+    }
+    const wrongWay = (
+      this.wrongWaySamples >= WRONG_WAY_CONFIRM_FIXES
+      && this.wrongWayDistanceM >= (WRONG_WAY_DISTANCE_M[this.state.mode] ?? WRONG_WAY_DISTANCE_M.walk)
+    );
+    const arrived = !wrongWay
+      && stableProjection.remainingKm <= 0.08
+      && targetDistanceM <= arrivalThresholdM;
     const liveSpeedMps = this.state.tracking ? this.recordSpeedEstimate(fix.speed) : null;
 
     if (offRoute && this.state.tracking && !arrived) {
@@ -448,23 +608,26 @@ export class NavigationViewModel extends ViewModel {
       this.offRouteSamples = 0;
     }
 
+    this.lastAcceptedFix = fix;
+    this.gpsLost = false;
     this.setState({
       fix,
       accuracyM,
-      progressPct: Math.round(projection.progress * 100),
-      distanceAlongKm: projection.distanceAlongKm,
-      remainingKm: projection.remainingKm,
-      remainingMin: remainingDurationMin(route, projection.remainingKm, liveSpeedMps),
+      progressPct: Math.round(stableProjection.progress * 100),
+      distanceAlongKm: stableProjection.distanceAlongKm,
+      remainingKm: stableProjection.remainingKm,
+      remainingMin: remainingDurationMin(route, stableProjection.remainingKm, liveSpeedMps),
       usingLiveEta: liveSpeedMps != null,
-      offRouteM: projection.distanceToRouteM,
+      offRouteM: stableProjection.distanceToRouteM,
       nextManeuver: next.maneuver,
       distanceToNextManeuverKm: next.distanceKm,
-      routePois: placesAlongRoute(route, this.state.offlinePois, projection.distanceAlongKm),
+      routePois: placesAlongRoute(route, this.state.offlinePois, stableProjection.distanceAlongKm),
+      wrongWay,
       arrived,
       gpsError: null,
     });
 
-    if (this.state.tracking) {
+    if (this.state.tracking && !offRoute && !wrongWay) {
       this.announceGuidance(next.maneuver, next.distanceKm);
     }
 
@@ -474,13 +637,23 @@ export class NavigationViewModel extends ViewModel {
       return;
     }
 
+    const rerouteConfirmed = (
+      (offRoute && this.offRouteSamples >= OFF_ROUTE_CONFIRM_FIXES)
+      || wrongWay
+    );
+    const eventTimeMs = fixTimestamp ?? Date.now();
+    const cooldownElapsed = this.lastRerouteAtMs == null
+      || eventTimeMs - this.lastRerouteAtMs >= REROUTE_COOLDOWN_MS;
     if (
-      offRoute
-      && this.offRouteSamples >= OFF_ROUTE_CONFIRM_FIXES
+      rerouteConfirmed
+      && cooldownElapsed
       && this.state.tracking
       && !this.state.rerouting
     ) {
+      this.lastRerouteAtMs = eventTimeMs;
       this.offRouteSamples = 0;
+      this.wrongWaySamples = 0;
+      this.wrongWayDistanceM = 0;
       void this.rerouteFrom(fix);
     }
   };
@@ -507,6 +680,7 @@ export class NavigationViewModel extends ViewModel {
       }
 
       this.resetSpokenGuidance();
+      this.resetNavigationEvidence({ preserveRerouteCooldown: true });
       this.setState(previous => ({
         route: result,
         rerouteCount: previous.rerouteCount + 1,
@@ -517,6 +691,7 @@ export class NavigationViewModel extends ViewModel {
         nextManeuver: result.maneuvers?.[1] ?? result.maneuvers?.[0] ?? null,
         distanceToNextManeuverKm: result.maneuvers?.[1]?.distanceAlongKm ?? null,
         offRouteM: 0,
+        wrongWay: false,
       }));
       this.applyFix(fix);
     } finally {
@@ -528,8 +703,7 @@ export class NavigationViewModel extends ViewModel {
     this.stopLocationWatch();
     this.stopSpeech();
     this.resetSpokenGuidance();
-    this.speedSamples = [];
-    this.offRouteSamples = 0;
+    this.resetNavigationEvidence();
     this.setState({
       fix: null,
       accuracyM: null,
@@ -546,6 +720,7 @@ export class NavigationViewModel extends ViewModel {
       distanceToNextManeuverKm: null,
       routePois: [],
       rerouteCount: 0,
+      wrongWay: false,
       arrived: false,
       gpsError: null,
       error: null,

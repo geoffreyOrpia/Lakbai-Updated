@@ -270,7 +270,7 @@ export const calculateOfflineRoute = ({
     nodeIds: path.nodeIds,
     edges: path.edges,
     geometry: routeGeometryFromPath(snapped.index, path),
-    maneuvers: buildRouteManeuvers(snapped.index, path, targetLabel),
+    maneuvers: buildRouteManeuvers(snapped.index, path, targetLabel, mode),
     distanceKm: summary.distanceKm,
     durationMin: summary.durationMin,
   };
