@@ -44,3 +44,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Build-time Python caches
+__pycache__/
+*.pyc

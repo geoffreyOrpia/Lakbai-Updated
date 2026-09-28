@@ -69,3 +69,5 @@ Routing edges may include a GeoJSON `geometry: { type: 'LineString', coordinates
 The current HOT graph builder already preserves each source coordinate as a graph node, so Panabo does not need regeneration for this change. Explicit edge geometry supports packs that store multiple road vertices between routing junctions. It preserves supplied detail; it does not interpolate invented road bends or increase the resolution of the source dataset.
 
 The navigation target is all of Davao del Norte, including journeys across municipal boundaries. See [the provincial navigation roadmap](docs/NAVIGATION_ROADMAP.md) for the build command, rollout order, and coverage acceptance criteria.
+
+Raw OSM PBF imports preserve node identity, road tags, and turn-restriction records. See [the OSM build and audit workflow](docs/OSM_PIPELINE.md) for reproducible extraction and candidate validation.

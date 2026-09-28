@@ -35,6 +35,6 @@ The legacy `npm run routing:prepare` retains its Panabo defaults. An empty or in
 
 ## Current evidence and next data gate
 
-The shipped routing graph covers central/coastal Panabo. Province-wide runtime coverage has not yet been delivered. The repository has municipality boundaries, but no provincial road source was found in the inspected workspace and `LAKBAI_ROUTING_SOURCE` is unset.
+The shipped routing graph still covers central/coastal Panabo. A dated Geofabrik Philippines source has now been downloaded and verified, and a provincial candidate has been extracted and audited. See [the OSM pipeline](OSM_PIPELINE.md) and [candidate audit](data/davao-del-norte-routing-audit.json). The large source and candidate remain in the ignored `.tmp-routing/osm/` directory rather than app assets.
 
-Next coverage gate: obtain a licensed provincial road source with provenance, check its access/topology limitations, generate the candidate, measure graph size and on-device memory/route latency, and validate connectivity and representative routes across all intended areas. Only then wire the shared graph into saved-pack storage and runtime graph selection. A graph that merely touches each municipality is not sufficient evidence of usable coverage.
+Next release gates: reduce graph storage and runtime memory, enforce turn restrictions and node barriers, investigate disconnected components, and validate mobile performance and real-world journeys. After those gates, integrate shared provincial graph storage and runtime graph selection. Desktop route success and mapped road presence do not establish field-verified coverage. Samal ferry connections remain a separate verified transport leg.

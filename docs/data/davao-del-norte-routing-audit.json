@@ -1,0 +1,1093 @@
+{
+  "status": "candidate-not-enabled",
+  "source": {
+    "sourceUrl": "https://download.geofabrik.de/asia/philippines-260927.osm.pbf",
+    "sourceExportedAt": "2026-09-27T20:23:36Z",
+    "sourceSha256": "9cf67e002d55f5036cd379d52734bff4d4914ea96608d3ccb87840fb94c526bb",
+    "roadsSha256": "d6cbab973cb3872d179ec3da5de00bcd21198d3653fabc7c3dd32f0d0f60acf2",
+    "license": "ODbL 1.0"
+  },
+  "graphSha256": "cbb0053accb53b61a00f64cc44cd96f2e95a9ee7bcd61f67df52c9fe69d3bd43",
+  "graphBytes": 141555528,
+  "nodes": 105202,
+  "directedEdges": 256367,
+  "bounds": [
+    125.30598715374263,
+    6.874344072818227,
+    125.95748905425752,
+    8.021428994181877
+  ],
+  "boundaryBufferKm": 2,
+  "preservedTurnRestrictions": 328,
+  "taggedBarrierNodes": 3971,
+  "invalidEdges": 0,
+  "modeConnectivity": {
+    "walk": {
+      "routableNodes": 104969,
+      "weakComponents": 494,
+      "largestComponentNodes": [
+        97490,
+        4318,
+        358,
+        319,
+        110,
+        102,
+        89,
+        59,
+        51,
+        47
+      ],
+      "areas": [
+        {
+          "name": "Asuncion",
+          "routableNodes": 1484,
+          "weakComponents": 38,
+          "largestLocalComponentSharePct": 91.91,
+          "anchor": {
+            "id": "osm:10768133533",
+            "lat": 7.6316981,
+            "lng": 125.7504284
+          },
+          "sampleDestination": {
+            "id": "osm:6525195605",
+            "lat": 7.7343529,
+            "lng": 125.9161423
+          }
+        },
+        {
+          "name": "Carmen",
+          "routableNodes": 2435,
+          "weakComponents": 7,
+          "largestLocalComponentSharePct": 98.73,
+          "anchor": {
+            "id": "osm:7007140368",
+            "lat": 7.3554901,
+            "lng": 125.6978825
+          },
+          "sampleDestination": {
+            "id": "osm:1964080456",
+            "lat": 7.4070805,
+            "lng": 125.6171943
+          }
+        },
+        {
+          "name": "Kapalong",
+          "routableNodes": 2218,
+          "weakComponents": 26,
+          "largestLocalComponentSharePct": 95.18,
+          "anchor": {
+            "id": "osm:8348667439",
+            "lat": 7.7775031,
+            "lng": 125.6371017
+          },
+          "sampleDestination": {
+            "id": "osm:10272252315",
+            "lat": 7.9895137,
+            "lng": 125.5456907
+          }
+        },
+        {
+          "name": "New Corella",
+          "routableNodes": 1682,
+          "weakComponents": 3,
+          "largestLocalComponentSharePct": 99.41,
+          "anchor": {
+            "id": "osm:8403743422",
+            "lat": 7.6244747,
+            "lng": 125.8611362
+          },
+          "sampleDestination": {
+            "id": "osm:14014566555",
+            "lat": 7.5051943,
+            "lng": 125.7802739
+          }
+        },
+        {
+          "name": "City of Panabo",
+          "routableNodes": 7057,
+          "weakComponents": 12,
+          "largestLocalComponentSharePct": 99.6,
+          "anchor": {
+            "id": "osm:1258238447",
+            "lat": 7.3338833,
+            "lng": 125.6208382
+          },
+          "sampleDestination": {
+            "id": "osm:13610881709",
+            "lat": 7.4514235,
+            "lng": 125.5469124
+          }
+        },
+        {
+          "name": "Island Garden City of Samal",
+          "routableNodes": 4108,
+          "weakComponents": 6,
+          "largestLocalComponentSharePct": 93.62,
+          "anchor": {
+            "id": "osm:523623270",
+            "lat": 7.0399425,
+            "lng": 125.7514107
+          },
+          "sampleDestination": {
+            "id": "osm:1125989307",
+            "lat": 7.1830856,
+            "lng": 125.6944341
+          }
+        },
+        {
+          "name": "Santo Tomas",
+          "routableNodes": 3286,
+          "weakComponents": 8,
+          "largestLocalComponentSharePct": 99.27,
+          "anchor": {
+            "id": "osm:11778517538",
+            "lat": 7.5271678,
+            "lng": 125.6343672
+          },
+          "sampleDestination": {
+            "id": "osm:8395641905",
+            "lat": 7.4745317,
+            "lng": 125.7476248
+          }
+        },
+        {
+          "name": "City of Tagum",
+          "routableNodes": 10533,
+          "weakComponents": 64,
+          "largestLocalComponentSharePct": 97.14,
+          "anchor": {
+            "id": "osm:6106208224",
+            "lat": 7.4196925,
+            "lng": 125.7978789
+          },
+          "sampleDestination": {
+            "id": "osm:7013940831",
+            "lat": 7.3211266,
+            "lng": 125.7349746
+          }
+        },
+        {
+          "name": "Talaingod",
+          "routableNodes": 936,
+          "weakComponents": 57,
+          "largestLocalComponentSharePct": 64.42,
+          "anchor": {
+            "id": "osm:6925771178",
+            "lat": 7.6964311,
+            "lng": 125.5450992
+          },
+          "sampleDestination": {
+            "id": "osm:7087053727",
+            "lat": 7.5748481,
+            "lng": 125.3357482
+          }
+        },
+        {
+          "name": "Braulio E. Dujali",
+          "routableNodes": 819,
+          "weakComponents": 1,
+          "largestLocalComponentSharePct": 100,
+          "anchor": {
+            "id": "osm:12698443126",
+            "lat": 7.4462001,
+            "lng": 125.6829929
+          },
+          "sampleDestination": {
+            "id": "osm:1964080458",
+            "lat": 7.4074142,
+            "lng": 125.617216
+          }
+        },
+        {
+          "name": "San Isidro",
+          "routableNodes": 809,
+          "weakComponents": 7,
+          "largestLocalComponentSharePct": 97.65,
+          "anchor": {
+            "id": "osm:6529140069",
+            "lat": 7.7486793,
+            "lng": 125.6927785
+          },
+          "sampleDestination": {
+            "id": "osm:8026988158",
+            "lat": 7.6545781,
+            "lng": 125.7420713
+          }
+        }
+      ],
+      "directedAnchorReachability": {
+        "Asuncion": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ],
+        "Carmen": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ],
+        "Kapalong": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ],
+        "New Corella": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ],
+        "City of Panabo": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ],
+        "Island Garden City of Samal": [
+          "Island Garden City of Samal"
+        ],
+        "Santo Tomas": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ],
+        "City of Tagum": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ],
+        "Talaingod": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ],
+        "Braulio E. Dujali": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ],
+        "San Isidro": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ]
+      }
+    },
+    "drive": {
+      "routableNodes": 87030,
+      "weakComponents": 144,
+      "largestComponentNodes": [
+        81918,
+        3702,
+        491,
+        240,
+        58,
+        30,
+        27,
+        27,
+        27,
+        26
+      ],
+      "areas": [
+        {
+          "name": "Asuncion",
+          "routableNodes": 1156,
+          "weakComponents": 1,
+          "largestLocalComponentSharePct": 100,
+          "anchor": {
+            "id": "osm:10768133533",
+            "lat": 7.6316981,
+            "lng": 125.7504284
+          },
+          "sampleDestination": {
+            "id": "osm:8024469830",
+            "lat": 7.750604,
+            "lng": 125.9033136
+          }
+        },
+        {
+          "name": "Carmen",
+          "routableNodes": 1987,
+          "weakComponents": 2,
+          "largestLocalComponentSharePct": 99.75,
+          "anchor": {
+            "id": "osm:7007140368",
+            "lat": 7.3554901,
+            "lng": 125.6978825
+          },
+          "sampleDestination": {
+            "id": "osm:1964080456",
+            "lat": 7.4070805,
+            "lng": 125.6171943
+          }
+        },
+        {
+          "name": "Kapalong",
+          "routableNodes": 1389,
+          "weakComponents": 2,
+          "largestLocalComponentSharePct": 99.35,
+          "anchor": {
+            "id": "osm:12863927266",
+            "lat": 7.7799068,
+            "lng": 125.6374598
+          },
+          "sampleDestination": {
+            "id": "osm:6528374769",
+            "lat": 7.5644081,
+            "lng": 125.7101288
+          }
+        },
+        {
+          "name": "New Corella",
+          "routableNodes": 1440,
+          "weakComponents": 1,
+          "largestLocalComponentSharePct": 100,
+          "anchor": {
+            "id": "osm:8403743422",
+            "lat": 7.6244747,
+            "lng": 125.8611362
+          },
+          "sampleDestination": {
+            "id": "osm:14014566555",
+            "lat": 7.5051943,
+            "lng": 125.7802739
+          }
+        },
+        {
+          "name": "City of Panabo",
+          "routableNodes": 6074,
+          "weakComponents": 2,
+          "largestLocalComponentSharePct": 99.97,
+          "anchor": {
+            "id": "osm:1258238447",
+            "lat": 7.3338833,
+            "lng": 125.6208382
+          },
+          "sampleDestination": {
+            "id": "osm:13610881709",
+            "lat": 7.4514235,
+            "lng": 125.5469124
+          }
+        },
+        {
+          "name": "Island Garden City of Samal",
+          "routableNodes": 3552,
+          "weakComponents": 3,
+          "largestLocalComponentSharePct": 94.65,
+          "anchor": {
+            "id": "osm:523623270",
+            "lat": 7.0399425,
+            "lng": 125.7514107
+          },
+          "sampleDestination": {
+            "id": "osm:1125989307",
+            "lat": 7.1830856,
+            "lng": 125.6944341
+          }
+        },
+        {
+          "name": "Santo Tomas",
+          "routableNodes": 2580,
+          "weakComponents": 1,
+          "largestLocalComponentSharePct": 100,
+          "anchor": {
+            "id": "osm:11778517538",
+            "lat": 7.5271678,
+            "lng": 125.6343672
+          },
+          "sampleDestination": {
+            "id": "osm:8105928041",
+            "lat": 7.4716842,
+            "lng": 125.7457606
+          }
+        },
+        {
+          "name": "City of Tagum",
+          "routableNodes": 9526,
+          "weakComponents": 7,
+          "largestLocalComponentSharePct": 99.8,
+          "anchor": {
+            "id": "osm:6106208224",
+            "lat": 7.4196925,
+            "lng": 125.7978789
+          },
+          "sampleDestination": {
+            "id": "osm:6100442426",
+            "lat": 7.3249647,
+            "lng": 125.7445238
+          }
+        },
+        {
+          "name": "Talaingod",
+          "routableNodes": 585,
+          "weakComponents": 1,
+          "largestLocalComponentSharePct": 100,
+          "anchor": {
+            "id": "osm:6925771178",
+            "lat": 7.6964311,
+            "lng": 125.5450992
+          },
+          "sampleDestination": {
+            "id": "osm:7087053727",
+            "lat": 7.5748481,
+            "lng": 125.3357482
+          }
+        },
+        {
+          "name": "Braulio E. Dujali",
+          "routableNodes": 652,
+          "weakComponents": 1,
+          "largestLocalComponentSharePct": 100,
+          "anchor": {
+            "id": "osm:12698443126",
+            "lat": 7.4462001,
+            "lng": 125.6829929
+          },
+          "sampleDestination": {
+            "id": "osm:1964080458",
+            "lat": 7.4074142,
+            "lng": 125.617216
+          }
+        },
+        {
+          "name": "San Isidro",
+          "routableNodes": 584,
+          "weakComponents": 1,
+          "largestLocalComponentSharePct": 100,
+          "anchor": {
+            "id": "osm:6529140056",
+            "lat": 7.7464238,
+            "lng": 125.6934666
+          },
+          "sampleDestination": {
+            "id": "osm:8026988158",
+            "lat": 7.6545781,
+            "lng": 125.7420713
+          }
+        }
+      ],
+      "directedAnchorReachability": {
+        "Asuncion": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ],
+        "Carmen": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ],
+        "Kapalong": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ],
+        "New Corella": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ],
+        "City of Panabo": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ],
+        "Island Garden City of Samal": [
+          "Island Garden City of Samal"
+        ],
+        "Santo Tomas": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ],
+        "City of Tagum": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ],
+        "Talaingod": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ],
+        "Braulio E. Dujali": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ],
+        "San Isidro": [
+          "Asuncion",
+          "Carmen",
+          "Kapalong",
+          "New Corella",
+          "City of Panabo",
+          "Santo Tomas",
+          "City of Tagum",
+          "Talaingod",
+          "Braulio E. Dujali",
+          "San Isidro"
+        ]
+      }
+    }
+  },
+  "limitations": [
+    "Counts establish mapped data presence, not complete or field-verified coverage.",
+    "Weak components ignore travel direction. The anchor matrix separately checks directed reachability.",
+    "Anchors are automatically chosen inside each municipality in its largest local component; they are not verified entrances.",
+    "Turn restrictions and barriers are preserved but not enforced by the current engine.",
+    "Ferries are excluded. Source-mapped road connectivity does not prove a crossing is open or usable.",
+    "Desktop checks do not establish mobile memory, performance, battery use, or GPS reliability."
+  ],
+  "desktopRuntime": {
+    "nodeVersion": "v24.19.0",
+    "platform": "win32",
+    "runtimeSourceSha256": {
+      "src/domain/usecases/offlineNavigation.jsx": "f793a5bda8b8139cfb54a2211e83b21d54b255db9658ed42baa08d9880259edb",
+      "src/core/routing/aStar.jsx": "652e79547a43458d62ad2cf448c2cec33ab6dd780a8b25ca2975aaf087fd52e4",
+      "src/core/utils/geo.jsx": "dd305b8fb020e046df5f0404425e84f2dfbe564e8756665dad566574bb8cf072",
+      "src/core/routing/graph.jsx": "fe4fdc5591234a3a691772b6b55a4417b5b75da99d03ddfc4385b3442bae2b87",
+      "src/core/routing/edgeGeometry.jsx": "66fe5d77c53d013a7d26653131a1b92ca267ba900447324339fd8e1f0abd48aa",
+      "src/core/routing/routingProfiles.jsx": "c1c1b52def2fb229c8e71f7d00d35b8428b1e9a3b177381a68a1bde7f662a0d0",
+      "src/core/routing/routeGeometry.jsx": "59116ba87d361f07670b33bde4039d619058877560d9ef24e8c9b7bd7d420d4a",
+      "src/core/routing/maneuvers.jsx": "b62d62b5b9e1bba182a1d9fe44c77b13b8ec7c008fa8d1423b46f0026108bb1f"
+    },
+    "runtimeSourceNote": "Measured against working-tree routing sources; fingerprints include pending navigation edits.",
+    "memoryAfterRoutesMiB": {
+      "rss": 1309,
+      "heapTotal": 841,
+      "heapUsed": 722,
+      "external": 407,
+      "arrayBuffers": 135
+    },
+    "includesIndexBuildInFirstRoute": true,
+    "routes": [
+      {
+        "mode": "walk",
+        "sample": "between-municipalities",
+        "from": "City of Panabo",
+        "to": "City of Tagum",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 25.085,
+        "durationMin": 334,
+        "desktopCalculationMs": 5336
+      },
+      {
+        "mode": "walk",
+        "sample": "between-municipalities",
+        "from": "City of Tagum",
+        "to": "Talaingod",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 71.255,
+        "durationMin": 950,
+        "desktopCalculationMs": 433
+      },
+      {
+        "mode": "walk",
+        "sample": "between-municipalities",
+        "from": "Asuncion",
+        "to": "New Corella",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 17.357,
+        "durationMin": 231,
+        "desktopCalculationMs": 204
+      },
+      {
+        "mode": "walk",
+        "sample": "between-municipalities",
+        "from": "Santo Tomas",
+        "to": "Kapalong",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 42.536,
+        "durationMin": 567,
+        "desktopCalculationMs": 228
+      },
+      {
+        "mode": "walk",
+        "sample": "between-municipalities",
+        "from": "Carmen",
+        "to": "Braulio E. Dujali",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 14.288,
+        "durationMin": 191,
+        "desktopCalculationMs": 226
+      },
+      {
+        "mode": "walk",
+        "sample": "between-municipalities",
+        "from": "San Isidro",
+        "to": "City of Tagum",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 49.229,
+        "durationMin": 656,
+        "desktopCalculationMs": 199
+      },
+      {
+        "mode": "walk",
+        "sample": "between-municipalities",
+        "from": "City of Panabo",
+        "to": "Island Garden City of Samal",
+        "ok": false,
+        "reason": "no-route",
+        "distanceKm": null,
+        "durationMin": null,
+        "desktopCalculationMs": 1281
+      },
+      {
+        "mode": "walk",
+        "sample": "within-municipality",
+        "from": "Asuncion",
+        "to": "Asuncion",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 28.616,
+        "durationMin": 382,
+        "desktopCalculationMs": 124
+      },
+      {
+        "mode": "walk",
+        "sample": "within-municipality",
+        "from": "Carmen",
+        "to": "Carmen",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 12.221,
+        "durationMin": 163,
+        "desktopCalculationMs": 127
+      },
+      {
+        "mode": "walk",
+        "sample": "within-municipality",
+        "from": "Kapalong",
+        "to": "Kapalong",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 48.625,
+        "durationMin": 648,
+        "desktopCalculationMs": 192
+      },
+      {
+        "mode": "walk",
+        "sample": "within-municipality",
+        "from": "New Corella",
+        "to": "New Corella",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 19.536,
+        "durationMin": 260,
+        "desktopCalculationMs": 125
+      },
+      {
+        "mode": "walk",
+        "sample": "within-municipality",
+        "from": "City of Panabo",
+        "to": "City of Panabo",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 20.77,
+        "durationMin": 277,
+        "desktopCalculationMs": 181
+      },
+      {
+        "mode": "walk",
+        "sample": "within-municipality",
+        "from": "Island Garden City of Samal",
+        "to": "Island Garden City of Samal",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 21.516,
+        "durationMin": 287,
+        "desktopCalculationMs": 138
+      },
+      {
+        "mode": "walk",
+        "sample": "within-municipality",
+        "from": "Santo Tomas",
+        "to": "Santo Tomas",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 16.654,
+        "durationMin": 222,
+        "desktopCalculationMs": 130
+      },
+      {
+        "mode": "walk",
+        "sample": "within-municipality",
+        "from": "City of Tagum",
+        "to": "City of Tagum",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 16.815,
+        "durationMin": 224,
+        "desktopCalculationMs": 178
+      },
+      {
+        "mode": "walk",
+        "sample": "within-municipality",
+        "from": "Talaingod",
+        "to": "Talaingod",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 111.616,
+        "durationMin": 1488,
+        "desktopCalculationMs": 203
+      },
+      {
+        "mode": "walk",
+        "sample": "within-municipality",
+        "from": "Braulio E. Dujali",
+        "to": "Braulio E. Dujali",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 12.781,
+        "durationMin": 170,
+        "desktopCalculationMs": 123
+      },
+      {
+        "mode": "walk",
+        "sample": "within-municipality",
+        "from": "San Isidro",
+        "to": "San Isidro",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 17.039,
+        "durationMin": 227,
+        "desktopCalculationMs": 123
+      },
+      {
+        "mode": "drive",
+        "sample": "between-municipalities",
+        "from": "City of Panabo",
+        "to": "City of Tagum",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 25.119,
+        "durationMin": 27,
+        "desktopCalculationMs": 190
+      },
+      {
+        "mode": "drive",
+        "sample": "between-municipalities",
+        "from": "City of Tagum",
+        "to": "Talaingod",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 58.3,
+        "durationMin": 66,
+        "desktopCalculationMs": 365
+      },
+      {
+        "mode": "drive",
+        "sample": "between-municipalities",
+        "from": "Asuncion",
+        "to": "New Corella",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 17.453,
+        "durationMin": 30,
+        "desktopCalculationMs": 137
+      },
+      {
+        "mode": "drive",
+        "sample": "between-municipalities",
+        "from": "Santo Tomas",
+        "to": "Kapalong",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 44.774,
+        "durationMin": 62,
+        "desktopCalculationMs": 177
+      },
+      {
+        "mode": "drive",
+        "sample": "between-municipalities",
+        "from": "Carmen",
+        "to": "Braulio E. Dujali",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 15.402,
+        "durationMin": 21,
+        "desktopCalculationMs": 162
+      },
+      {
+        "mode": "drive",
+        "sample": "between-municipalities",
+        "from": "San Isidro",
+        "to": "City of Tagum",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 50.749,
+        "durationMin": 55,
+        "desktopCalculationMs": 177
+      },
+      {
+        "mode": "drive",
+        "sample": "between-municipalities",
+        "from": "City of Panabo",
+        "to": "Island Garden City of Samal",
+        "ok": false,
+        "reason": "no-route",
+        "distanceKm": null,
+        "durationMin": null,
+        "desktopCalculationMs": 820
+      },
+      {
+        "mode": "drive",
+        "sample": "within-municipality",
+        "from": "Asuncion",
+        "to": "Asuncion",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 31.419,
+        "durationMin": 53,
+        "desktopCalculationMs": 181
+      },
+      {
+        "mode": "drive",
+        "sample": "within-municipality",
+        "from": "Carmen",
+        "to": "Carmen",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 12.752,
+        "durationMin": 17,
+        "desktopCalculationMs": 137
+      },
+      {
+        "mode": "drive",
+        "sample": "within-municipality",
+        "from": "Kapalong",
+        "to": "Kapalong",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 34.186,
+        "durationMin": 53,
+        "desktopCalculationMs": 163
+      },
+      {
+        "mode": "drive",
+        "sample": "within-municipality",
+        "from": "New Corella",
+        "to": "New Corella",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 21.104,
+        "durationMin": 34,
+        "desktopCalculationMs": 136
+      },
+      {
+        "mode": "drive",
+        "sample": "within-municipality",
+        "from": "City of Panabo",
+        "to": "City of Panabo",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 21.362,
+        "durationMin": 30,
+        "desktopCalculationMs": 196
+      },
+      {
+        "mode": "drive",
+        "sample": "within-municipality",
+        "from": "Island Garden City of Samal",
+        "to": "Island Garden City of Samal",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 21.854,
+        "durationMin": 26,
+        "desktopCalculationMs": 132
+      },
+      {
+        "mode": "drive",
+        "sample": "within-municipality",
+        "from": "Santo Tomas",
+        "to": "Santo Tomas",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 16.617,
+        "durationMin": 25,
+        "desktopCalculationMs": 170
+      },
+      {
+        "mode": "drive",
+        "sample": "within-municipality",
+        "from": "City of Tagum",
+        "to": "City of Tagum",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 15.641,
+        "durationMin": 21,
+        "desktopCalculationMs": 231
+      },
+      {
+        "mode": "drive",
+        "sample": "within-municipality",
+        "from": "Talaingod",
+        "to": "Talaingod",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 92.089,
+        "durationMin": 101,
+        "desktopCalculationMs": 179
+      },
+      {
+        "mode": "drive",
+        "sample": "within-municipality",
+        "from": "Braulio E. Dujali",
+        "to": "Braulio E. Dujali",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 12.784,
+        "durationMin": 20,
+        "desktopCalculationMs": 125
+      },
+      {
+        "mode": "drive",
+        "sample": "within-municipality",
+        "from": "San Isidro",
+        "to": "San Isidro",
+        "ok": true,
+        "reason": null,
+        "distanceKm": 22.488,
+        "durationMin": 32,
+        "desktopCalculationMs": 152
+      }
+    ]
+  }
+}

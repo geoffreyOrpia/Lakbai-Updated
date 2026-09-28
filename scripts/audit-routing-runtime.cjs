@@ -1,0 +1,58 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const { createHash } = require('node:crypto');
+const fingerprint = content => createHash('sha256').update(content).digest('hex');
+const runtimeSourceSha256 = {};
+const babel = require('@babel/core');
+require.extensions['.jsx'] = (module, filename) => {
+  runtimeSourceSha256[path.relative(process.cwd(), filename).replace(/\\/g, '/')] = fingerprint(fs.readFileSync(filename));
+  const transformed = babel.transformFileSync(filename, {
+    babelrc: false, configFile: false,
+    plugins: [require.resolve('@babel/plugin-transform-modules-commonjs')],
+  });
+  module._compile(transformed.code, filename);
+};
+const { calculateOfflineRoute } = require(path.resolve('src/domain/usecases/offlineNavigation.jsx'));
+const arg = name => process.argv.find(value => value.startsWith('--' + name + '='))?.split('=').slice(1).join('=');
+const graphPath = arg('graph');
+const auditPath = arg('report');
+if (!graphPath || !auditPath) throw new Error('Pass --graph=<candidate.json> and --report=<audit.json>');
+const graphContent = fs.readFileSync(graphPath);
+const audit = JSON.parse(fs.readFileSync(auditPath, 'utf8'));
+if (fingerprint(graphContent) !== audit.graphSha256) throw new Error('Graph does not match the geographic audit; regenerate that audit first');
+const graph = JSON.parse(graphContent);
+const pairs = [
+  ['City of Panabo', 'City of Tagum'],
+  ['City of Tagum', 'Talaingod'],
+  ['Asuncion', 'New Corella'],
+  ['Santo Tomas', 'Kapalong'],
+  ['Carmen', 'Braulio E. Dujali'],
+  ['San Isidro', 'City of Tagum'],
+  ['City of Panabo', 'Island Garden City of Samal'],
+];
+const results = [];
+for (const mode of ['walk', 'drive']) {
+  const areas = audit.modeConnectivity[mode].areas;
+  const localPairs = areas.map(area => [area.name, area.name]);
+  for (const [start, end] of [...pairs, ...localPairs]) {
+    const from = areas.find(area => area.name === start).anchor;
+    const targetArea = areas.find(area => area.name === end);
+    const to = start === end ? targetArea.sampleDestination : targetArea.anchor;
+    const started = performance.now();
+    const route = calculateOfflineRoute({ graph, from, to, mode, maxSnapDistanceKm: 0.05 });
+    results.push({ mode, sample: start === end ? 'within-municipality' : 'between-municipalities', from: start, to: end, ok: route.ok, reason: route.reason ?? null,
+      distanceKm: route.ok ? Math.round(route.distanceKm * 1000) / 1000 : null,
+      durationMin: route.durationMin ?? null,
+      desktopCalculationMs: Math.round(performance.now() - started),
+    });
+  }
+}
+audit.desktopRuntime = { nodeVersion: process.version, platform: process.platform,
+  runtimeSourceSha256,
+  runtimeSourceNote: 'Measured against working-tree routing sources; fingerprints include pending navigation edits.',
+  memoryAfterRoutesMiB: Object.fromEntries(Object.entries(process.memoryUsage()).map(([key,value]) => [key, Math.round(value / 1024 / 1024)])),
+  includesIndexBuildInFirstRoute: true,
+  routes: results,
+};
+fs.writeFileSync(auditPath, JSON.stringify(audit, null, 2) + '\n');
+console.log(JSON.stringify(audit.desktopRuntime, null, 2));
