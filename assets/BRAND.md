@@ -35,6 +35,7 @@ colors are exposed separately in `src/theme.jsx`.
 - `lakbai-icon-foreground.png` — 1080×1080 transparent Android adaptive-icon foreground.
 - `lakbai-splash.png` — 1242×2436 portrait splash artwork.
 - `lakbai-loading.png` — compact transparent loading/restore lockup.
+- `lakbai-welcome.png` — exact approved full-screen first-launch Welcome artwork; do not redraw, crop into a different composition, or replace with substitute UI.
 
 The production files are built from the accepted branding-board artwork by isolating
 the approved mark and wordmark, cleaning their edges, upscaling them, and recomposing
