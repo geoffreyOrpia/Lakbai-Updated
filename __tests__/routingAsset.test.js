@@ -42,4 +42,21 @@ describe('Panabo routing pilot asset', () => {
     expect(route.durationMin).toBeLessThan(20);
     expect(route.endSnap.distanceKm).toBeLessThan(0.2);
   });
+
+  test('routes offline to a curated Panabo city point of interest', () => {
+    const route = calculateOfflineRoute({
+      graph: panaboGraph,
+      from: { lat: 7.2999, lng: 125.6807 },
+      to: { lat: 7.3048, lng: 125.6789 },
+      mode: 'walk',
+      maxSnapDistanceKm: 1,
+      targetLabel: 'Panabo Public Market',
+    });
+
+    expect(route.ok).toBe(true);
+    expect(route.distanceKm).toBeGreaterThan(0);
+    expect(route.distanceKm).toBeLessThan(2);
+    expect(route.maneuvers.at(-1).instruction).toBe('Arrive at Panabo Public Market');
+    expect(route.endSnap.distanceKm).toBeLessThan(0.2);
+  });
 });

@@ -149,19 +149,31 @@ export class DestinationViewModel extends ViewModel {
   openTrail = trailId => {
     this.nav.onOpenTrail(trailId);
   };
-  openOfflineNavigation = () => {
+  openOfflineNavigation = place => {
     const destination = this.state.pack?.destination;
     const navigation = destination?.offlineNavigation;
     const verifiedTrail = this.state.pack?.trails?.find(trail => trail.routeVerified === true);
     if (!destination || !navigation || !this.nav.onOpenNavigation) return;
+    const hasPlaceCoordinates = Number.isFinite(place?.lat) && Number.isFinite(place?.lng);
+    const target = hasPlaceCoordinates ? {
+      label: place.name ?? destination.name,
+      lat: place.lat,
+      lng: place.lng,
+    } : navigation.target;
+    const isTrailTarget = !hasPlaceCoordinates || (
+      Number.isFinite(navigation.target?.lat)
+      && Number.isFinite(navigation.target?.lng)
+      && Math.abs(target.lat - navigation.target.lat) < 0.00015
+      && Math.abs(target.lng - navigation.target.lng) < 0.00015
+    );
     this.nav.onOpenNavigation({
       destinationId: destination.id,
       destinationName: destination.name,
-      target: navigation.target,
+      target,
       mode: navigation.mode ?? 'walk',
       coverage: navigation.coverage ?? null,
       previewStart: navigation.previewStart ?? null,
-      trailId: verifiedTrail?.id ?? null,
+      trailId: isTrailTarget ? verifiedTrail?.id ?? null : null,
     });
   };
   planRoute = route => {

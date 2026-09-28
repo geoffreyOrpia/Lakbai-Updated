@@ -84,7 +84,7 @@ export const NavigationScreen = ({ viewModel }) => {
         </View>
         <View style={styles.heroCopy}>
           <Text style={styles.eyebrow}>LAKBAI OFFLINE NAVIGATION</Text>
-          <Text style={styles.title}>{state.destinationName}</Text>
+          <Text style={styles.title}>{state.target?.label ?? state.destinationName}</Text>
           <Text style={styles.subtitle}>
             {state.mode === 'drive' ? 'Driving' : 'Walking'} · {state.coverage ?? 'Local offline coverage'}
             {state.mode === 'walk' ? ' · ' + preferenceLabel(state.preference) : ''}

@@ -352,8 +352,32 @@ export const DestinationScreen = ({
                   <Text style={styles.spotName}>{spot.name}</Text>
                   <Text style={styles.spotText}>{spot.description}</Text>
                   {spot.tip ? <Text style={styles.spotTip}>Tip: {spot.tip}</Text> : null}
+                  {destination.offlineNavigation ? <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={state.saved
+                      ? `Navigate offline to ${spot.name} with LakBai`
+                      : `Save ${destination.name} to navigate offline to ${spot.name}`}
+                    accessibilityState={{ disabled: !state.saved }}
+                    disabled={!state.saved}
+                    onPress={() => viewModel.openOfflineNavigation(spot)}
+                    style={({ pressed }) => [
+                      styles.spotOfflineRoute,
+                      !state.saved && styles.ctaDisabled,
+                      pressed && state.saved && styles.pressed,
+                    ]}
+                  >
+                    <Ionicons
+                      name={state.saved ? 'navigate' : 'lock-closed'}
+                      size={13}
+                      color={colors.onPrimary}
+                    />
+                    <Text style={styles.spotOfflineRouteText}>
+                      {state.saved ? 'Navigate offline' : 'Save pack for offline route'}
+                    </Text>
+                  </Pressable> : null}
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel={`Open optional external directions to ${spot.name}`}
                     disabled={state.directionsBusyId !== null}
                     onPress={() => void runDirections(spot)}
                     style={({ pressed }) => [styles.spotDirections, state.directionsBusyId !== null && styles.ctaDisabled, pressed && state.directionsBusyId === null && styles.pressed]}
@@ -935,6 +959,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5
+  },
+  spotOfflineRoute: {
+    minHeight: 34,
+    marginTop: spacing.sm,
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5
+  },
+  spotOfflineRouteText: {
+    color: colors.onPrimary,
+    fontSize: 10,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 0.25
   },
   spotDirectionsText: {
     color: colors.primary,
