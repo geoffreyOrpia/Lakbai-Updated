@@ -2,6 +2,12 @@
 // White-first surfaces, forest green primary, warm orange accent.
 
 export const colors = {
+  // LakBai brand palette — approved tourism/local identity.
+  brandForest: '#0F5132',
+  brandLeaf: '#2E7D32',
+  brandOrange: '#F7931E',
+  brandSea: '#0288D1',
+  brandCream: '#F9E7C5',
   white: '#FFFFFF',
   background: '#FFFFFF',
   surface: '#FFFFFF',

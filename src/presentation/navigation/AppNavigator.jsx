@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, BackHandler, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, StyleSheet, Text, View } from 'react-native';
 import { colors, spacing } from "../../theme.jsx";
 import { getContainer } from "../di/container.jsx";
 import { useViewModel } from "../viewmodel/useViewModel.jsx";
@@ -26,6 +26,7 @@ import { SafetyScreen } from "../views/screens/SafetyScreen.jsx";
 import { TrailScreen } from "../views/screens/TrailScreen.jsx";
 import { TripsScreen } from "../views/screens/TripsScreen.jsx";
 import { BottomNav } from "../views/components/BottomNav.jsx";
+import { BrandMark, BrandWordmark } from "../views/components/BrandMark.jsx";
 
 /**
  * App shell: device-local setup phases (landing -> onboarding -> main),
@@ -79,8 +80,11 @@ export const AppNavigator = () => {
   }, [stack.length, tab]);
   if (session.state.phase === 'restoring') {
     return <View style={styles.splash}>
-        <ActivityIndicator size="small" color={colors.primary} />
-        <Text style={styles.splashText}>Preparing LakBai…</Text>
+        <View style={styles.splashMark}>
+          <BrandMark size={76} />
+        </View>
+        <BrandWordmark compact showTagline align="center" />
+        <Text style={styles.splashText}>Preparing your local guide…</Text>
       </View>;
   }
   if (session.state.phase === 'landing') {
@@ -312,8 +316,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: colors.brandCream,
     gap: spacing.sm
+  },
+  splashMark: {
+    marginBottom: spacing.xs
   },
   splashText: {
     color: colors.muted,

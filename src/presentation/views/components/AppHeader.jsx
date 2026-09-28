@@ -1,15 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { colors, radius, spacing } from "../../../theme.jsx";
+import { BrandLockup } from "./BrandMark.jsx";
 
 export const AppHeader = () => {
   return <View style={styles.header}>
-      <View style={styles.brandRow}>
-        <Image source={require('../../../../assets/lakbai-mark.png')} style={styles.logoMark} resizeMode="contain" />
-        <Text style={styles.brandName}>
-          Lak<Text style={styles.brandAccent}>Bai</Text>
-        </Text>
-      </View>
+      <BrandLockup markSize={34} compact />
 
       <View
         accessibilityLabel="Offline-first app. Saved travel data stays on this device."
@@ -26,27 +22,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: spacing.sm
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: spacing.sm,
-    flexShrink: 1
-  },
-  logoMark: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.sm
-  },
-  brandName: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: '900',
-    letterSpacing: -0.6
-  },
-  brandAccent: {
-    color: colors.accent
   },
   pill: {
     minHeight: 32,
@@ -55,17 +31,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5
+    gap: 5,
   },
   pillOffline: {
     backgroundColor: colors.primarySofter,
-    borderColor: '#CBE6D5'
+    borderColor: '#CBE6D5',
   },
   pillText: {
     fontSize: 10.5,
-    fontWeight: '800'
+    fontWeight: '800',
   },
   pillTextOffline: {
-    color: colors.primary
-  }
+    color: colors.primary,
+  },
 });
