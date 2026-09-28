@@ -18,6 +18,30 @@ const graph = {
   ],
 };
 
+const ferryMainlandGraph = {
+  meta: { id: 'ferry-mainland-fixture' },
+  nodes: [
+    { id: 'start', lat: 7.2999, lng: 125.6801 },
+    { id: 'terminal', lat: 7.1461111111, lng: 125.6633333333 },
+  ],
+  edges: [
+    { from: 'start', to: 'terminal', distanceKm: 17.2, walk: true, drive: true, highway: 'primary', name: 'Mainland Ferry Approach' },
+    { from: 'terminal', to: 'start', distanceKm: 17.2, walk: true, drive: true, highway: 'primary', name: 'Mainland Ferry Approach' },
+  ],
+};
+
+const ferrySamalGraph = {
+  meta: { id: 'ferry-samal-fixture' },
+  nodes: [
+    { id: 'terminal', lat: 7.1336111111, lng: 125.6838888889 },
+    { id: 'target', lat: 7.1072, lng: 125.6903 },
+  ],
+  edges: [
+    { from: 'terminal', to: 'target', distanceKm: 3.1, walk: true, drive: true, highway: 'primary', name: 'Samal Arrival Road' },
+    { from: 'target', to: 'terminal', distanceKm: 3.1, walk: true, drive: true, highway: 'primary', name: 'Samal Arrival Road' },
+  ],
+};
+
 const restrictedRerouteGraph = {
   meta: { id: 'restricted-reroute-fixture' },
   nodes: [
@@ -202,7 +226,115 @@ const createRestrictedVm = () => {
   );
 };
 
+const createFerryVm = () => {
+  const fix = { lat: 7.2999, lng: 125.6801, accuracy: 5, timestamp: 1_000 };
+  let watchCallback = null;
+  const routingDeps = {
+    routingGraphRepository: {
+      getForDestination: jest.fn().mockResolvedValue(ferrySamalGraph),
+      getForRegion: jest.fn(async region => (
+        region === 'mainland' ? ferryMainlandGraph : region === 'samal' ? ferrySamalGraph : null
+      )),
+    },
+    speechService: {
+      speak: jest.fn().mockResolvedValue(true),
+      stop: jest.fn().mockResolvedValue(),
+    },
+  };
+  const destinationDeps = {
+    packRepository: {
+      getOfflineBundleStatus: jest.fn().mockResolvedValue({
+        basemapUri: 'file:///maps/davao-del-norte.pmtiles',
+        routingGraphUri: 'file:///routing/samal.routing',
+      }),
+      getOfflineBasemapStatus: jest.fn().mockResolvedValue({
+        uri: 'file:///maps/davao-del-norte.pmtiles',
+      }),
+      getSavedPack: jest.fn().mockResolvedValue({ trails: [], spots: [] }),
+      getBundledPack: jest.fn().mockResolvedValue({ trails: [], spots: [] }),
+    },
+  };
+  const locationService = {
+    requestPermissions: jest.fn().mockResolvedValue(true),
+    getCurrentFix: jest.fn().mockResolvedValue(fix),
+    watchFix: jest.fn().mockImplementation(async onFix => {
+      watchCallback = onFix;
+      return jest.fn();
+    }),
+  };
+  const vm = new NavigationViewModel(
+    routingDeps,
+    destinationDeps,
+    locationService,
+    {
+      destinationId: 'samal',
+      destinationName: 'Samal Island',
+      target: { label: 'Peñaplata', lat: 7.1072, lng: 125.6903 },
+      mode: 'drive',
+    },
+    { onBack: jest.fn(), onOpenTrail: jest.fn() },
+  );
+  return {
+    vm,
+    routingDeps,
+    emitFix: next => watchCallback?.(next),
+  };
+};
+
 describe('NavigationViewModel', () => {
+  test('builds a mainland-to-Samal ferry journey and pauses road rerouting on the ferry leg', async () => {
+    const { vm, emitFix } = createFerryVm();
+    await vm.load();
+    await vm.startFromGps();
+
+    expect(vm.state.route).toEqual(expect.objectContaining({
+      ok: true,
+      type: 'ferry-journey',
+      totalDurationKnown: false,
+    }));
+    expect(vm.state.remainingMin).toBeGreaterThanOrEqual(30);
+    expect(vm.state.coverage).toContain('ferry link');
+
+    await vm.startNavigation();
+    const reroute = jest.spyOn(vm, 'rerouteFrom').mockResolvedValue();
+    emitFix({
+      lat: 7.1461111111,
+      lng: 125.6633333333,
+      accuracy: 5,
+      speed: 8,
+      timestamp: 3_000,
+    });
+    emitFix({
+      lat: 7.1398611111,
+      lng: 125.6736111111,
+      accuracy: 5,
+      speed: 7,
+      timestamp: 5_000,
+    });
+
+    expect(vm.state.journeyPhase).toBe('ferry');
+    expect(vm.state.remainingMin).toBeGreaterThan(0);
+    expect(vm.state.remainingMin).toBeLessThan(vm.state.route.durationMin);
+    expect(reroute).not.toHaveBeenCalled();
+  });
+
+  test('drops the ferry leg after reaching the destination-side road region', async () => {
+    const { vm } = createFerryVm();
+    await vm.load();
+    await vm.startFromGps();
+
+    const result = await vm.calculateRouteResult({
+      lat: 7.1336111111,
+      lng: 125.6838888889,
+      accuracy: 5,
+      timestamp: 9_000,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.type).not.toBe('ferry-journey');
+    expect(result.maneuvers.some(maneuver => maneuver.kind === 'ferry-board')).toBe(false);
+  });
+
   test('loads the bundled graph and saved offline basemap', async () => {
     const { vm, routingDeps } = createVm();
 
@@ -595,7 +727,7 @@ describe('NavigationViewModel', () => {
     const { vm } = createVm();
     await vm.load();
 
-    vm.previewRoute();
+    await vm.previewRoute();
 
     expect(vm.state.preview).toBe(true);
     expect(vm.state.fix).toEqual({ lat: 7.2999, lng: 125.6807 });

@@ -12,6 +12,12 @@ import {
   calculateOfflineRoute,
   turnStateBeforeRoutePosition,
 } from "../../domain/usecases/offlineNavigation.jsx";
+import {
+  calculateOfflineFerryJourney,
+  isOnFerryLeg,
+  remainingFerryJourneyDurationMin,
+} from "../../domain/usecases/ferryJourney.jsx";
+import { routingRegionFor } from "../../data/assets/routingRegionAssets.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 
 const MAX_NAVIGATION_ACCURACY_M = 60;
@@ -121,6 +127,7 @@ export class NavigationViewModel extends ViewModel {
       distanceToNextManeuverKm: null,
       voiceGuidance: true,
       rerouteCount: 0,
+      journeyPhase: null,
       wrongWay: false,
       arrived: false,
       gpsError: null,
@@ -241,22 +248,45 @@ export class NavigationViewModel extends ViewModel {
         });
         return;
       }
-      this.calculateFrom(fix, false);
+      await this.calculateFrom(fix, false);
     } finally {
       this.setState({ calculating: false });
     }
   };
 
-  previewRoute = () => {
+  previewRoute = async () => {
     if (!this.state.graph || !this.state.offlineBasemapUri || !this.state.previewStart) return;
     this.stopLocationWatch();
     this.setState({ calculating: true, tracking: false, error: null, gpsError: null });
-    this.calculateFrom(this.state.previewStart, true);
-    this.setState({ calculating: false });
+    try {
+      await this.calculateFrom(this.state.previewStart, true);
+    } finally {
+      this.setState({ calculating: false });
+    }
   };
 
-  calculateFrom = (from, preview) => {
-    const result = calculateOfflineRoute({
+  calculateRouteResult = async (from, initialTurnState = []) => {
+    const originRegion = routingRegionFor(null, from);
+    const targetRegion = routingRegionFor(this.state.destinationId, this.state.target);
+    if (
+      originRegion
+      && targetRegion
+      && originRegion !== targetRegion
+      && this.routingDeps.routingGraphRepository?.getForRegion
+    ) {
+      return calculateOfflineFerryJourney({
+        routingGraphRepository: this.routingDeps.routingGraphRepository,
+        from,
+        to: this.state.target,
+        mode: this.state.mode,
+        preference: this.state.preference,
+        routeAttractors: this.state.scenicPois,
+        maxSnapDistanceKm: 1,
+        targetLabel: this.state.target.label ?? this.state.destinationName,
+        initialTurnState,
+      });
+    }
+    return calculateOfflineRoute({
       graph: this.state.graph,
       from,
       to: this.state.target,
@@ -265,7 +295,12 @@ export class NavigationViewModel extends ViewModel {
       routeAttractors: this.state.scenicPois,
       maxSnapDistanceKm: 1,
       targetLabel: this.state.target.label ?? this.state.destinationName,
+      initialTurnState,
     });
+  };
+
+  calculateFrom = async (from, preview) => {
+    const result = await this.calculateRouteResult(from);
 
     if (!result.ok) {
       this.setState({
@@ -278,8 +313,13 @@ export class NavigationViewModel extends ViewModel {
         remainingMin: null,
         nextManeuver: null,
         distanceToNextManeuverKm: null,
-        error: result.reason === 'ferry-required'
-          ? 'Mainland and Samal road networks are separate. Ferry navigation is not available; start road navigation after arriving on the same island or mainland as your destination.'
+        journeyPhase: null,
+        error: result.reason === 'ferry-unavailable' || result.reason === 'ferry-required'
+          ? 'LakBai could not build a source-reviewed ferry journey between the mainland and Samal from this position.'
+          : result.reason === 'ferry-origin-route-failed'
+          ? 'LakBai could not connect your current position to the mapped ferry terminal using the offline road graph.'
+          : result.reason === 'ferry-destination-route-failed'
+          ? 'LakBai could not connect the ferry arrival terminal to this destination using the offline road graph.'
           : result.reason === 'outside-coverage'
           ? `Your position is outside the current ${this.state.coverage ?? 'offline-routing coverage'}.`
           : 'No connected offline route could be found from this position.',
@@ -292,15 +332,21 @@ export class NavigationViewModel extends ViewModel {
       fix: from,
       accuracyM: from.accuracy ?? null,
       route: result,
+      coverage: result.type === 'ferry-journey'
+        ? 'Davao del Norte ↔ Samal via source-reviewed ferry link'
+        : this.state.coverage,
       preview,
       progressPct: 0,
       distanceAlongKm: 0,
       remainingKm: result.distanceKm,
-      remainingMin: result.durationMin,
+      remainingMin: result.type === 'ferry-journey'
+        ? remainingFerryJourneyDurationMin(result, 0)
+        : result.durationMin,
       offRouteM: null,
       nextManeuver: result.maneuvers?.[1] ?? result.maneuvers?.[0] ?? null,
       distanceToNextManeuverKm: result.maneuvers?.[1]?.distanceAlongKm ?? null,
       routePois: placesAlongRoute(result, this.state.offlinePois),
+      journeyPhase: result.type === 'ferry-journey' ? 'road' : null,
       wrongWay: false,
       arrived: false,
       error: null,
@@ -574,8 +620,9 @@ export class NavigationViewModel extends ViewModel {
           : 0,
       };
     const next = nextRouteManeuver(route, stableProjection.distanceAlongKm);
+    const onFerryLeg = isOnFerryLeg(route, stableProjection.distanceAlongKm);
     const thresholdM = Math.max(BASE_OFF_ROUTE_M, (accuracyM ?? 0) * 1.8);
-    const offRoute = stableProjection.distanceToRouteM > thresholdM;
+    const offRoute = !onFerryLeg && stableProjection.distanceToRouteM > thresholdM;
     const targetDistanceM = haversineKm(fix, this.state.target) * 1000;
     const arrivalThresholdM = Math.max(35, (accuracyM ?? 0) * 1.5);
     const routeHeadingDifference = headingDifferenceDeg(
@@ -584,6 +631,7 @@ export class NavigationViewModel extends ViewModel {
     );
     const wrongWaySample = (
       !recoveredFromGpsLoss
+      && !onFerryLeg
       && !offRoute
       && movementDistanceM >= minimumMovementM
       && routeHeadingDifference != null
@@ -610,7 +658,9 @@ export class NavigationViewModel extends ViewModel {
     const arrived = !wrongWay
       && stableProjection.remainingKm <= 0.08
       && targetDistanceM <= arrivalThresholdM;
-    const liveSpeedMps = this.state.tracking ? this.recordSpeedEstimate(fix.speed) : null;
+    const liveSpeedMps = this.state.tracking && !onFerryLeg
+      ? this.recordSpeedEstimate(fix.speed)
+      : null;
 
     if (offRoute && this.state.tracking && !arrived) {
       this.offRouteSamples += 1;
@@ -629,12 +679,17 @@ export class NavigationViewModel extends ViewModel {
       progressPct: Math.round(stableProjection.progress * 100),
       distanceAlongKm: stableProjection.distanceAlongKm,
       remainingKm: stableProjection.remainingKm,
-      remainingMin: remainingDurationMin(route, stableProjection.remainingKm, liveSpeedMps),
-      usingLiveEta: liveSpeedMps != null,
+      remainingMin: route.type === 'ferry-journey'
+        ? remainingFerryJourneyDurationMin(route, stableProjection.distanceAlongKm)
+        : remainingDurationMin(route, stableProjection.remainingKm, liveSpeedMps),
+      usingLiveEta: route.type !== 'ferry-journey' && liveSpeedMps != null,
       offRouteM: stableProjection.distanceToRouteM,
       nextManeuver: next.maneuver,
       distanceToNextManeuverKm: next.distanceKm,
       routePois: placesAlongRoute(route, this.state.offlinePois, stableProjection.distanceAlongKm),
+      journeyPhase: route.type === 'ferry-journey'
+        ? (onFerryLeg ? 'ferry' : 'road')
+        : null,
       wrongWay,
       arrived,
       gpsError: null,
@@ -673,25 +728,40 @@ export class NavigationViewModel extends ViewModel {
 
   rerouteFrom = async fix => {
     if (!this.state.graph || !this.state.route) return;
-    const initialTurnState = turnStateBeforeRoutePosition({
-      graph: this.state.graph,
-      route: this.state.route,
-      distanceAlongKm: this.lastConfirmedRouteDistanceKm,
-      mode: this.state.mode,
-    });
+    let initialTurnState = [];
+    if (this.state.route.type === 'ferry-journey') {
+      const region = routingRegionFor(null, fix);
+      const roadLeg = this.state.route.legs?.find(leg => (
+        leg.kind === 'road'
+        && leg.region === region
+        && this.lastConfirmedRouteDistanceKm >= leg.startKm - 0.05
+        && this.lastConfirmedRouteDistanceKm <= leg.endKm + 0.05
+      ));
+      if (roadLeg && region) {
+        const targetRegion = routingRegionFor(this.state.destinationId, this.state.target);
+        const graph = region === targetRegion
+          ? this.state.graph
+          : await this.routingDeps.routingGraphRepository.getForRegion(region);
+        if (graph) {
+          initialTurnState = turnStateBeforeRoutePosition({
+            graph,
+            route: roadLeg.route,
+            distanceAlongKm: Math.max(0, this.lastConfirmedRouteDistanceKm - roadLeg.startKm),
+            mode: this.state.mode,
+          });
+        }
+      }
+    } else {
+      initialTurnState = turnStateBeforeRoutePosition({
+        graph: this.state.graph,
+        route: this.state.route,
+        distanceAlongKm: this.lastConfirmedRouteDistanceKm,
+        mode: this.state.mode,
+      });
+    }
     this.setState({ rerouting: true, gpsError: null });
     try {
-      const result = calculateOfflineRoute({
-        graph: this.state.graph,
-        from: fix,
-        to: this.state.target,
-        mode: this.state.mode,
-        preference: this.state.preference,
-        routeAttractors: this.state.scenicPois,
-        maxSnapDistanceKm: 1,
-        targetLabel: this.state.target.label ?? this.state.destinationName,
-        initialTurnState,
-      });
+      const result = await this.calculateRouteResult(fix, initialTurnState);
       if (!result.ok) {
         this.setState({
           gpsError: 'You appear to be off the active route, but LakBai could not find another connected offline route from this position.',
@@ -703,11 +773,14 @@ export class NavigationViewModel extends ViewModel {
       this.resetNavigationEvidence({ preserveRerouteCooldown: true });
       this.setState(previous => ({
         route: result,
+        journeyPhase: result.type === 'ferry-journey' ? 'road' : null,
         rerouteCount: previous.rerouteCount + 1,
         progressPct: 0,
         distanceAlongKm: 0,
         remainingKm: result.distanceKm,
-        remainingMin: result.durationMin,
+        remainingMin: result.type === 'ferry-journey'
+          ? remainingFerryJourneyDurationMin(result, 0)
+          : result.durationMin,
         nextManeuver: result.maneuvers?.[1] ?? result.maneuvers?.[0] ?? null,
         distanceToNextManeuverKm: result.maneuvers?.[1]?.distanceAlongKm ?? null,
         offRouteM: 0,
@@ -740,6 +813,7 @@ export class NavigationViewModel extends ViewModel {
       distanceToNextManeuverKm: null,
       routePois: [],
       rerouteCount: 0,
+      journeyPhase: null,
       wrongWay: false,
       arrived: false,
       gpsError: null,

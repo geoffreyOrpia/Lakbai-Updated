@@ -5,6 +5,15 @@ const data=region=>compactRoutingGraph({meta:{regionId:region},nodes:[{id:'a',ln
  edges:[{from:'a',to:'b',osmId:'1',segmentId:'1',walk:true,drive:true,geometry:{type:'LineString',coordinates:[[125.68,7.3],[125.69,7.3]]}}]});
 
 describe('regional graph repository',()=>{
+ test('loads a region directly for multi-region journey composition',async()=>{
+  const read=jest.fn(uri=>JSON.stringify(data(uri.split('/')[0])));
+  const store={ensure:jest.fn(async region=>({uri:region+'/graph.routing'}))};
+  const repo=new BundledRoutingGraphRepository(read,store);
+  expect((await repo.getForRegion('mainland')).meta.regionId).toBe('mainland');
+  expect((await repo.getForRegion('samal')).meta.regionId).toBe('samal');
+  expect(store.ensure).toHaveBeenNthCalledWith(1,'mainland');
+  expect(store.ensure).toHaveBeenNthCalledWith(2,'samal');
+ });
  test('loads the selected region once and releases its cache when switching regions',async()=>{
   const read=jest.fn(uri=>JSON.stringify(data(uri.split('/')[0])));
   const store={ensure:jest.fn(async region=>({uri:region+'/graph.routing'}))};

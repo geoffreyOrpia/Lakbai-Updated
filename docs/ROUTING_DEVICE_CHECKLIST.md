@@ -39,13 +39,25 @@ Offline Discovery uses bundled catalog content plus a generated street-name inde
 - Search an alias such as a local/alternate road name and confirm the canonical OSM road name is shown. Record duplicate or ambiguous road-name results rather than assuming one representative point identifies the whole road.
 - Verify recent destinations remain device-local and bounded; removing a dropped pin must not remove destination packs, favorites or itineraries.
 
+## Mainland–Samal ferry journey gate — device pending
+
+Automated tests cover mainland→Samal and Samal→mainland road-ferry-road composition, reverse ferry geometry, missing regional graphs, ferry-phase reroute suppression, and preservation of the existing road-only cross-channel rejection. These tests do not establish that the terminals, queues, schedules or service are correct on the day of travel.
+
+- In airplane mode, calculate Panabo/Tagum-area → Samal journeys and the reverse. Confirm the map shows two road legs plus a visually distinct dashed ferry leg, never one continuous road line across Pakiputan Strait.
+- Verify the mainland road leg physically reaches the DAVSAM/Km. 13 Panacan terminal access and the Samal road leg resumes from the correct Babak terminal access. Record any gate/driveway mismatch as a terminal-coordinate defect.
+- Confirm the UI identifies the crossing as source-reviewed/device-pending and does not claim a live ferry schedule. The displayed 30-minute ferry travel time is the MARINA March 2026 published reference crossing time, not a live ETA; queue/wait time must remain explicitly unknown.
+- During an actual ferry crossing, confirm road off-route warnings, wrong-way detection and road rerouting do not repeatedly fire over water. After arrival, confirm normal road matching and rerouting resume on the destination-side graph.
+- Test both walking/passenger and vehicle journeys. Follow current operator/port rules; a routable app journey is not evidence that a specific passenger, vehicle type or departure is accepted.
+- Disable/remove one regional routing asset in a development build and confirm the journey fails closed rather than drawing a fallback straight route across the channel.
+- Verify current ferry operation and terminal access independently before relying on this journey in a field demonstration. Do not describe the ferry journey as live-service-aware or field-verified until these checks are complete.
+
 ## Provincial coverage and recovery gate
 
 This gate is ready for device testing. Do not mark it passed from Panabo results or the desktop audit. Six incomplete restriction relations are conservatively excluded by blocking driving on their known approach roads; no missing turn membership was guessed. The engine enforces supported restrictions and conservative barrier rules.
 
 - Offline local walking and driving journeys in Asuncion, Braulio E. Dujali, Carmen, Kapalong, New Corella, Panabo, Samal, San Isidro, Santo Tomas, Tagum and Talaingod.
 - Connected mainland cross-boundary journeys, including Panabo–Tagum and Tagum–Talaingod; verify real destination entrances and road access.
-- Local Samal journeys work independently. Mainland–Samal must remain unavailable until verified ferry legs are modeled; no line across water.
+- Local Samal journeys work independently. Mainland–Samal road-only routing must still return `ferry-required`; the separate ferry journey must use explicit Panacan/Babak terminal transitions and a distinct water leg rather than a road line across the channel.
 - Curved roads, parallel roads and loops: snaps stay on the intended physical segment, and a reverse one-way movement is not offered.
 - Known prohibited turns, only-turn junctions, access-restricted segments and barriers are handled according to verified local rules. Compare walking/driving at bollards, public gates and private gates; record conservative exclusions caused by missing access tags. Check that a destination before a barrier is reachable without crossing it.
 - Recalculate from midway along the approach road to a restricted junction. Then trigger a reroute after entering a mapped multi-way restricted maneuver and confirm the legal continuation still reflects the approach already traveled. A fresh navigation session started inside the maneuver has no pre-session history and must not invent one.

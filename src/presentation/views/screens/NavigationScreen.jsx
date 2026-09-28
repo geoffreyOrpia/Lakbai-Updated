@@ -15,6 +15,7 @@ const maneuverIcon = kind => {
   if (kind === 'right' || kind === 'sharp-right' || kind === 'slight-right') return 'return-up-forward-outline';
   if (kind === 'uturn') return 'refresh-outline';
   if (kind === 'roundabout-enter' || kind === 'roundabout-exit') return 'sync-outline';
+  if (kind === 'ferry-board' || kind === 'ferry-arrive') return 'boat-outline';
   if (kind === 'arrive') return 'flag-outline';
   return 'arrow-up-outline';
 };
@@ -73,7 +74,12 @@ export const NavigationScreen = ({ viewModel }) => {
   const shownDistanceKm = state.tracking || state.arrived
     ? state.remainingKm ?? state.route?.distanceKm
     : state.route?.distanceKm;
-  const shownDurationMin = state.tracking || state.arrived
+  const ferryJourney = state.route?.type === 'ferry-journey' ? state.route : null;
+  const shownDurationMin = ferryJourney
+    ? (state.tracking || state.arrived
+      ? state.remainingMin ?? ferryJourney.durationMin
+      : ferryJourney.durationMin)
+    : state.tracking || state.arrived
     ? state.remainingMin ?? state.route?.durationMin
     : state.route?.durationMin;
   const routeSteps = state.route
@@ -110,6 +116,14 @@ export const NavigationScreen = ({ viewModel }) => {
 
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
       {state.gpsError ? <InfoBanner tone="warn" text={state.gpsError} /> : null}
+      {ferryJourney ? <InfoBanner
+        tone="info"
+        text="This journey uses the source-reviewed DAVSAM Panacan ↔ Babak ferry link. The 30-minute crossing is a MARINA March 2026 reference, not a live ETA; current departure and queue time are not known. Confirm service and terminal access before departure."
+      /> : null}
+      {state.journeyPhase === 'ferry' && state.tracking ? <InfoBanner
+        tone="info"
+        text="Ferry crossing detected. Road off-route rerouting and road-speed ETA are paused until LakBai resumes the destination-side road leg."
+      /> : null}
       {state.discoveryTarget && state.coordinateStatus !== 'verified' ? <InfoBanner
         tone="info"
         text="This navigation target is an offline map reference or user-selected pin, not a locally verified entrance. Confirm signs, gates, and permitted access when you arrive."
@@ -142,7 +156,42 @@ export const NavigationScreen = ({ viewModel }) => {
             voiceGuidance={state.voiceGuidance}
             trailPreview={state.trailPreview}
             routePois={state.routePois}
+            timeIsReference={Boolean(ferryJourney)}
           />
+
+          {ferryJourney ? <View style={[styles.journeyCard, shadows.soft]}>
+              <View style={styles.journeyHeader}>
+                <View style={styles.journeyIcon}>
+                  <Ionicons name="boat-outline" size={19} color={colors.primary} />
+                </View>
+                <View style={styles.journeyCopy}>
+                  <Text style={styles.journeyEyebrow}>ROAD → FERRY → ROAD</Text>
+                  <Text style={styles.journeyTitle}>Mainland and Samal connected without a fake road</Text>
+                </View>
+              </View>
+              <View style={styles.journeySteps}>
+                <JourneyStep
+                  icon={state.mode === 'drive' ? 'car-outline' : 'walk-outline'}
+                  label="To terminal"
+                  detail={ferryJourney.ferryLeg.originTerminal.name}
+                />
+                <Ionicons name="chevron-forward" size={15} color={colors.muted} />
+                <JourneyStep
+                  icon="boat-outline"
+                  label="Ferry"
+                  detail={formatKm(ferryJourney.ferryLeg.distanceKm)}
+                />
+                <Ionicons name="chevron-forward" size={15} color={colors.muted} />
+                <JourneyStep
+                  icon="navigate-outline"
+                  label="Resume roads"
+                  detail={ferryJourney.ferryLeg.targetTerminal.name}
+                />
+              </View>
+              <Text style={styles.journeyNote}>
+                {formatDurationMinutes(ferryJourney.roadDurationMin)} road time · {formatDurationMinutes(ferryJourney.ferryDurationMin ?? 0)} MARINA 2026 crossing reference · queue/departure time not included
+              </Text>
+            </View> : null}
 
           {state.trailPreview ? <View style={[styles.journeyCard, shadows.soft]}>
               <View style={styles.journeyHeader}>
@@ -209,7 +258,9 @@ export const NavigationScreen = ({ viewModel }) => {
             <Summary
               icon="time-outline"
               value={formatDurationMinutes(shownDurationMin ?? 0)}
-              label={state.tracking && state.usingLiveEta ? 'Live ETA' : state.tracking || state.arrived ? 'ETA' : 'Est. time'}
+              label={ferryJourney
+                ? 'Travel ref. · wait varies'
+                : state.tracking && state.usingLiveEta ? 'Live ETA' : state.tracking || state.arrived ? 'ETA' : 'Est. time'}
             />
             <Summary
               icon="locate-outline"

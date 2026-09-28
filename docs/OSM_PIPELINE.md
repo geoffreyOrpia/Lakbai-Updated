@@ -48,6 +48,14 @@ The geographic audit reports road-node counts, weak components, directed reachab
 
 Same-road snap matching distinguishes imported segment IDs so parallel sections of one OSM way remain distinct. Shared storage and conservative source exclusions now pass automated checks. Mobile memory, route latency, coverage completeness and real-device offline behavior remain unverified. The legacy Panabo data stays available during migration.
 
+## Ferry journey composition
+
+Ferry transport is intentionally not inserted into the OSM road graphs. `calculateOfflineRoute` continues to reject mainland–Samal requests with `ferry-required`; the separate ferry journey composer may connect the two regional road routes only through an explicit reviewed ferry record.
+
+The current ferry record is DAVSAM Link's Km. 13 Panacan ↔ Babak service. The PCG heavy-weather circular defines the DAVSAM–Babak corridor endpoints, while MARINA's March 2026 Road Roll-On/Roll-Off Terminal System matrix lists the route as served, 1.51 NM, with DAVSAM Link and a published 30-minute travel time. MARINA Regional Office XI also documented vessel safety inspections at DavSam Port in March 2026. LakBai uses the matrix's 30-minute crossing duration as a static transport reference only. It does not model a departure schedule, queue/wait time, live service status, fares, vessel assignment or weather suspension.
+
+The mainland regional graph extends far enough south through its connected road component to route to the Panacan terminal reference; the Samal regional graph routes from the Babak terminal reference. The map renders the road legs independently and overlays the ferry as a dashed transport segment, so the channel is never presented as a road. Reverse journeys reverse the ferry geometry and terminal roles.
+
 ## Compact storage and memory audit
 
 The provincial candidate also has a versioned `lakbai-routing-compact-v1` representation. It is **41,250,273 bytes instead of 141,555,528 bytes (70.9% smaller)**. The encoder stores node coordinates at OSM's seven-decimal precision, delta-encodes curve coordinates, shares geometry between travel directions, and shares road attributes. OSM node IDs, physical segment IDs, tags, modes, and restriction relations remain available. It does not simplify curves or join disconnected components.
@@ -134,4 +142,4 @@ MD5 and size are checked before using or promoting an installed file; SHA-256 is
 
 [The pack audit](data/davao-del-norte-pack-audit.json) records 34 successful walking/driving samples covering all 11 municipalities and six mainland pairs, plus four rejected cross-channel cases. The ten catalog previews are also recorded: nine pass; driving to Panabo's boardwalk returns no connected permitted route. This is not corrected by relaxing road access. Existing catalog coordinates are not verified entrances.
 
-Storage tests cover concurrent destination saves, checksum rejection/repair, cold reuse, interrupted dataset copying, failed pack promotion, backup recovery, old-version fallback and pack deletion. Android export verifies both assets are included. All device, GPS, memory and real-road checks remain pending. Samal local routing is available; ferry journeys remain unsupported.
+Storage tests cover concurrent destination saves, checksum rejection/repair, cold reuse, interrupted dataset copying, failed pack promotion, backup recovery, old-version fallback and pack deletion. Android export verifies both regional road assets are included. All device, GPS, memory, terminal-access and real-road checks remain pending. Local Samal routing and the source-reviewed Panacan ↔ Babak ferry journey composer are available offline, but neither current departure availability nor terminal field accuracy is inferred from automated tests.

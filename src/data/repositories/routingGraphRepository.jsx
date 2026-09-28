@@ -23,6 +23,26 @@ export class BundledRoutingGraphRepository {
     return graph;
   };
 
+  getForRegion = async (region, savedGraphUri = null, savedReference = null) => {
+    if (!region) return null;
+    if (savedGraphUri && !savedGraphUri.endsWith('.routing')) {
+      try { return this.readGraph(savedGraphUri); } catch { /* Retry current bundled region. */ }
+    }
+    try {
+      const saved = await this.sharedStorage.ensure(region);
+      return this.readGraph(saved.uri, region);
+    } catch {
+      if (savedReference) {
+        try {
+          const previous = this.sharedStorage.status(region, savedReference);
+          if (previous && previous.uri === savedGraphUri) return this.readGraph(previous.uri, region);
+        } catch { /* A damaged previous copy cannot be used. */ }
+      }
+      if (savedGraphUri?.endsWith('.routing')) return null;
+    }
+    return null;
+  };
+
   getForDestination = async (destinationId, savedGraphUri = null, target = null, savedReference = null) => {
     const region = routingRegionFor(destinationId, target);
     if (target && !region) return null;
@@ -32,20 +52,9 @@ export class BundledRoutingGraphRepository {
       try { return this.readGraph(savedGraphUri); } catch { /* Retry current bundled region. */ }
     }
     if (region) {
-      try {
-        const saved = await this.sharedStorage.ensure(region);
-        return this.readGraph(saved.uri, region);
-      } catch {
-        // Current shared data must be checksum-validated by the store. Do not
-        // trust an unchecked shared URI or silently replace it with pilot data.
-        if (savedReference) {
-          try {
-            const previous = this.sharedStorage.status(region, savedReference);
-            if (previous && previous.uri === savedGraphUri) return this.readGraph(previous.uri, region);
-          } catch { /* A damaged previous copy cannot be used. */ }
-        }
-        if (savedGraphUri?.endsWith('.routing')) return null;
-      }
+      const graph = await this.getForRegion(region, savedGraphUri, savedReference);
+      if (graph) return graph;
+      if (savedGraphUri?.endsWith('.routing')) return null;
     }
     return getBundledRoutingGraph(destinationId);
   };

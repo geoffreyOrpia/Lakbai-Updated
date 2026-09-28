@@ -11,6 +11,7 @@ const maneuverIcon = kind => {
   if (kind === 'left' || kind === 'sharp-left' || kind === 'slight-left') return 'return-up-back-outline';
   if (kind === 'right' || kind === 'sharp-right' || kind === 'slight-right') return 'return-up-forward-outline';
   if (kind === 'uturn') return 'refresh-outline';
+  if (kind === 'ferry-board' || kind === 'ferry-arrive') return 'boat-outline';
   if (kind === 'arrive') return 'flag-outline';
   return 'arrow-up-outline';
 };
@@ -44,6 +45,7 @@ export const NavigationMap = ({
   voiceGuidance = true,
   trailPreview = null,
   routePois = [],
+  timeIsReference = false,
 }) => {
   const [following, setFollowing] = useState(liveGps);
   const [basemapFailed, setBasemapFailed] = useState(false);
@@ -52,13 +54,34 @@ export const NavigationMap = ({
   const bounds = routeBounds(geometry);
   const routeData = useMemo(() => ({
     type: 'FeatureCollection',
-    features: [{
-      type: 'Feature',
-      id: 'route',
-      properties: {},
-      geometry,
-    }],
-  }), [geometry]);
+    features: route.type === 'ferry-journey'
+      ? (route.legs ?? [])
+        .filter(leg => leg.kind === 'road' && leg.route?.geometry)
+        .map((leg, index) => ({
+          type: 'Feature',
+          id: `road-leg-${index}`,
+          properties: { kind: 'road' },
+          geometry: leg.route.geometry,
+        }))
+      : [{
+        type: 'Feature',
+        id: 'route',
+        properties: { kind: 'road' },
+        geometry,
+      }],
+  }), [geometry, route.type, route.legs]);
+  const ferryData = useMemo(() => {
+    if (!route.ferryLeg?.geometry?.coordinates?.length) return null;
+    return {
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        id: 'ferry-leg',
+        properties: {},
+        geometry: route.ferryLeg.geometry,
+      }],
+    };
+  }, [route.ferryLeg]);
   const trailData = useMemo(() => {
     if (!trailPreview?.geometry?.coordinates?.length) return null;
     return {
@@ -76,6 +99,18 @@ export const NavigationMap = ({
     features: [
       pointFeature('route-start', geometry.coordinates[0], 'start'),
       pointFeature('route-destination', [target.lng, target.lat], 'destination'),
+      ...(route.ferryLeg ? [
+        pointFeature(
+          'ferry-origin-terminal',
+          [route.ferryLeg.originTerminal.lng, route.ferryLeg.originTerminal.lat],
+          'ferry-terminal',
+        ),
+        pointFeature(
+          'ferry-target-terminal',
+          [route.ferryLeg.targetTerminal.lng, route.ferryLeg.targetTerminal.lat],
+          'ferry-terminal',
+        ),
+      ] : []),
       ...(trailPreview?.geometry?.coordinates?.length
         ? [pointFeature(
           'verified-trail-end',
@@ -89,7 +124,7 @@ export const NavigationMap = ({
         'poi',
       )),
     ],
-  }), [geometry.coordinates, target.lat, target.lng, trailPreview, routePois]);
+  }), [geometry.coordinates, target.lat, target.lng, trailPreview, routePois, route.ferryLeg]);
 
   return <View style={[styles.card, shadows.card]}>
       <View style={[styles.mapFrame, liveGps && styles.mapFrameLive]}>
@@ -140,6 +175,30 @@ export const NavigationMap = ({
             />
           </GeoJSONSource>
 
+          {ferryData ? <GeoJSONSource id="lakbai-navigation-ferry" data={ferryData}>
+              <Layer
+                id="lakbai-navigation-ferry-casing"
+                type="line"
+                source="lakbai-navigation-ferry"
+                paint={{
+                  'line-color': colors.white,
+                  'line-width': 9,
+                  'line-opacity': 0.92,
+                }}
+              />
+              <Layer
+                id="lakbai-navigation-ferry-line"
+                type="line"
+                source="lakbai-navigation-ferry"
+                paint={{
+                  'line-color': colors.accentDark,
+                  'line-width': 5,
+                  'line-opacity': 0.96,
+                  'line-dasharray': [2, 1.2],
+                }}
+              />
+            </GeoJSONSource> : null}
+
           {trailData ? <GeoJSONSource id="lakbai-navigation-trail" data={trailData}>
               <Layer
                 id="lakbai-navigation-trail-casing"
@@ -176,6 +235,7 @@ export const NavigationMap = ({
                   ['get', 'role'],
                   'destination', colors.accent,
                   'trail-end', colors.accentDark,
+                  'ferry-terminal', colors.accentDark,
                   'poi', colors.accentDark,
                   colors.primary,
                 ],
@@ -215,7 +275,9 @@ export const NavigationMap = ({
               <Text style={styles.navigationHudMeta}>
                 {remainingKm != null ? formatKm(remainingKm) : '—'} remaining
                 {' · '}
-                {remainingMin != null ? formatDurationMinutes(remainingMin) : '—'}
+                {remainingMin != null
+                  ? `${formatDurationMinutes(remainingMin)}${timeIsReference ? ' travel ref.' : ''}`
+                  : '—'}
               </Text>
             </View>
           </View> : null}
@@ -239,7 +301,9 @@ export const NavigationMap = ({
       </View>
       <Text style={styles.caption}>
         {detailedOffline
-          ? trailData
+          ? ferryData
+            ? 'Road legs and the local basemap stay offline. The dashed ferry segment is an explicit source-reviewed transport leg, not a road across the channel.'
+            : trailData
             ? 'Road route and saved map data are local. The dashed line shows the source-verified trail continuation after the entrance.'
             : 'Route geometry and the Davao del Norte basemap are both local. No Google Maps or network tiles are used.'
           : 'The route remains visible, but the detailed local basemap could not be loaded.'}
