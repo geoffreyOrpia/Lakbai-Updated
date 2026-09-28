@@ -147,8 +147,8 @@ export const SafetyScreen = ({
       <View style={styles.section}>
         <SectionHeader eyebrow="Essentials" title="Travel readiness" />
         <View style={styles.grid}>
-          <SafetyTile icon="medical-outline" title="Medical" text="Nearest known facilities" />
-          <SafetyTile icon="call-outline" title="Contacts" text="Local emergency numbers" />
+          <SafetyTile icon="medical-outline" title="Medical" text="Reconfirm nearby care locally" />
+          <SafetyTile icon="call-outline" title="Contacts" text="Verified 911 reference" />
           <SafetyTile icon="navigate-outline" title="Route" text="Saved trail references" />
           <SafetyTile icon="information-circle-outline" title="Advisories" text="Destination reminders" />
         </View>

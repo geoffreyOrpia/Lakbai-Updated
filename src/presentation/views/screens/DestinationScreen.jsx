@@ -151,11 +151,18 @@ export const DestinationScreen = ({
             <View style={styles.verificationCopy}>
               <Text style={styles.verificationEyebrow}>CONTENT STATUS</Text>
               <Text style={styles.verificationTitle}>
-                {destination.verification.status === 'partial' ? 'Core facts source-reviewed' : 'Prototype content'}
+                {destination.verification.status === 'partial' ? 'Online sources reviewed' : 'Prototype content'}
               </Text>
             </View>
           </View>
           <Text style={styles.verificationText}>{destination.verification.summary}</Text>
+          {destination.verification.fieldVerified === false ? <View style={styles.verificationNotice}>
+              <Ionicons name="location-outline" size={14} color={colors.accentDark} />
+              <Text style={styles.verificationNoticeText}>Not field verified · online source review only</Text>
+            </View> : null}
+          {destination.verification.operationalNote ? <Text style={styles.verificationOperational}>
+              {destination.verification.operationalNote}
+            </Text> : null}
           {destination.verification.sources?.length ? <View style={styles.verificationSources}>
               {destination.verification.sources.map(source => <View key={source.url} style={styles.verificationSource}>
                   <Ionicons name="document-text-outline" size={14} color={colors.primary} />
@@ -604,6 +611,28 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 11.2,
     lineHeight: 16
+  },
+  verificationNotice: {
+    minHeight: 30,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
+    backgroundColor: colors.accentSoft,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs
+  },
+  verificationNoticeText: {
+    flex: 1,
+    color: colors.accentDark,
+    fontSize: 10.5,
+    lineHeight: 14,
+    fontWeight: '800'
+  },
+  verificationOperational: {
+    color: colors.muted,
+    fontSize: 10.7,
+    lineHeight: 15
   },
   verificationSources: {
     gap: spacing.xs

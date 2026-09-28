@@ -48,14 +48,53 @@ describe('release catalog safety', () => {
     }
   });
 
-  test('marks every destination with source-review status or an explicit prototype label', () => {
+  test('marks every destination with transparent online-source provenance', () => {
     for (const pack of seedPacks) {
       expect(['partial', 'prototype']).toContain(pack.destination.verification.status);
       expect(pack.destination.verification.reviewedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(pack.destination.verification.reviewMethod).toBe('online-source-review');
+      expect(pack.destination.verification.fieldVerified).toBe(false);
+      expect(pack.destination.verification.operationalNote).toContain('not a field inspection');
       if (pack.destination.status === 'available') {
         expect(pack.destination.verification.sources.length).toBeGreaterThan(0);
+        for (const source of pack.destination.verification.sources) {
+          expect(source.url).toMatch(/^https:\/\//);
+          expect(source.type).toBeTruthy();
+          expect(source.scope).toBeTruthy();
+        }
       }
     }
+  });
+
+  test('does not ship known overconfident operational claims in source-reviewed visitor tips', () => {
+    const serialized = JSON.stringify(seedPacks);
+    const unsupportedPhrases = [
+      'Entrance is inexpensive',
+      'Cottages go fast on weekends',
+      'Vans leave when full',
+      'buses run on fixed schedules',
+      'stroller-friendly to the first viewdeck',
+      'Weeknights have the busiest food stall row',
+      'most practical option',
+      'swimmable natural pools',
+      'Guided viewing decks with scheduled talks',
+      'Short accessible sanctuary path',
+      'walkable heritage route',
+    ];
+
+    for (const phrase of unsupportedPhrases) {
+      expect(serialized).not.toContain(phrase);
+    }
+  });
+
+  test('limits Panabo trail navigation to the source-matched segment without claiming a current total boardwalk length', () => {
+    const panabo = seedPacks.find(pack => pack.id === 'panabo');
+    const trail = panabo?.trails[0];
+
+    expect(trail.description).toContain('Historical Panabo City pages report differing total boardwalk lengths');
+    expect(trail.description).toContain('approximately 214-meter OpenStreetMap segment');
+    expect(trail.verification.summary).toContain('different boardwalk lengths');
+    expect(trail.verification.summary).not.toContain('reports a 430-meter boardwalk');
   });
 
   test('ships only the national emergency hotline until local numbers are reverified', () => {

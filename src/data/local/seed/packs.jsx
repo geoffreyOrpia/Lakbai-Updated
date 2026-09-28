@@ -12,8 +12,8 @@ const NATIONAL_EMERGENCY_CONTACT = {
 
 export const packs = [{
   id: 'samal',
-  version: 7,
-  updatedAt: '2026-09-28T08:00:00.000Z',
+  version: 8,
+  updatedAt: '2026-09-29T00:00:00.000Z',
   trails: [{
     id: 'samal-kaputian-coastal',
     name: 'Kaputian Coastal Trail',
@@ -21,7 +21,7 @@ export const packs = [{
     distanceKm: 2.4,
     durationMin: 55,
     elevationGainM: 40,
-    description: 'A relaxed shoreline walk connecting the Kaputian wharf to the quieter coves south of the barangay proper. Mostly sand and compact coral paths with views across to Talikud Island.',
+    description: 'Planning-only shoreline route suggestion near Kaputian. LakBai has not field-verified this line, surface conditions, access continuity, or walking time; use local signs and current advice on site.',
     start: {
       name: 'Kaputian Wharf',
       lat: 6.9888,
@@ -69,24 +69,24 @@ export const packs = [{
     category: 'beach',
     lat: 6.987,
     lng: 125.7213,
-    description: 'Public beach park with cottages, picnic huts, and a long shallow shoreline.',
-    tip: 'Entrance is inexpensive; bring cash, the area has no reliable card payment.'
+    description: 'Public beach destination listed within Samal tourism context.',
+    tip: 'Confirm current entrance, cottage, payment, and operating arrangements locally before visiting.'
   }, {
     id: 'spot-samal-vanishing',
     name: 'Vanishing Island Sandbar',
     category: 'island',
     lat: 7.0936,
     lng: 125.6803,
-    description: 'A tidal sandbar that appears at low tide between Samal and the mainland channel.',
-    tip: 'Visit near low tide and hire a boat from Babak; check return timing with the boatman.'
+    description: 'A tidal sandbar attraction associated with the channel between Samal and the mainland.',
+    tip: 'Tide, boat access, weather, and return arrangements can change; confirm them with a current local operator.'
   }, {
     id: 'spot-samal-talikud',
     name: 'Talikud Island (Santiago Bay)',
     category: 'island',
     lat: 6.9667,
     lng: 125.65,
-    description: 'Quiet island across from Kaputian with white-sand coves and snorkeling areas.',
-    tip: 'Day trips usually arrange boats through Kaputian wharf operators.'
+    description: 'Island destination across from the Kaputian area with coastal recreation associated with local tourism.',
+    tip: 'Confirm current boat departure points, weather limits, and visitor arrangements before leaving.'
   }, {
     id: 'spot-samal-plaza',
     name: 'Peñaplata Public Plaza and Market',
@@ -101,39 +101,39 @@ export const packs = [{
     category: 'transport',
     lat: 7.1216,
     lng: 125.6849,
-    description: 'Barangay road junction where habal-habal drivers wait for falls and sanctuary trips.',
-    tip: 'Agree on round-trip fare and waiting time before leaving.'
+    description: 'Mapped road junction included as a local orientation point in the Samal pack.',
+    tip: 'Local transport availability and fares are not verified by LakBai; confirm them at the time of travel.'
   }, {
     id: 'spot-samal-resort',
     name: 'Isla Reta Beach Area',
     category: 'beach',
     lat: 6.9561,
     lng: 125.6753,
-    description: 'Long-established beach area on Talikud with open huts and camping spaces.',
-    tip: 'Overnight stays should be arranged ahead of time with resort staff.'
+    description: 'Beach-area destination on Talikud Island included for trip planning.',
+    tip: 'Confirm current access, accommodation, fees, and overnight policies directly with the operator.'
   }, {
     id: 'spot-samal-viewdeck',
     name: 'Babak Coastal Viewdeck',
     category: 'viewpoint',
     lat: 7.1203,
     lng: 125.6699,
-    description: 'Roadside viewpoint over the Davao Gulf with clear sunset angles.',
-    tip: 'Quick stop on a habal-habal circuit; mind traffic on the narrow road.'
+    description: 'Mapped coastal viewpoint included as a short scenic stop in the Samal pack.',
+    tip: 'Treat roadside access and stopping safety as conditions to confirm on site.'
   }],
   transport: {
-    gettingThere: ['From Davao City, take the Sasa ferry terminal barge or the Sta. Ana wharf fastcraft to Samal.', 'Barges carry vehicles; fastcraft are passengers only and cross more frequently.', 'Habal-habal (motorcycle taxi) stands at Peñaplata market and Babak junction cover most barangay roads.'],
-    gettingAround: ['Single-cab multicabs and tricycles connect Peñaplata, Babak, and Kaputian on rough schedules.', 'For beaches and falls, hiring a habal-habal for a half-day circuit is the most practical option.', 'Roads are paved but narrow in sections; travel times grow quickly after rain.'],
-    localTips: ['Signal is strong near the plaza but drops on coves and forested barangay roads.', 'Carry small bills; sari-sari stores and habal-habal drivers rarely keep change for large notes.', 'Save this pack to your library before leaving Davao City so it is easy to find during the trip.']
+    gettingThere: ['Samal is reached from the Davao side through ferry/boat connections serving the island.', 'Vehicle and passenger arrangements, terminal use, fares, and schedules can change; confirm the current crossing at the port before travel.', 'Local road transport options vary by area and time of day.'],
+    gettingAround: ['Use the local road network and confirm current public-transport or hired-vehicle availability for the part of the island you plan to visit.', 'Allow extra time for weather, ferry queues, road works, and local access conditions that LakBai cannot verify live.'],
+    localTips: ['Download the Samal pack before crossing if you expect limited connectivity.', 'Carry an offline copy of important booking and operator details.', 'Confirm return-crossing arrangements before traveling far from the port area.']
   },
   safety: {
-    reminders: ['Confirm the last return ferry time before heading to southern coves.', 'Wear reef-safe sunscreen and footwear that handles coral rubble.', 'Tell your accommodation where your day route goes and when you expect to return.', 'Sea conditions change fast; agree on a cutoff time with boat operators.'],
+    reminders: ['Confirm current return-crossing arrangements before traveling far from your arrival port.', 'Use sun protection and footwear suitable for the conditions you actually encounter.', 'Share your day plan with someone you trust when visiting less-connected areas.', 'Follow current marine-weather and boat-operator safety guidance.'],
     emergencyContacts: [NATIONAL_EMERGENCY_CONTACT],
-    facilities: ['Peñaplata health center', 'Babak district hospital', 'Kaputian barangay station']
+    facilities: []
   }
 }, {
   id: 'hagimit-falls',
-  version: 5,
-  updatedAt: '2026-09-28T08:00:00.000Z',
+  version: 6,
+  updatedAt: '2026-09-29T00:00:00.000Z',
   trails: [{
     id: 'hagimit-nature-trail',
     name: 'Hagimit Falls Nature Trail',
@@ -141,7 +141,7 @@ export const packs = [{
     distanceKm: 1.4,
     durationMin: 40,
     elevationGainM: 60,
-    description: 'A short loop linking the entrance cottages down through the falls levels and back via the upper view deck. Steps and handrails exist on the main line; side paths are root and rock.',
+    description: 'Planning-only route suggestion around the Hagimit Falls area. LakBai has not field-verified this geometry, path condition, barriers, or walking time, so follow current site guidance rather than this line when conditions differ.',
     start: {
       name: 'Trailhead Entrance',
       lat: 7.1172,
@@ -157,21 +157,21 @@ export const packs = [{
       type: 'start',
       lat: 7.1172,
       lng: 125.6965,
-      note: 'Registration table and cottage assignments happen here.'
+      note: 'Approximate planning start. Confirm the current visitor entrance and registration procedure on arrival.'
     }, {
       id: 'wp-hag-first',
       name: 'First Falls Pool',
       type: 'poi',
       lat: 7.1164,
       lng: 125.6987,
-      note: 'Shallow family-friendly pool; depth markers are approximate after heavy rain.'
+      note: 'Planning waypoint only. Water depth and safe swimming conditions are not verified by LakBai.'
     }, {
       id: 'wp-hag-second',
       name: 'Second Falls',
       type: 'poi',
       lat: 7.1181,
       lng: 125.7004,
-      note: 'Stronger current; stay behind the rope line when the water is brownish.'
+      note: 'Planning waypoint only. Follow current barriers, staff instructions, and posted water-safety guidance.'
     }, {
       id: 'wp-hag-deck',
       name: 'Upper View Deck',
@@ -187,39 +187,39 @@ export const packs = [{
     category: 'facility',
     lat: 7.1172,
     lng: 125.6965,
-    description: 'Ticketing, cottage rental, and basic store for the falls area.',
-    tip: 'Cottages go fast on weekends; arrive before 9 AM.'
+    description: 'Approximate visitor-entry point included for orientation in the Hagimit pack.',
+    tip: 'Confirm current ticketing, hours, fees, cottage availability, and entrance procedure locally.'
   }, {
     id: 'spot-hag-store',
     name: 'Falls Road Sari-sari Cluster',
     category: 'town',
     lat: 7.1201,
     lng: 125.6921,
-    description: 'Small stores at the road junction selling water, snacks, and life-vest rentals.',
-    tip: 'Rent vests here if you plan to swim with children.'
+    description: 'Mapped roadside cluster included as a planning landmark near the falls approach.',
+    tip: 'LakBai does not verify current vendors, supplies, rentals, or operating hours.'
   }, {
     id: 'spot-hag-habal',
     name: 'Habal-habal Waiting Shed',
     category: 'transport',
     lat: 7.1152,
     lng: 125.7008,
-    description: 'Motorcycle taxis wait near the upper road for the ride back to Peñaplata.',
-    tip: 'Signal is weak in the falls hollow; agree on pickup time in advance.'
+    description: 'Mapped roadside point included as an orientation landmark near the falls area.',
+    tip: 'Do not rely on transport being available here; arrange and confirm current pickup options separately.'
   }],
   transport: {
-    gettingThere: ['Cross to Samal via the Sasa barge, then ride a habal-habal or single motorbike toward Peñaplata.', 'Ask for "Hagimit junction"; the falls are a few minutes downhill past the stores.'],
-    gettingAround: ['The falls area is walkable; the trail connects the entrance, pools, and view deck.', 'Steps can be slippery; use the handrail line on the main path.'],
-    localTips: ['Go on weekday mornings for the quietest pools.', 'Keep phone use to the cottages area; water and humidity claim careless devices.']
+    gettingThere: ['Reach Samal using the current ferry/boat arrangement, then confirm the present local road transport and visitor entrance for Hagimit Falls.', 'LakBai does not verify live fares, schedules, road condition, or final access procedure.'],
+    gettingAround: ['Follow posted site paths, barriers, and staff instructions. The LakBai route suggestion is planning-only and is not released as verified trail navigation.'],
+    localTips: ['Check weather and local access conditions before the visit.', 'Protect phones and valuables from water and humidity around the falls.']
   },
   safety: {
-    reminders: ['Do not swim directly after heavy rain; brown water means stronger undercurrents.', 'Watch children near the second falls; depths change quickly.', 'Leave before dusk; the trail has no lighting.'],
+    reminders: ['Avoid entering the water when weather, current, visibility, or site guidance indicates unsafe conditions.', 'Keep children closely supervised around moving water and follow current site barriers.', 'Plan enough daylight for the visit unless the attraction explicitly provides and permits after-dark access.'],
     emergencyContacts: [NATIONAL_EMERGENCY_CONTACT],
-    facilities: ['Peñaplata health center', 'Falls entrance first-aid kit']
+    facilities: []
   }
 }, {
   id: 'monfort-bat-sanctuary',
-  version: 4,
-  updatedAt: '2026-09-28T08:00:00.000Z',
+  version: 5,
+  updatedAt: '2026-09-29T00:00:00.000Z',
   trails: [{
     id: 'monfort-sanctuary-path',
     name: 'Sanctuary Wildlife Path',
@@ -227,7 +227,7 @@ export const packs = [{
     distanceKm: 0.8,
     durationMin: 25,
     elevationGainM: 15,
-    description: 'A short guided loop from the visitor center to the cave viewdecks and back. Guides lead every group; the path is shaded and mostly flat.',
+    description: 'Planning-only path suggestion around the sanctuary area. LakBai does not claim the route, guide procedure, accessibility, surface, or timing is field-verified.',
     start: {
       name: 'Visitor Center',
       lat: 7.1259,
@@ -243,7 +243,7 @@ export const packs = [{
       type: 'start',
       lat: 7.1259,
       lng: 125.6776,
-      note: 'Pay fees, watch the intro talk, and get assigned a guide.'
+      note: 'Planning start only. Confirm the current registration, fee, briefing, and visitor procedure with sanctuary staff.'
     }, {
       id: 'wp-mon-deck',
       name: 'Main Cave Viewdeck',
@@ -266,8 +266,8 @@ export const packs = [{
     category: 'facility',
     lat: 7.1259,
     lng: 125.6776,
-    description: 'Registration, fees, and the conservation briefing for all visitors.',
-    tip: 'Viewings run in small groups; mornings are calmest for the colony.'
+    description: 'Visitor-area point included for orientation at the sanctuary.',
+    tip: 'Confirm current registration, viewing rules, fees, schedules, and group procedures directly with sanctuary staff.'
   }, {
     id: 'spot-mon-cave',
     name: 'Monfort Cave Complex',
@@ -275,30 +275,30 @@ export const packs = [{
     lat: 7.1281,
     lng: 125.6796,
     description: 'Protected cave network hosting millions of Geoffrey\'s rousette fruit bats.',
-    tip: 'No flash photography and no drones inside the sanctuary.'
+    tip: 'Follow the sanctuary’s current posted wildlife, photography, noise, and access rules.'
   }, {
     id: 'spot-mon-entrance',
     name: 'Sanctuary Gate Road Junction',
     category: 'transport',
     lat: 7.1236,
     lng: 125.6752,
-    description: 'Habal-habal drop-off point on the Babak road with the sanctuary signage.',
-    tip: 'Arrange the return pickup when you arrive; waiting drivers are not always around.'
+    description: 'Mapped road-junction point included as an orientation landmark near the sanctuary.',
+    tip: 'Local transport availability and pickup arrangements are not verified by LakBai.'
   }],
   transport: {
-    gettingThere: ['From Babak proper, take a habal-habal north along the coastal road to the sanctuary junction.', 'Most island circuits combine the sanctuary with Hagimit Falls in one morning.'],
-    gettingAround: ['All visits follow the guided path; independent exploration of the caves is prohibited.', 'The loop is stroller-friendly to the first viewdeck only.'],
-    localTips: ['Bring a cap with a brim; the colony overhead can be messy.', 'Quiet groups see more natural behavior from the bats.']
+    gettingThere: ['Use the Samal road network from your arrival area and confirm the current route, drop-off, and local transport arrangement to the sanctuary.', 'LakBai does not verify live transport fares, visitor schedules, or same-day access.'],
+    gettingAround: ['Follow sanctuary staff, signs, barriers, and current visitor rules. The LakBai path suggestion is not released as verified trail navigation.'],
+    localTips: ['Keep wildlife disturbance low and follow current sanctuary instructions.', 'Bring suitable sun/rain protection for outdoor portions of the visit.']
   },
   safety: {
-    reminders: ['Follow your guide\'s distance markers at all times near the caves.', 'Do not touch guano, cave walls, or fallen pups.', 'Sanitize hands after the visit; wildlife areas carry zoonotic risk.'],
+    reminders: ['Follow current sanctuary staff instructions, barriers, and wildlife-distance rules.', 'Do not handle wildlife or enter restricted cave areas.', 'Use normal hand hygiene after contact with outdoor wildlife environments.'],
     emergencyContacts: [NATIONAL_EMERGENCY_CONTACT],
-    facilities: ['Babak district hospital', 'Sanctuary first-aid station']
+    facilities: []
   }
 }, {
   id: 'tagum',
-  version: 5,
-  updatedAt: '2026-09-28T08:00:00.000Z',
+  version: 6,
+  updatedAt: '2026-09-29T00:00:00.000Z',
   trails: [{
     id: 'tagum-heritage-walk',
     name: 'Tagum Heritage Walk',
@@ -306,7 +306,7 @@ export const packs = [{
     distanceKm: 2.1,
     durationMin: 50,
     elevationGainM: 10,
-    description: 'A flat city-center loop connecting the golden cathedral, Freedom Park, the trade center, and the new city hall grounds. Best walked in the early morning or after 4 PM.',
+    description: 'Planning-only city-center route suggestion connecting catalog landmarks. LakBai has not field-verified the full pedestrian path, crossings, temporary closures, accessibility, or walking time.',
     start: {
       name: 'Christ the King Cathedral',
       lat: 7.4477,
@@ -362,7 +362,7 @@ export const packs = [{
     lat: 7.4496,
     lng: 125.8072,
     description: 'Central plaza hosting city events, the Musikahan festival stage, and night markets.',
-    tip: 'Weeknights have the busiest food stall row.'
+    tip: 'Event use and vendor activity change; check the current city schedule when planning around the park.'
   }, {
     id: 'spot-tag-trade',
     name: 'Tagum Trade Center',
@@ -370,7 +370,7 @@ export const packs = [{
     lat: 7.4505,
     lng: 125.8056,
     description: 'Public market and trade complex covering wet goods, textiles, and delicacies.',
-    tip: 'Visit mid-morning for the freshest produce selection.'
+    tip: 'Market operating patterns can change; confirm current opening and activity locally.'
   }, {
     id: 'spot-tag-hall',
     name: 'New City Hall Grounds',
@@ -378,15 +378,15 @@ export const packs = [{
     lat: 7.4452,
     lng: 125.805,
     description: 'Modern government center with landscaped grounds and wide walkways.',
-    tip: 'Quiet in the late afternoon; good rest stop on the loop.'
+    tip: 'Public access can change around government activity and events; follow current site rules.'
   }, {
     id: 'spot-tag-terminal',
     name: 'Tagum Overseas Transport Terminal',
     category: 'transport',
     lat: 7.4436,
     lng: 125.8038,
-    description: 'Bus and van terminal for routes toward Davao City, Mati, and the Compostela Valley.',
-    tip: 'Vans leave when full; buses run on fixed schedules.'
+    description: 'Transport-terminal point included for regional trip planning in the Tagum pack.',
+    tip: 'Routes, operators, loading areas, and departure times can change; verify them at the terminal.'
   }, {
     id: 'spot-tag-museum',
     name: 'Museyo Sukwahi',
@@ -394,22 +394,22 @@ export const packs = [{
     lat: 7.4489,
     lng: 125.8045,
     description: 'Compact city museum covering Tagum history and festival memorabilia.',
-    tip: 'Check opening days at the desk; hours change around city events.'
+    tip: 'LakBai does not currently have source-reviewed operating hours; confirm opening directly before visiting.'
   }],
   transport: {
-    gettingThere: ['Buses and vans run from Davao City\'s Ecoland/Overland terminals to Tagum on a fixed schedule.', 'From Panabo, multicabs and buses stop along the national highway and at the terminal.'],
-    gettingAround: ['The city core is walkable; tricycles cover the wider barangays cheaply.', 'Jeepney routes radiate from the trade center area; confirm the destination sign before boarding.'],
-    localTips: ['Signal is reliable citywide; offline packs still help for reading notes on the go.', 'Festival weeks ( Musikahan, Araw ng Tagum ) close several roads around Freedom Park.']
+    gettingThere: ['Tagum is served by regional road transport from Davao del Norte and neighboring areas.', 'Confirm the current operator, terminal, route, fare, and departure arrangement before travel.'],
+    gettingAround: ['Use current local transport information and pedestrian conditions for the city area you plan to visit.', 'Temporary traffic management and event closures can affect routes around major city venues.'],
+    localTips: ['Keep the offline pack available for destination notes and navigation context.', 'Check current city advisories when traveling during major civic or cultural events.']
   },
   safety: {
-    reminders: ['Keep bags zipped in market crowds.', 'Cross only at pedestrian lanes; traffic around the terminal is fast.', 'Save the terminal\'s last-bus time for your return leg.'],
+    reminders: ['Keep personal belongings secure in crowded public areas.', 'Use marked pedestrian crossings and follow current traffic controls.', 'Confirm your return transport directly with the current operator or terminal before relying on a departure.'],
     emergencyContacts: [NATIONAL_EMERGENCY_CONTACT],
-    facilities: ['Tagum City Hospital', 'Davao Regional Medical Center (nearby)', 'Freedom Park police assistance desk']
+    facilities: []
   }
 }, {
   id: 'panabo',
-  version: 6,
-  updatedAt: '2026-09-28T11:00:00.000Z',
+  version: 7,
+  updatedAt: '2026-09-29T00:00:00.000Z',
   trails: [{
     id: 'panabo-mangrove-boardwalk',
     name: 'Panabo Mangrove Boardwalk — mapped segment',
@@ -418,7 +418,7 @@ export const packs = [{
     durationMin: 12,
     elevationGainM: null,
     routeVerified: true,
-    description: 'A verified pedestrian segment inside Panabo Mangrove Park. The City Government documents a 430-meter boardwalk at Barangay J.P. Laurel; LakBai currently navigates only the 214-meter segment mapped in OpenStreetMap and does not claim the remainder is GPS-verified.',
+    description: 'A source-matched pedestrian segment inside Panabo Mangrove Park. Historical Panabo City pages report differing total boardwalk lengths, so LakBai makes no claim about the current total length and navigates only the approximately 214-meter OpenStreetMap segment matched to the attraction.',
     start: {
       name: 'Mapped boardwalk segment start',
       lat: 7.2723324,
@@ -431,7 +431,7 @@ export const packs = [{
       geometryUrl: 'https://www.openstreetmap.org/way/641690678',
       officialSource: 'https://panabocity.gov.ph/panabo-mangrove-park-ecotourism-project-inaugurated/',
       license: 'OpenStreetMap data © OpenStreetMap contributors, ODbL 1.0',
-      summary: 'Panabo City confirms the boardwalk attraction in Barangay J.P. Laurel and reports a 430-meter boardwalk. The navigation line is limited to OpenStreetMap way 641690678, whose approximately 214-meter mapped geometry sits at the independently published Panabo Mangrove Park coordinates.'
+      summary: 'Panabo City sources confirm the mangrove attraction in Barangay J.P. Laurel but historical official pages report different boardwalk lengths. The LakBai navigation line is therefore limited to OpenStreetMap way 641690678, an approximately 214-meter mapped segment matched to the attraction; it does not represent the full current facility.'
     },
     geometry: {
       type: 'LineString',
@@ -468,25 +468,25 @@ export const packs = [{
     category: 'park',
     lat: 7.3058,
     lng: 125.6809,
-    description: 'Central city park and common jeepney stop for coastal barangay rides.',
-    tip: 'Motorcycles to the coast gather near the highway side.'
+    description: 'Mapped central-city park included as an orientation point in the Panabo pack.',
+    tip: 'LakBai does not verify current public-transport loading points or availability here.'
   }, {
     id: 'spot-pan-market',
     name: 'Panabo Public Market',
     category: 'market',
     lat: 7.3048,
     lng: 125.6789,
-    description: 'City market for supplies before coastal trips.',
-    tip: 'Buy drinking water here; stores near the boardwalk are limited.'
+    description: 'Mapped public-market point included for city orientation and trip planning.',
+    tip: 'Vendor hours, supplies, and coastal-facility availability can change; confirm current conditions locally.'
   }],
   transport: {
-    gettingThere: ['From Davao City or Tagum, ride any Panabo-bound bus or van and alight at the city proper.', 'From the highway, hire a single motorcycle to the coastal barangay with the boardwalk.'],
-    gettingAround: ['The boardwalk itself is the only path; wear shoes that tolerate mud on the approach road.', 'Habitual habal-habal drivers can wait or return for you; fix a time both ways.'],
-    localTips: ['Check tide times the night before; high tide hides the mudflats that attract wading birds.', 'Mornings are cooler and the boardwalk is quietest then.']
+    gettingThere: ['Panabo is served by the provincial road network; confirm the current local connection from the city area to Barangay J.P. Laurel before travel.', 'LakBai does not verify live transport operators, fares, schedules, or final approach conditions.'],
+    gettingAround: ['At the mangrove attraction, follow current signs, barriers, caretaker instructions, and locally open sections of the boardwalk.', 'Do not assume the mapped LakBai segment represents every currently accessible part of the facility.'],
+    localTips: ['Tide, weather, maintenance, and temporary access conditions can change the experience.', 'Check current local conditions before traveling to the coastal site.']
   },
   safety: {
-    reminders: ['Stay on the boardwalk; mangrove mud can trap footwear and legs.', 'Bring insect repellent, especially around dusk.', 'Mind loose planks after storms; report them to the caretaker.'],
+    reminders: ['Stay on locally open boardwalk sections and do not enter mangrove mudflats unless explicitly permitted and safe.', 'Use suitable sun and insect protection for coastal conditions.', 'If you encounter damaged or closed infrastructure, do not proceed and report the hazard locally.'],
     emergencyContacts: [NATIONAL_EMERGENCY_CONTACT],
-    facilities: ['Panabo City Hospital', 'Barangay health station (coastal)']
+    facilities: []
   }
 }];
