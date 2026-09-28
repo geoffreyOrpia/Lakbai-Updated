@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { APP_VERSION } from "../../../core/appInfo.jsx";
 import { formatSizeKb } from "../../../core/utils/format.jsx";
 import { useFeedback } from "../../../feedback/FeedbackProvider.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
@@ -213,7 +214,7 @@ export const SettingsScreen = ({ viewModel }) => {
         <Text style={styles.aboutText}>
           An offline-first tourism and navigation experience for Davao del Norte, combining local destination guides, source-aware recommendations, and on-device geospatial routing.
         </Text>
-        <Text style={styles.version}>Version 1.0.0</Text>
+        <Text style={styles.version}>Version {APP_VERSION}</Text>
         <View style={styles.attribution}>
           <Text style={styles.attributionTitle}>Map & data attribution</Text>
           <Text style={styles.attributionText}>

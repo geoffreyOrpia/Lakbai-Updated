@@ -3,6 +3,8 @@
     "name": "LakBai",
     "slug": "lakbaylokal",
     "version": "1.0.0",
+    "description": "Offline-first tourism, trip planning, and on-device navigation for Davao del Norte.",
+    "primaryColor": "#0F5132",
     "newArchEnabled": true,
     "orientation": "portrait",
     "icon": "./assets/lakbai-icon.png",
@@ -18,6 +20,10 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.ywach.lakbaylokal"
     },
+    "androidStatusBar": {
+      "backgroundColor": "#F9E7C5",
+      "barStyle": "dark-content"
+    },
     "web": {
       "favicon": "./assets/lakbai-icon.png"
     },
@@ -27,7 +33,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow LakBai to use your location to find nearby saved places and support offline trail guidance."
+          "locationWhenInUsePermission": "Allow LakBai to use your location for nearby places, offline routing, route progress, and navigation guidance."
         }
       ],
       [
