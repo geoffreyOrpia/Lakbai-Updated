@@ -11,6 +11,7 @@ import { LoadingState } from "../components/LoadingState.jsx";
 import { SearchField } from "../components/SearchField.jsx";
 import { SecondaryButton } from "../components/Buttons.jsx";
 import { SmartExplorePanel } from "../components/SmartExplorePanel.jsx";
+import { ScreenIntro } from "../components/ScreenIntro.jsx";
 import { colors, layout, radius, spacing } from "../../../theme.jsx";
 const CATEGORY_OPTIONS = [{
   key: 'all',
@@ -31,6 +32,7 @@ const CATEGORY_OPTIONS = [{
 export const ExploreScreen = ({
   viewModel,
   onOpenDestination,
+  onOpenSettings,
   initialQuery = ''
 }) => {
   const state = viewModel.state;
@@ -47,13 +49,13 @@ export const ExploreScreen = ({
   } = useFeedback();
   if (state.loading && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AppHeader />
+        <AppHeader onOpenSettings={onOpenSettings} />
         <LoadingState title="Loading the local catalog" text="Reading destination guides stored with LakBai." />
       </ScrollView>;
   }
   if (state.error && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AppHeader />
+        <AppHeader onOpenSettings={onOpenSettings} />
         <EmptyState icon="alert-circle-outline" title="Explore could not load" text={state.error} actionLabel="Try again" onAction={() => void viewModel.load()} />
       </ScrollView>;
   }
@@ -98,12 +100,13 @@ export const ExploreScreen = ({
     }
   };
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <AppHeader />
+      <AppHeader onOpenSettings={onOpenSettings} />
 
-      <View>
-        <Text style={styles.title}>Explore</Text>
-        <Text style={styles.subtitle}>Browse local guides, save packs for offline maps, and keep favorites ready for trip planning.</Text>
-      </View>
+      <ScreenIntro
+        eyebrow="LOCAL DISCOVERY"
+        title="Explore"
+        subtitle="Browse local guides, save packs for offline maps, and keep favorites ready for trip planning."
+      />
 
       <SearchField value={state.query} onChangeText={value => viewModel.setQuery(value)} onSubmit={() => undefined} />
       <CategoryChips options={CATEGORY_OPTIONS} selected={state.category} onSelect={key => viewModel.setCategory(key)} />

@@ -1,4 +1,4 @@
-import { getTravelPreferences } from "../../domain/usecases/preferences.jsx";
+import { clearTravelPreferences, getTravelPreferences } from "../../domain/usecases/preferences.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 /** Device-local flow with no account or authentication gate. */
 export class SessionViewModel extends ViewModel {
@@ -31,6 +31,12 @@ export class SessionViewModel extends ViewModel {
   completeOnboarding = () => {
     this.setState({
       phase: 'main'
+    });
+  };
+  restartSetup = async () => {
+    await clearTravelPreferences(this.deps);
+    this.setState({
+      phase: 'landing'
     });
   };
 }

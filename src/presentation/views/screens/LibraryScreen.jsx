@@ -7,11 +7,13 @@ import { InfoBanner } from "../components/InfoBanner.jsx";
 import { EmptyState } from "../components/EmptyState.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { SectionHeader } from "../components/SectionHeader.jsx";
+import { ScreenIntro } from "../components/ScreenIntro.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
 import { formatSizeKb } from "../../../core/utils/format.jsx";
 export const LibraryScreen = ({
   viewModel,
-  onOpenDestination
+  onOpenDestination,
+  onOpenSettings
 }) => {
   const state = viewModel.state;
   const {
@@ -23,13 +25,13 @@ export const LibraryScreen = ({
   const available = viewModel.available;
   if (state.loading && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AppHeader />
+        <AppHeader onOpenSettings={onOpenSettings} />
         <LoadingState title="Opening your local Library" text="Checking which bundled destination packs you saved." />
       </ScrollView>;
   }
   if (state.error && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AppHeader />
+        <AppHeader onOpenSettings={onOpenSettings} />
         <EmptyState icon="alert-circle-outline" title="Library could not load" text={state.error} actionLabel="Try again" onAction={() => void viewModel.load()} />
       </ScrollView>;
   }
@@ -69,12 +71,13 @@ export const LibraryScreen = ({
     });
   };
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <AppHeader />
+      <AppHeader onOpenSettings={onOpenSettings} />
 
-      <View>
-        <Text style={styles.title}>Local Library</Text>
-        <Text style={styles.subtitle}>Manage saved offline packs, updates, and favorites stored on this device.</Text>
-      </View>
+      <ScreenIntro
+        eyebrow="ON THIS DEVICE"
+        title="Local Library"
+        subtitle="Manage saved offline packs, updates, and favorites stored on this device."
+      />
 
       <View style={[styles.summaryCard, shadows.card]}>
         <View style={styles.summaryIcon}>

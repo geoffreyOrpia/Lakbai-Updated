@@ -8,4 +8,7 @@ export class LocalPreferencesRepository {
   get = () => {
     return this.dao.get();
   };
+  clear = () => {
+    return this.dao.clear();
+  };
 }

@@ -9,10 +9,12 @@ import { InfoBanner } from "../components/InfoBanner.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { ProgressBar } from "../components/ProgressBar.jsx";
 import { AppHeader } from "../components/AppHeader.jsx";
+import { ScreenIntro } from "../components/ScreenIntro.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
 import { formatDate } from "../../../core/utils/format.jsx";
 export const TripsScreen = ({
-  viewModel
+  viewModel,
+  onOpenSettings
 }) => {
   const state = viewModel.state;
   if (state.mode === 'create' || state.mode === 'edit') {
@@ -21,36 +23,35 @@ export const TripsScreen = ({
   if (state.mode === 'details' && state.selected) {
     return <TripDetails viewModel={viewModel} trip={state.selected} />;
   }
-  return <TripList viewModel={viewModel} />;
+  return <TripList viewModel={viewModel} onOpenSettings={onOpenSettings} />;
 };
 const TripList = ({
-  viewModel
+  viewModel,
+  onOpenSettings
 }) => {
   const state = viewModel.state;
   const totalStops = state.trips.reduce((count, trip) => count + trip.stops.length, 0);
   const offlineStops = state.trips.reduce((count, trip) => count + viewModel.tripReadiness(trip).ready, 0);
   if (state.loading && !state.trips.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AppHeader />
+        <AppHeader onOpenSettings={onOpenSettings} />
         <LoadingState title="Loading your itineraries" text="Reading trips saved on this device." />
       </ScrollView>;
   }
   if (state.error && !state.trips.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AppHeader />
+        <AppHeader onOpenSettings={onOpenSettings} />
         <EmptyState icon="alert-circle-outline" title="Trips could not load" text={state.error} actionLabel="Try again" onAction={() => void viewModel.load()} />
       </ScrollView>;
   }
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <AppHeader />
+      <AppHeader onOpenSettings={onOpenSettings} />
 
-      <View style={styles.tripsHeader}>
-        <View style={styles.tripsHeaderCopy}>
-          <Text style={styles.eyebrow}>MY TRIPS</Text>
-          <Text style={styles.title}>Your itineraries</Text>
-          <Text style={styles.subtitle}>Plan, save, and review personal trips stored only on this device.</Text>
-        </View>
-      </View>
+      <ScreenIntro
+        eyebrow="MY TRIPS"
+        title="Your itineraries"
+        subtitle="Plan, save, and review personal trips stored only on this device."
+      />
 
       <View style={styles.quickStatsRow}>
         <TripStat value={String(state.trips.length)} label={state.trips.length === 1 ? 'Trip' : 'Trips'} />

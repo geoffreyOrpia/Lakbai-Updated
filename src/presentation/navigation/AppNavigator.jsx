@@ -12,6 +12,7 @@ import { HomeViewModel } from "../viewmodels/HomeViewModel.jsx";
 import { OnboardingViewModel } from "../viewmodels/OnboardingViewModel.jsx";
 import { SafetyViewModel } from "../viewmodels/SafetyViewModel.jsx";
 import { SessionViewModel } from "../viewmodels/SessionViewModel.jsx";
+import { SettingsViewModel } from "../viewmodels/SettingsViewModel.jsx";
 import { TrailViewModel } from "../viewmodels/TrailViewModel.jsx";
 import { TripsViewModel } from "../viewmodels/TripsViewModel.jsx";
 import { DestinationScreen } from "../views/screens/DestinationScreen.jsx";
@@ -23,6 +24,7 @@ import { HomeScreen } from "../views/screens/HomeScreen.jsx";
 import { LandingScreen } from "../views/screens/LandingScreen.jsx";
 import { OnboardingScreen } from "../views/screens/OnboardingScreen.jsx";
 import { SafetyScreen } from "../views/screens/SafetyScreen.jsx";
+import { SettingsScreen } from "../views/screens/SettingsScreen.jsx";
 import { TrailScreen } from "../views/screens/TrailScreen.jsx";
 import { TripsScreen } from "../views/screens/TripsScreen.jsx";
 import { BottomNav } from "../views/components/BottomNav.jsx";
@@ -124,6 +126,12 @@ export const AppNavigator = () => {
       onBack={pop}
     />;
   }
+  if (topRoute?.name === 'settings') {
+    return <SettingsFlow
+      session={session}
+      onBack={pop}
+    />;
+  }
   if (topRoute?.name === 'nearby') {
     return <NearbyFlow onOpenDestination={destinationId => push({
       name: 'destination',
@@ -138,7 +146,7 @@ export const AppNavigator = () => {
   }
   return <View style={styles.screen}>
       <View style={styles.content}>
-        {tab === 'home' ? <HomeTab onOpenExplore={query => {
+        {tab === 'home' ? <HomeTab onOpenSettings={() => push({ name: 'settings' })} onOpenExplore={query => {
         setExploreQuery(query ?? '');
         setTab('explore');
       }} onOpenLibrary={() => setTab('library')} onOpenDestination={destinationId => push({
@@ -148,6 +156,7 @@ export const AppNavigator = () => {
         name: 'nearby'
       })} /> : null}
         {tab === 'explore' ? <ExploreTab
+          onOpenSettings={() => push({ name: 'settings' })}
           initialQuery={exploreQuery}
           onOpenDestination={destinationId => push({
             name: 'destination',
@@ -160,6 +169,7 @@ export const AppNavigator = () => {
           }}
         /> : null}
         {tab === 'trips' ? <TripsTab
+          onOpenSettings={() => push({ name: 'settings' })}
           initialRouteDraft={tripDraft}
           onDraftConsumed={() => setTripDraft(null)}
           onOpenDestination={destinationId => push({
@@ -171,11 +181,11 @@ export const AppNavigator = () => {
             ...navigation
           })}
         /> : null}
-        {tab === 'library' ? <LibraryTab onOpenDestination={destinationId => push({
+        {tab === 'library' ? <LibraryTab onOpenSettings={() => push({ name: 'settings' })} onOpenDestination={destinationId => push({
         name: 'destination',
         destinationId
       })} /> : null}
-        {tab === 'safety' ? <SafetyTab /> : null}
+        {tab === 'safety' ? <SafetyTab onOpenSettings={() => push({ name: 'settings' })} /> : null}
       </View>
       <BottomNav active={tab} onChange={setTab} />
     </View>;
@@ -236,7 +246,8 @@ const HomeTab = ({
   onOpenExplore,
   onOpenLibrary,
   onOpenDestination,
-  onOpenNearby
+  onOpenNearby,
+  onOpenSettings
 }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new HomeViewModel(container.destinationDeps, {
@@ -245,7 +256,7 @@ const HomeTab = ({
     onOpenDestination,
     onOpenNearby
   }));
-  return <HomeScreen viewModel={viewModel} />;
+  return <HomeScreen viewModel={viewModel} onOpenSettings={onOpenSettings} />;
 };
 const NearbyFlow = ({
   onOpenDestination,
@@ -266,6 +277,7 @@ const ExploreTab = ({
   initialQuery,
   onOpenDestination,
   onPlanTrip,
+  onOpenSettings,
 }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new ExploreViewModel(
@@ -275,20 +287,22 @@ const ExploreTab = ({
     container.locationService,
     { onOpenDestination, onPlanTrip },
   ));
-  return <ExploreScreen viewModel={viewModel} initialQuery={initialQuery} onOpenDestination={onOpenDestination} />;
+  return <ExploreScreen viewModel={viewModel} initialQuery={initialQuery} onOpenDestination={onOpenDestination} onOpenSettings={onOpenSettings} />;
 };
 const LibraryTab = ({
-  onOpenDestination
+  onOpenDestination,
+  onOpenSettings
 }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new LibraryViewModel(container.destinationDeps));
-  return <LibraryScreen viewModel={viewModel} onOpenDestination={onOpenDestination} />;
+  return <LibraryScreen viewModel={viewModel} onOpenDestination={onOpenDestination} onOpenSettings={onOpenSettings} />;
 };
 const TripsTab = ({
   onOpenDestination,
   onOpenNavigation,
   initialRouteDraft,
-  onDraftConsumed
+  onDraftConsumed,
+  onOpenSettings
 }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new TripsViewModel(container.tripsDeps, container.destinationDeps, {
@@ -299,12 +313,28 @@ const TripsTab = ({
   useEffect(() => {
     if (initialRouteDraft) onDraftConsumed?.();
   }, [initialRouteDraft, onDraftConsumed]);
-  return <TripsScreen viewModel={viewModel} />;
+  return <TripsScreen viewModel={viewModel} onOpenSettings={onOpenSettings} />;
 };
-const SafetyTab = () => {
+const SafetyTab = ({ onOpenSettings }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new SafetyViewModel(container.safetyDeps, container.destinationDeps.packRepository));
-  return <SafetyScreen viewModel={viewModel} />;
+  return <SafetyScreen viewModel={viewModel} onOpenSettings={onOpenSettings} />;
+};
+const SettingsFlow = ({ session, onBack }) => {
+  const container = getContainer();
+  const viewModel = useViewModel(() => new SettingsViewModel(
+    container.preferencesDeps,
+    container.destinationDeps,
+    container.routingDeps,
+    {
+      onBack,
+      onRestartSetup: async () => {
+        onBack();
+        await session.restartSetup();
+      },
+    },
+  ));
+  return <SettingsScreen viewModel={viewModel} />;
 };
 const styles = StyleSheet.create({
   screen: {

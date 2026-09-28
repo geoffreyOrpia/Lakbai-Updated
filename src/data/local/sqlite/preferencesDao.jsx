@@ -15,6 +15,10 @@ export const createPreferencesDao = () => {
       } catch {
         return null;
       }
+    },
+    clear: async () => {
+      const db = await getDatabase();
+      await db.runAsync('DELETE FROM app_meta WHERE key = ?', PREFERENCES_KEY);
     }
   };
 };

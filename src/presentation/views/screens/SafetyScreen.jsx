@@ -5,9 +5,11 @@ import { AppHeader } from "../components/AppHeader.jsx";
 import { EmptyState } from "../components/EmptyState.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { SectionHeader } from "../components/SectionHeader.jsx";
+import { ScreenIntro } from "../components/ScreenIntro.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
 export const SafetyScreen = ({
-  viewModel
+  viewModel,
+  onOpenSettings
 }) => {
   const state = viewModel.state;
   const {
@@ -62,23 +64,24 @@ export const SafetyScreen = ({
   };
   if (state.loading && !state.checklist.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AppHeader />
+        <AppHeader onOpenSettings={onOpenSettings} />
         <LoadingState title="Preparing Safety" text="Loading your checklist and verified contacts from saved destination packs." />
       </ScrollView>;
   }
   if (state.error && !state.checklist.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AppHeader />
+        <AppHeader onOpenSettings={onOpenSettings} />
         <EmptyState icon="alert-circle-outline" title="Safety could not load" text={state.error} actionLabel="Try again" onAction={() => void viewModel.load()} />
       </ScrollView>;
   }
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <AppHeader />
+      <AppHeader onOpenSettings={onOpenSettings} />
 
-      <View>
-        <Text style={styles.title}>Safety</Text>
-        <Text style={styles.subtitle}>Offline travel preparation and essential local guidance.</Text>
-      </View>
+      <ScreenIntro
+        eyebrow="TRAVEL READY"
+        title="Safety"
+        subtitle="Offline travel preparation and essential local guidance."
+      />
 
       <View style={[styles.emergencyCard, shadows.card]}>
         <View style={styles.emergencyIcon}>

@@ -10,7 +10,7 @@ export const REPOSITORY_METHODS = Object.freeze({
     'savePack',
     'removePack',
   ]),
-  preferences: Object.freeze(['get', 'save']),
+  preferences: Object.freeze(['get', 'save', 'clear']),
   itinerary: Object.freeze(['listItineraries', 'saveItinerary', 'deleteItinerary']),
   safety: Object.freeze([
     'listChecklist',

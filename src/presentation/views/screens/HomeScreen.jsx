@@ -8,9 +8,11 @@ import { InfoBanner } from "../components/InfoBanner.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { SearchField } from "../components/SearchField.jsx";
 import { SectionHeader } from "../components/SectionHeader.jsx";
+import { ScreenIntro } from "../components/ScreenIntro.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
 export const HomeScreen = ({
-  viewModel
+  viewModel,
+  onOpenSettings
 }) => {
   const state = viewModel.state;
   const [searchQuery, setSearchQuery] = useState('');
@@ -18,26 +20,24 @@ export const HomeScreen = ({
   const firstSaved = state.items.find(item => item.saved);
   if (state.loading && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AppHeader />
+        <AppHeader onOpenSettings={onOpenSettings} />
         <LoadingState title="Preparing your local guides" text="Reading the Davao del Norte catalog and your saved Library state." />
       </ScrollView>;
   }
   if (state.error && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AppHeader />
+        <AppHeader onOpenSettings={onOpenSettings} />
         <EmptyState icon="alert-circle-outline" title="Home could not load" text={state.error} actionLabel="Try again" onAction={() => void viewModel.load()} />
       </ScrollView>;
   }
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <AppHeader />
+      <AppHeader onOpenSettings={onOpenSettings} />
 
-      <View style={styles.intro}>
-        <Text style={styles.eyebrow}>DAVAO DEL NORTE</Text>
-        <Text style={styles.title}>Explore confidently, even beyond the signal.</Text>
-        <Text style={styles.subtitle}>
-          Saved maps, destination guides, itineraries, and province-wide offline discovery keep working when your signal does not.
-        </Text>
-      </View>
+      <ScreenIntro
+        eyebrow="DAVAO DEL NORTE"
+        title="Explore confidently, even beyond the signal."
+        subtitle="Saved maps, destination guides, itineraries, and province-wide offline discovery keep working when your signal does not."
+      />
 
       <SearchField value={searchQuery} onChangeText={setSearchQuery} placeholder="Search destination packs" onSubmit={value => viewModel.openExplore(value)} />
 
