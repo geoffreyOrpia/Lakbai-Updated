@@ -1,8 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
-import { BrandMarkLayer, BrandWordmark } from "../components/BrandMark.jsx";
 const features = [{
   icon: 'phone-portrait-outline',
   title: 'Ready from first launch',
@@ -27,8 +26,6 @@ export const LandingScreen = ({
   const [haloPulse] = useState(() => new Animated.Value(0));
   const [sunGlow] = useState(() => new Animated.Value(0));
   const [roadTravel] = useState(() => new Animated.Value(0));
-  const [landscapeReveal] = useState(() => new Animated.Value(0));
-  const [detailsReveal] = useState(() => new Animated.Value(0));
   useEffect(() => {
     let active = true;
     let floatLoop = null;
@@ -43,54 +40,37 @@ export const LandingScreen = ({
         footerEntrance.setValue(1);
         sunGlow.setValue(1);
         roadTravel.setValue(1);
-        landscapeReveal.setValue(1);
-        detailsReveal.setValue(1);
         return;
       }
       Animated.sequence([
-        Animated.timing(logoEntrance, {
-          toValue: 1,
-          duration: 420,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true
-        }),
         Animated.parallel([
-          Animated.timing(landscapeReveal, {
+          Animated.timing(logoEntrance, {
             toValue: 1,
-            duration: 360,
-            easing: Easing.out(Easing.cubic),
+            duration: 640,
+            easing: Easing.out(Easing.back(1.08)),
             useNativeDriver: true
           }),
           Animated.timing(sunGlow, {
             toValue: 1,
-            duration: 360,
-            delay: 90,
+            duration: 520,
+            delay: 110,
             easing: Easing.out(Easing.cubic),
             useNativeDriver: true
           }),
           Animated.timing(roadTravel, {
             toValue: 1,
-            duration: 500,
-            delay: 150,
+            duration: 720,
+            delay: 170,
             easing: Easing.out(Easing.cubic),
             useNativeDriver: true
           }),
         ]),
-        Animated.parallel([
-          Animated.timing(detailsReveal, {
-            toValue: 1,
-            duration: 320,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true
-          }),
-          Animated.timing(heroEntrance, {
-            toValue: 1,
-            duration: 420,
-            delay: 70,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true
-          }),
-        ]),
+        Animated.timing(heroEntrance, {
+          toValue: 1,
+          duration: 420,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true
+        }),
         Animated.parallel([Animated.timing(featureEntrance, {
         toValue: 1,
         duration: 460,
@@ -136,7 +116,7 @@ export const LandingScreen = ({
       floatLoop?.stop();
       haloLoop?.stop();
     };
-  }, [detailsReveal, featureEntrance, float, footerEntrance, haloPulse, heroEntrance, landscapeReveal, logoEntrance, roadTravel, sunGlow]);
+  }, [featureEntrance, float, footerEntrance, haloPulse, heroEntrance, logoEntrance, roadTravel, sunGlow]);
   const logoTranslateY = Animated.add(logoEntrance.interpolate({
     inputRange: [0, 1],
     outputRange: [24, 0]
@@ -230,48 +210,17 @@ export const LandingScreen = ({
               opacity: logoEntrance,
               transform: [{
                 scale: logoEntrance.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.92, 1]
+                  inputRange: [0, 0.7, 1],
+                  outputRange: [0.86, 1.035, 1]
                 })
               }]
             }]}>
-              <BrandMarkLayer part="frame" size={128} />
-            </Animated.View>
-            <Animated.View style={[styles.logoLayer, {
-              opacity: landscapeReveal,
-              transform: [{
-                translateY: landscapeReveal.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [12, 0]
-                })
-              }]
-            }]}>
-              <BrandMarkLayer part="landscape" size={128} />
-            </Animated.View>
-            <Animated.View style={[styles.logoLayer, {
-              opacity: sunGlow,
-              transform: [{
-                scale: sunGlow.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.4, 1]
-                })
-              }]
-            }]}>
-              <BrandMarkLayer part="sun" size={128} />
-            </Animated.View>
-            <Animated.View style={[styles.logoLayer, { opacity: roadTravel }]}>
-              <BrandMarkLayer part="road" size={128} />
-            </Animated.View>
-            <Animated.View style={[styles.logoLayer, {
-              opacity: detailsReveal,
-              transform: [{
-                scale: detailsReveal.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.94, 1]
-                })
-              }]
-            }]}>
-              <BrandMarkLayer part="details" size={128} />
+              <Image
+                source={require('../../../../assets/lakbai-mark.png')}
+                style={styles.logoArtwork}
+                resizeMode="contain"
+                accessibilityLabel="LakBai tourism mark"
+              />
             </Animated.View>
             <Animated.View pointerEvents="none" style={[styles.roadTravel, {
               opacity: roadTravel.interpolate({
@@ -307,7 +256,12 @@ export const LandingScreen = ({
             <Text style={styles.locationBadgeText}>DAVAO DEL NORTE · OFFLINE-FIRST</Text>
           </View>
           <Text style={styles.eyebrow}>WELCOME TO</Text>
-          <BrandWordmark showTagline align="center" />
+          <Image
+            source={require('../../../../assets/lakbai-wordmark.png')}
+            style={styles.wordmarkArtwork}
+            resizeMode="contain"
+            accessibilityLabel="LakBai. Explore Davao del Norte."
+          />
           <Text style={styles.title}>Go beyond. Go local.</Text>
           <Text style={styles.subtitle}>
             Discover Davao del Norte with an offline-first travel companion designed for local exploration.
@@ -421,6 +375,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
+  logoArtwork: {
+    width: 128,
+    height: 154
+  },
   roadTravel: {
     position: 'absolute',
     width: 22,
@@ -456,6 +414,11 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0.9,
     textAlign: 'center'
+  },
+  wordmarkArtwork: {
+    width: 220,
+    height: 80,
+    marginTop: 2
   },
   title: {
     marginTop: spacing.xs,

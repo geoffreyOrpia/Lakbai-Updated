@@ -1,13 +1,17 @@
 # LakBai brand system
 
-## Brand idea
+## Approved identity
 
-LakBai's mark combines a destination pin with a winding local road, mountain landscape,
-sun, coast/water, tropical foliage, and birds. The pin is the navigation anchor; the
-road represents the journey; the landscape represents Davao del Norte tourism.
+The approved LakBai mark is the detailed tourism pin shown in the accepted branding
+board: tropical palm, layered mountains, sunrise-orange sun, blue water, winding cream
+road, dense green foliage, and birds inside a dark forest-green destination pin.
 
-The mark should feel local, warm, outdoors-oriented, and modern rather than like a
-generic global mapping product.
+The approved wordmark uses **Lak** in forest green and **Bai** in sunrise orange with
+the green leaf accent, followed by:
+
+> EXPLORE DAVAO DEL NORTE
+
+Do not replace this artwork with a simplified redraw or substitute SVG.
 
 ## Core palette
 
@@ -20,59 +24,54 @@ generic global mapping product.
 | Sand Cream | `#F9E7C5` | Warm icon/splash background |
 
 The wider UI may continue to use its accessibility-tested interface tokens. Brand
-colors are exposed separately in `src/theme.jsx` so the logo stays consistent.
+colors are exposed separately in `src/theme.jsx`.
 
 ## Production assets
 
-- `lakbai-icon.png` — 1024×1024 opaque square icon for iOS/general Expo icon use.
-- `lakbai-icon-foreground.png` — 1024×1024 transparent Android adaptive-icon foreground.
-- `lakbai-splash.png` — 1024×1024 transparent native splash mark.
-- `lakbai-mark.png` — 1024×1024 transparent raster master/fallback.
-- `BrandMark.jsx` — scalable in-app vector mark and wordmark. Prefer this over PNGs in UI.
+- `lakbai-mark.png` — 1024×1024 transparent standalone approved mark.
+- `lakbai-wordmark.png` — transparent approved LakBai wordmark and tagline.
+- `lakbai-lockup.png` — transparent compact mark + wordmark lockup for app headers.
+- `lakbai-icon.png` — 1024×1024 light app icon.
+- `lakbai-icon-foreground.png` — 1080×1080 transparent Android adaptive-icon foreground.
+- `lakbai-splash.png` — 1242×2436 portrait splash artwork.
+- `lakbai-loading.png` — compact transparent loading/restore lockup.
 
-Do not screenshot or crop the brand board for production use. UI surfaces should use
-the vector component; native platform surfaces should use the dedicated PNG exports.
+The production files are built from the accepted branding-board artwork by isolating
+the approved mark and wordmark, cleaning their edges, upscaling them, and recomposing
+them at each target size. They are not raw screenshots, and they are not substitute
+redraws.
 
-## Wordmark
+## In-app usage
 
-Write **LakBai** with:
-- “Lak” in Forest Green
-- “Bai” in Sunrise Orange
+Use `lakbai-lockup.png` in compact headers, `lakbai-mark.png` where the icon stands
+alone, and `lakbai-wordmark.png` when the text identity is shown separately.
 
-Preferred tagline:
-
-> EXPLORE DAVAO DEL NORTE
-
-The tagline is optional at compact header sizes.
+Native icon and splash surfaces use their dedicated production exports. Avoid resizing
+small raster screenshots into large branding surfaces.
 
 ## Logo motion
 
-The first-launch reveal follows the approved story:
+The first-launch reveal animates the approved standalone mark as one intact artwork,
+followed by the approved wordmark. A subtle glow and road-light pass provide movement
+without rebuilding the logo from alternate shapes.
 
-1. Pin/frame establishes the destination.
-2. Landscape rises into the pin.
-3. Sun appears.
-4. Road/path reveals the journey.
-5. Palm and birds complete the local-tourism scene.
-6. LakBai wordmark settles below the mark.
-
-Motion must respect the operating system Reduce Motion setting. Do not delay startup
-only to finish the animation; native splash and session restoration should remain fast.
+Motion must respect the operating-system Reduce Motion setting and must not delay app
+startup merely to finish branding animation.
 
 ## Small-size rules
 
-At header/app-icon sizes, prioritize silhouette and contrast over tiny illustration
-detail. Keep generous safe-area padding for OS icon masks. Never add additional small
-text inside the pin.
+At header/app-icon sizes, prioritize the mark silhouette and contrast. Keep generous
+safe-area padding for operating-system icon masks. Do not add text inside the pin or
+remove the palm, mountain, road, water, sun, or bird details from the approved mark.
 
 ## Future visual work
 
 Use this identity as the base for:
+
 - destination hero treatments
 - map pins and selected-location markers
 - empty/loading states
 - social/share cards
-- optional dark-mode brand lockups
+- optional dark-background brand variants
 
-Avoid introducing extra tourism symbols into the core mark. The current pin, path,
-landscape, sun, coast, and foliage already carry the story.
+Any future variant must remain visibly derived from the approved LakBai branding board.

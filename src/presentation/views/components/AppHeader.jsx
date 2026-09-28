@@ -1,11 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { colors, radius, spacing } from "../../../theme.jsx";
-import { BrandLockup } from "./BrandMark.jsx";
 
 export const AppHeader = () => {
   return <View style={styles.header}>
-      <BrandLockup markSize={34} compact />
+      <Image
+        source={require('../../../../assets/lakbai-lockup.png')}
+        style={styles.brandLockup}
+        resizeMode="contain"
+        accessibilityLabel="LakBai. Explore Davao del Norte."
+      />
 
       <View
         accessibilityLabel="Offline-first app. Saved travel data stays on this device."
@@ -23,6 +27,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.sm,
+  },
+  brandLockup: {
+    width: 168,
+    height: 50,
+    flexShrink: 1,
   },
   pill: {
     minHeight: 32,

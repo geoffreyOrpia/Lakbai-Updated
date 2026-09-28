@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BackHandler, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, Image, StyleSheet, Text, View } from 'react-native';
 import { colors, spacing } from "../../theme.jsx";
 import { getContainer } from "../di/container.jsx";
 import { useViewModel } from "../viewmodel/useViewModel.jsx";
@@ -26,7 +26,7 @@ import { SafetyScreen } from "../views/screens/SafetyScreen.jsx";
 import { TrailScreen } from "../views/screens/TrailScreen.jsx";
 import { TripsScreen } from "../views/screens/TripsScreen.jsx";
 import { BottomNav } from "../views/components/BottomNav.jsx";
-import { BrandMark, BrandWordmark } from "../views/components/BrandMark.jsx";
+
 
 /**
  * App shell: device-local setup phases (landing -> onboarding -> main),
@@ -80,10 +80,12 @@ export const AppNavigator = () => {
   }, [stack.length, tab]);
   if (session.state.phase === 'restoring') {
     return <View style={styles.splash}>
-        <View style={styles.splashMark}>
-          <BrandMark size={76} />
-        </View>
-        <BrandWordmark compact showTagline align="center" />
+        <Image
+          source={require('../../../assets/lakbai-loading.png')}
+          style={styles.splashLogo}
+          resizeMode="contain"
+          accessibilityLabel="LakBai. Explore Davao del Norte."
+        />
         <Text style={styles.splashText}>Preparing your local guide…</Text>
       </View>;
   }
@@ -319,7 +321,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandCream,
     gap: spacing.sm
   },
-  splashMark: {
+  splashLogo: {
+    width: 210,
+    height: 210,
     marginBottom: spacing.xs
   },
   splashText: {
