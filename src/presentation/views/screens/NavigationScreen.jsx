@@ -16,6 +16,7 @@ const maneuverIcon = kind => {
   if (kind === 'uturn') return 'refresh-outline';
   if (kind === 'roundabout-enter' || kind === 'roundabout-exit') return 'sync-outline';
   if (kind === 'ferry-board' || kind === 'ferry-arrive') return 'boat-outline';
+  if (kind === 'trail-enter' || kind === 'trail-waypoint') return 'trail-sign-outline';
   if (kind === 'arrive') return 'flag-outline';
   return 'arrow-up-outline';
 };
@@ -75,6 +76,7 @@ export const NavigationScreen = ({ viewModel }) => {
     ? state.remainingKm ?? state.route?.distanceKm
     : state.route?.distanceKm;
   const ferryJourney = state.route?.type === 'ferry-journey' ? state.route : null;
+  const roadTrailJourney = state.route?.type === 'road-trail-journey' ? state.route : null;
   const shownDurationMin = ferryJourney
     ? (state.tracking || state.arrived
       ? state.remainingMin ?? ferryJourney.durationMin
@@ -124,6 +126,10 @@ export const NavigationScreen = ({ viewModel }) => {
         tone="info"
         text="Ferry crossing detected. Road off-route rerouting and road-speed ETA are paused until LakBai resumes the destination-side road leg."
       /> : null}
+      {state.journeyPhase === 'trail' && state.tracking ? <InfoBanner
+        tone="info"
+        text="Verified trail segment active. LakBai keeps the same journey progress and ETA, but road rerouting and road-speed ETA are disabled until this mapped trail segment ends."
+      /> : null}
       {state.discoveryTarget && state.coordinateStatus !== 'verified' ? <InfoBanner
         tone="info"
         text="This navigation target is an offline map reference or user-selected pin, not a locally verified entrance. Confirm signs, gates, and permitted access when you arrive."
@@ -139,13 +145,15 @@ export const NavigationScreen = ({ viewModel }) => {
       /> : null}
       {viewModel.offRoute && state.tracking && !state.rerouting ? <InfoBanner
         tone="warn"
-        text={`You are about ${Math.round(state.offRouteM ?? 0)} m from the active route. LakBai waits for several reliable GPS fixes before rerouting to avoid reacting to location drift.`}
+        text={state.journeyPhase === 'trail'
+          ? `You are about ${Math.round(state.offRouteM ?? 0)} m from the verified trail line. LakBai will not road-reroute while you are on the trail; return toward the mapped segment and follow posted signs.`
+          : `You are about ${Math.round(state.offRouteM ?? 0)} m from the active route. LakBai waits for several reliable GPS fixes before rerouting to avoid reacting to location drift.`}
       /> : null}
 
       {state.route ? <>
           <NavigationMap
             route={state.route}
-            target={state.target}
+            target={state.route.finalTarget ?? state.target}
             offlineBasemapUri={state.offlineBasemapUri}
             liveGps={state.tracking}
             nextManeuver={state.nextManeuver}
@@ -193,21 +201,21 @@ export const NavigationScreen = ({ viewModel }) => {
               </Text>
             </View> : null}
 
-          {state.trailPreview ? <View style={[styles.journeyCard, shadows.soft]}>
+          {roadTrailJourney ? <View style={[styles.journeyCard, shadows.soft]}>
               <View style={styles.journeyHeader}>
                 <View style={styles.journeyIcon}>
                   <Ionicons name="trail-sign-outline" size={19} color={colors.primary} />
                 </View>
                 <View style={styles.journeyCopy}>
                   <Text style={styles.journeyEyebrow}>ROAD → VERIFIED TRAIL</Text>
-                  <Text style={styles.journeyTitle}>The journey continues after the entrance</Text>
+                  <Text style={styles.journeyTitle}>One continuous route from roads onto the verified trail</Text>
                 </View>
               </View>
               <View style={styles.journeySteps}>
                 <JourneyStep
                   icon="navigate-outline"
                   label="Offline road route"
-                  detail={formatKm(state.route.distanceKm)}
+                  detail={formatKm(roadTrailJourney.legs?.find(leg => leg.kind === 'road')?.route?.distanceKm ?? 0)}
                 />
                 <Ionicons name="chevron-forward" size={15} color={colors.muted} />
                 <JourneyStep
@@ -219,11 +227,11 @@ export const NavigationScreen = ({ viewModel }) => {
                 <JourneyStep
                   icon="footsteps-outline"
                   label="Verified trail"
-                  detail={formatKm(state.trailPreview.distanceKm ?? 0)}
+                  detail={formatKm(roadTrailJourney.trailLeg?.distanceKm ?? 0)}
                 />
               </View>
               <Text style={styles.journeyNote}>
-                {state.trailPreview.name} · {formatDurationMinutes(state.trailPreview.durationMin ?? 0)} mapped segment
+                {roadTrailJourney.trail.name} · shared progress and ETA continue through the verified mapped segment
               </Text>
             </View> : null}
 
@@ -361,18 +369,20 @@ export const NavigationScreen = ({ viewModel }) => {
                 <Ionicons name="checkmark-circle" size={30} color={colors.primary} />
               </View>
               <Text style={styles.arrivalEyebrow}>ARRIVED</Text>
-              <Text style={styles.arrivalTitle}>{state.target.label ?? state.destinationName}</Text>
+              <Text style={styles.arrivalTitle}>{state.route?.finalTarget?.label ?? state.target.label ?? state.destinationName}</Text>
               <Text style={styles.arrivalText}>
-                LakBai has reached the end of the offline road route. Confirm the physical entrance and posted local signs before continuing.
+                {roadTrailJourney
+                  ? 'LakBai has reached the end of the source-verified mapped trail segment. Follow posted local signs for any continuation beyond the verified geometry.'
+                  : 'LakBai has reached the end of the offline route. Confirm the physical destination and posted local signs before continuing.'}
               </Text>
-              {state.trailPreview ? <View style={styles.arrivalTrailMeta}>
+              {roadTrailJourney ? <View style={styles.arrivalTrailMeta}>
                   <Ionicons name="shield-checkmark-outline" size={17} color={colors.primary} />
                   <Text style={styles.arrivalTrailMetaText}>
-                    {formatKm(state.trailPreview.distanceKm ?? 0)} verified segment · {formatDurationMinutes(state.trailPreview.durationMin ?? 0)} · offline GPS
+                    {formatKm(roadTrailJourney.trailLeg.distanceKm)} verified segment · {formatDurationMinutes(roadTrailJourney.trailLeg.durationMin)} · continuous offline GPS
                   </Text>
                 </View> : null}
-              {state.trailId ? <PrimaryButton
-                label="Continue in verified Trail Mode"
+              {!roadTrailJourney && state.trailId ? <PrimaryButton
+                label="Open verified Trail Mode"
                 icon="trail-sign-outline"
                 onPress={() => viewModel.openTrail()}
               /> : null}

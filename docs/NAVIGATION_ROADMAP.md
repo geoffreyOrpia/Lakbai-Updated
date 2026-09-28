@@ -51,4 +51,6 @@ The mainland–Samal ferry journey layer is now implemented as an explicit multi
 
 Road-only routing still returns `ferry-required` for cross-channel requests. Ferry composition is a separate journey use case that must successfully load and route both regional graphs; if either terminal approach or destination-side road route fails, LakBai fails closed instead of drawing a direct water crossing.
 
-Next implementation priority: represent road and source-verified trail legs as a single continuous journey with shared progress, total distance/ETA and transition guidance. Multi-stop journeys and alternative-route previews remain later work.
+Continuous road → source-verified trail journeys are now implemented for walking targets with verified trail geometry. LakBai routes to the verified trail start, keeps one distance/progress/ETA timeline across the transition, announces the trail entry, suppresses road rerouting/wrong-way logic while on the trail leg, and only marks arrival at the verified mapped trail endpoint. Driving remains road-only and unverified trails are never composed into navigation.
+
+Next implementation priority: add alternative-route previews, then multi-stop journeys. Both must reuse the existing restriction/access policy and preserve ferry/trail journey semantics instead of bypassing them.

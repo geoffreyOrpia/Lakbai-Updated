@@ -11,7 +11,7 @@ Provincial roads are enabled in the five available destination packs. Install a 
 3. Compare Direct, Easy, Adventure and Scenic walking choices where the pack offers alternatives. Check that each displayed route reaches its destination; identical choices can be valid when alternatives are absent.
 4. Start navigation while stationary, confirm the next instruction and audible guidance. Then follow a short suitable walking route and confirm progress/ETA update without repeated voice announcements.
 5. On a suitable route, deliberately take another permitted walking path. Check rerouting and repeat several times, then change the destination and return to the original destination. Look for stale route endpoints, growing delays, freezes or crashes.
-6. Route toward the mangrove/trail destination. Verify the road-to-trail handoff and Trail Mode behavior. Confirm the transition is visibly distinct from road guidance.
+6. Route toward the mangrove/trail destination. Confirm the road route transitions automatically into the verified trail within the same journey: progress and ETA must remain continuous, the entrance must not be treated as arrival, road rerouting must stop on the trail leg, and arrival must occur only at the verified mapped trail endpoint.
 7. Switch apps and return; lock and unlock the phone. Record whether navigation resumes with current position and instruction. Note observed behavior during poor/lost GPS and after recovery.
 8. Repeat route calculations at least 20 times in one app session. Record responsiveness and memory if available. Finish with an offline cold start and repeat the first route.
 

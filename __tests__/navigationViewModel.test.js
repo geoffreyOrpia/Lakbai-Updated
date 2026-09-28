@@ -364,9 +364,11 @@ describe('NavigationViewModel', () => {
     expect(locationService.requestPermissions).toHaveBeenCalledTimes(1);
     expect(locationService.getCurrentFix).toHaveBeenCalledTimes(1);
     expect(vm.state.route?.ok).toBe(true);
-    expect(vm.state.route.distanceKm).toBeGreaterThan(3);
-    expect(vm.state.route.distanceKm).toBeLessThan(3.1);
-    expect(vm.state.route.maneuvers.at(-1).instruction).toBe('Arrive at Panabo Mangrove Park');
+    expect(vm.state.route.type).toBe('road-trail-journey');
+    expect(vm.state.route.distanceKm).toBeGreaterThan(3.1);
+    expect(vm.state.route.distanceKm).toBeLessThan(3.35);
+    expect(vm.state.route.maneuvers.some(maneuver => maneuver.kind === 'trail-enter')).toBe(true);
+    expect(vm.state.route.maneuvers.at(-1).instruction).toContain('Panabo Mangrove Boardwalk');
     expect(vm.state.routePois[0]).toEqual(expect.objectContaining({
       id: 'spot-city-park',
     }));
@@ -665,20 +667,23 @@ describe('NavigationViewModel', () => {
     expect(vm.state.route.edges.some(edge => edge.osmId === 'detour')).toBe(true);
   });
 
-  test('marks arrival, stops tracking, and can hand off to the verified trail', async () => {
-    const { vm, removeWatch, nav } = createVm();
+  test('continues through the trail entrance and arrives only at the verified trail end', async () => {
+    const { vm, removeWatch } = createVm();
     await vm.load();
     await vm.startFromGps();
     await vm.startNavigation();
 
-    vm.applyFix({ lat: 7.272383, lng: 125.680829, accuracy: 5 });
+    vm.applyFix({ lat: 7.2723324, lng: 125.6808807, accuracy: 5 });
+    expect(vm.state.arrived).toBe(false);
+    expect(vm.state.tracking).toBe(true);
+    expect(vm.state.journeyPhase).toBe('trail');
+
+    vm.applyFix({ lat: 7.2710674, lng: 125.6810269, accuracy: 5 });
 
     expect(vm.state.arrived).toBe(true);
     expect(vm.state.tracking).toBe(false);
+    expect(vm.state.progressPct).toBeGreaterThanOrEqual(98);
     expect(removeWatch).toHaveBeenCalled();
-
-    vm.openTrail();
-    expect(nav.onOpenTrail).toHaveBeenCalledWith('panabo-mangrove-boardwalk');
   });
 
   test('rejects GPS positions outside the current pilot coverage', async () => {

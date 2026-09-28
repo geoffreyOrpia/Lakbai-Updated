@@ -54,7 +54,10 @@ export const NavigationMap = ({
   const bounds = routeBounds(geometry);
   const routeData = useMemo(() => ({
     type: 'FeatureCollection',
-    features: route.type === 'ferry-journey'
+    features: (
+      route.type === 'ferry-journey'
+      || route.type === 'road-trail-journey'
+    )
       ? (route.legs ?? [])
         .filter(leg => leg.kind === 'road' && leg.route?.geometry)
         .map((leg, index) => ({
@@ -83,17 +86,18 @@ export const NavigationMap = ({
     };
   }, [route.ferryLeg]);
   const trailData = useMemo(() => {
-    if (!trailPreview?.geometry?.coordinates?.length) return null;
+    const trailGeometry = route.trailLeg?.geometry ?? trailPreview?.geometry;
+    if (!trailGeometry?.coordinates?.length) return null;
     return {
       type: 'FeatureCollection',
       features: [{
         type: 'Feature',
         id: 'verified-trail-continuation',
         properties: {},
-        geometry: trailPreview.geometry,
+        geometry: trailGeometry,
       }],
     };
-  }, [trailPreview]);
+  }, [route.trailLeg, trailPreview]);
   const markers = useMemo(() => ({
     type: 'FeatureCollection',
     features: [

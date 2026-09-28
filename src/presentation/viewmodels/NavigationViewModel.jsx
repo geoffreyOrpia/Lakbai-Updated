@@ -17,6 +17,11 @@ import {
   isOnFerryLeg,
   remainingFerryJourneyDurationMin,
 } from "../../domain/usecases/ferryJourney.jsx";
+import {
+  calculateOfflineRoadTrailJourney,
+  isOnTrailLeg,
+  remainingRoadTrailDurationMin,
+} from "../../domain/usecases/roadTrailJourney.jsx";
 import { routingRegionFor } from "../../data/assets/routingRegionAssets.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 
@@ -269,6 +274,24 @@ export class NavigationViewModel extends ViewModel {
     const originRegion = routingRegionFor(null, from);
     const targetRegion = routingRegionFor(this.state.destinationId, this.state.target);
     if (
+      this.state.trailPreview?.routeVerified
+      && this.state.mode === 'walk'
+      && originRegion
+      && targetRegion
+      && originRegion === targetRegion
+    ) {
+      return calculateOfflineRoadTrailJourney({
+        graph: this.state.graph,
+        from,
+        trail: this.state.trailPreview,
+        mode: 'walk',
+        preference: this.state.preference,
+        routeAttractors: this.state.scenicPois,
+        maxSnapDistanceKm: 1,
+        initialTurnState,
+      });
+    }
+    if (
       originRegion
       && targetRegion
       && originRegion !== targetRegion
@@ -316,6 +339,10 @@ export class NavigationViewModel extends ViewModel {
         journeyPhase: null,
         error: result.reason === 'ferry-unavailable' || result.reason === 'ferry-required'
           ? 'LakBai could not build a source-reviewed ferry journey between the mainland and Samal from this position.'
+          : result.reason === 'trail-approach-route-failed'
+          ? 'LakBai could not connect your position to the verified trail start using the offline walking graph.'
+          : result.reason === 'trail-unverified'
+          ? 'This trail cannot be included in continuous navigation because its route geometry is not verified.'
           : result.reason === 'ferry-origin-route-failed'
           ? 'LakBai could not connect your current position to the mapped ferry terminal using the offline road graph.'
           : result.reason === 'ferry-destination-route-failed'
@@ -341,12 +368,17 @@ export class NavigationViewModel extends ViewModel {
       remainingKm: result.distanceKm,
       remainingMin: result.type === 'ferry-journey'
         ? remainingFerryJourneyDurationMin(result, 0)
+        : result.type === 'road-trail-journey'
+        ? remainingRoadTrailDurationMin(result, 0)
         : result.durationMin,
       offRouteM: null,
       nextManeuver: result.maneuvers?.[1] ?? result.maneuvers?.[0] ?? null,
       distanceToNextManeuverKm: result.maneuvers?.[1]?.distanceAlongKm ?? null,
       routePois: placesAlongRoute(result, this.state.offlinePois),
-      journeyPhase: result.type === 'ferry-journey' ? 'road' : null,
+      journeyPhase: (
+        result.type === 'ferry-journey'
+        || result.type === 'road-trail-journey'
+      ) ? 'road' : null,
       wrongWay: false,
       arrived: false,
       error: null,
@@ -621,9 +653,11 @@ export class NavigationViewModel extends ViewModel {
       };
     const next = nextRouteManeuver(route, stableProjection.distanceAlongKm);
     const onFerryLeg = isOnFerryLeg(route, stableProjection.distanceAlongKm);
+    const onTrailLeg = isOnTrailLeg(route, stableProjection.distanceAlongKm);
     const thresholdM = Math.max(BASE_OFF_ROUTE_M, (accuracyM ?? 0) * 1.8);
     const offRoute = !onFerryLeg && stableProjection.distanceToRouteM > thresholdM;
-    const targetDistanceM = haversineKm(fix, this.state.target) * 1000;
+    const arrivalTarget = route.finalTarget ?? this.state.target;
+    const targetDistanceM = haversineKm(fix, arrivalTarget) * 1000;
     const arrivalThresholdM = Math.max(35, (accuracyM ?? 0) * 1.5);
     const routeHeadingDifference = headingDifferenceDeg(
       movementHeading,
@@ -632,6 +666,7 @@ export class NavigationViewModel extends ViewModel {
     const wrongWaySample = (
       !recoveredFromGpsLoss
       && !onFerryLeg
+      && !onTrailLeg
       && !offRoute
       && movementDistanceM >= minimumMovementM
       && routeHeadingDifference != null
@@ -658,7 +693,7 @@ export class NavigationViewModel extends ViewModel {
     const arrived = !wrongWay
       && stableProjection.remainingKm <= 0.08
       && targetDistanceM <= arrivalThresholdM;
-    const liveSpeedMps = this.state.tracking && !onFerryLeg
+    const liveSpeedMps = this.state.tracking && !onFerryLeg && !onTrailLeg
       ? this.recordSpeedEstimate(fix.speed)
       : null;
 
@@ -681,14 +716,18 @@ export class NavigationViewModel extends ViewModel {
       remainingKm: stableProjection.remainingKm,
       remainingMin: route.type === 'ferry-journey'
         ? remainingFerryJourneyDurationMin(route, stableProjection.distanceAlongKm)
+        : route.type === 'road-trail-journey'
+        ? remainingRoadTrailDurationMin(route, stableProjection.distanceAlongKm, liveSpeedMps)
         : remainingDurationMin(route, stableProjection.remainingKm, liveSpeedMps),
-      usingLiveEta: route.type !== 'ferry-journey' && liveSpeedMps != null,
+      usingLiveEta: route.type !== 'ferry-journey' && !onTrailLeg && liveSpeedMps != null,
       offRouteM: stableProjection.distanceToRouteM,
       nextManeuver: next.maneuver,
       distanceToNextManeuverKm: next.distanceKm,
       routePois: placesAlongRoute(route, this.state.offlinePois, stableProjection.distanceAlongKm),
       journeyPhase: route.type === 'ferry-journey'
         ? (onFerryLeg ? 'ferry' : 'road')
+        : route.type === 'road-trail-journey'
+        ? (onTrailLeg ? 'trail' : 'road')
         : null,
       wrongWay,
       arrived,
@@ -706,7 +745,7 @@ export class NavigationViewModel extends ViewModel {
     }
 
     const rerouteConfirmed = (
-      (offRoute && this.offRouteSamples >= OFF_ROUTE_CONFIRM_FIXES)
+      (!onTrailLeg && offRoute && this.offRouteSamples >= OFF_ROUTE_CONFIRM_FIXES)
       || wrongWay
     );
     const eventTimeMs = fixTimestamp ?? Date.now();
@@ -751,6 +790,19 @@ export class NavigationViewModel extends ViewModel {
           });
         }
       }
+    } else if (this.state.route.type === 'road-trail-journey') {
+      const roadLeg = this.state.route.legs?.find(leg => leg.kind === 'road');
+      if (roadLeg) {
+        initialTurnState = turnStateBeforeRoutePosition({
+          graph: this.state.graph,
+          route: roadLeg.route,
+          distanceAlongKm: Math.min(
+            roadLeg.endKm,
+            this.lastConfirmedRouteDistanceKm,
+          ),
+          mode: this.state.mode,
+        });
+      }
     } else {
       initialTurnState = turnStateBeforeRoutePosition({
         graph: this.state.graph,
@@ -773,13 +825,18 @@ export class NavigationViewModel extends ViewModel {
       this.resetNavigationEvidence({ preserveRerouteCooldown: true });
       this.setState(previous => ({
         route: result,
-        journeyPhase: result.type === 'ferry-journey' ? 'road' : null,
+        journeyPhase: (
+          result.type === 'ferry-journey'
+          || result.type === 'road-trail-journey'
+        ) ? 'road' : null,
         rerouteCount: previous.rerouteCount + 1,
         progressPct: 0,
         distanceAlongKm: 0,
         remainingKm: result.distanceKm,
         remainingMin: result.type === 'ferry-journey'
           ? remainingFerryJourneyDurationMin(result, 0)
+          : result.type === 'road-trail-journey'
+          ? remainingRoadTrailDurationMin(result, 0)
           : result.durationMin,
         nextManeuver: result.maneuvers?.[1] ?? result.maneuvers?.[0] ?? null,
         distanceToNextManeuverKm: result.maneuvers?.[1]?.distanceAlongKm ?? null,
