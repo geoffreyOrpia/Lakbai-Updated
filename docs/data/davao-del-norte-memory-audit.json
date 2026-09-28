@@ -1,0 +1,435 @@
+{
+  "status": "candidate-not-enabled",
+  "source": {
+    "sourceUrl": "https://download.geofabrik.de/asia/philippines-260927.osm.pbf",
+    "sourceExportedAt": "2026-09-27T20:23:36Z",
+    "sourceSha256": "9cf67e002d55f5036cd379d52734bff4d4914ea96608d3ccb87840fb94c526bb",
+    "roadsSha256": "d6cbab973cb3872d179ec3da5de00bcd21198d3653fabc7c3dd32f0d0f60acf2",
+    "license": "ODbL 1.0"
+  },
+  "sourceGraphSha256": "cbb0053accb53b61a00f64cc44cd96f2e95a9ee7bcd61f67df52c9fe69d3bd43",
+  "nodeVersion": "v24.19.0",
+  "platform": "win32",
+  "runtimeSourceSha256": {
+    "src/domain/usecases/offlineNavigation.jsx": "ffc97ee656bfba24b79ebaf4f45d49d53d7c2d2a8e3ceb4abbe4323b39094a95",
+    "src/core/routing/aStar.jsx": "652e79547a43458d62ad2cf448c2cec33ab6dd780a8b25ca2975aaf087fd52e4",
+    "src/core/utils/geo.jsx": "dd305b8fb020e046df5f0404425e84f2dfbe564e8756665dad566574bb8cf072",
+    "src/core/routing/graph.jsx": "50be745afae65a2cf7005da768950047ce6831753b82dbda0b9d18b1576136a0",
+    "src/core/routing/edgeGeometry.jsx": "66fe5d77c53d013a7d26653131a1b92ca267ba900447324339fd8e1f0abd48aa",
+    "src/core/routing/compactGraph.jsx": "bcd45aecb5059c2ca85ef87ad4fe66e12edc4e09a2287e58f462da449e377ff3",
+    "src/core/routing/routingProfiles.jsx": "c1c1b52def2fb229c8e71f7d00d35b8428b1e9a3b177381a68a1bde7f662a0d0",
+    "src/core/routing/routeGeometry.jsx": "59116ba87d361f07670b33bde4039d619058877560d9ef24e8c9b7bd7d420d4a",
+    "src/core/routing/maneuvers.jsx": "b62d62b5b9e1bba182a1d9fe44c77b13b8ec7c008fa8d1423b46f0026108bb1f",
+    "src/core/routing/routingMapOverlay.jsx": "d7a38a044620a90c57767149f3ff923a032f3f89e88adc8a9bab8bf724a01506"
+  },
+  "legacy": {
+    "graphBytes": 141555528,
+    "graphSha256": "cbb0053accb53b61a00f64cc44cd96f2e95a9ee7bcd61f67df52c9fe69d3bd43",
+    "memoryAfterLoadMiB": {
+      "rss": 555,
+      "heapTotal": 431,
+      "heapUsed": 301,
+      "external": 137,
+      "arrayBuffers": 0
+    },
+    "memoryAfterRoutesMiB": {
+      "rss": 745,
+      "heapTotal": 684,
+      "heapUsed": 551,
+      "external": 2,
+      "arrayBuffers": 0
+    },
+    "peakResidentMiB": 834,
+    "garbageCollectionRequested": true
+  },
+  "compact": {
+    "graphBytes": 41250273,
+    "graphSha256": "fd48632e7c800da6e28b7a9ca7fdc4d88c1a32b0ca7c449e683edebd6401cfce",
+    "memoryAfterLoadMiB": {
+      "rss": 237,
+      "heapTotal": 247,
+      "heapUsed": 117,
+      "external": 41,
+      "arrayBuffers": 0
+    },
+    "memoryAfterRoutesMiB": {
+      "rss": 407,
+      "heapTotal": 342,
+      "heapUsed": 210,
+      "external": 2,
+      "arrayBuffers": 0
+    },
+    "peakResidentMiB": 445,
+    "garbageCollectionRequested": true
+  },
+  "storageReductionPct": 70.9,
+  "identicalRouteSamples": 36,
+  "samples": [
+    {
+      "from": "City of Panabo",
+      "to": "City of Tagum",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "a3195fb2cafcb1c8a536222ec0353582fe9ce9953a4df62b06b2074b23de360e",
+      "legacyMs": 1926,
+      "compactMs": 947
+    },
+    {
+      "from": "City of Tagum",
+      "to": "Talaingod",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "477497694b8e24d7e67d9a57e38d00ac412dc39bcc66f57925500efface7d056",
+      "legacyMs": 72,
+      "compactMs": 63
+    },
+    {
+      "from": "Asuncion",
+      "to": "New Corella",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "33dfd58b52a16a67b25506f8538168c3400da9b22ae82521fe3a36da98541fdf",
+      "legacyMs": 2,
+      "compactMs": 3
+    },
+    {
+      "from": "Santo Tomas",
+      "to": "Kapalong",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "7ade88ba01530ffaa094c016c15fcb1b4273b6ed775b0903208bc6891dfb7bde",
+      "legacyMs": 14,
+      "compactMs": 11
+    },
+    {
+      "from": "Carmen",
+      "to": "Braulio E. Dujali",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "98c330f794b835286f80e8faab643ef4d5cb7947522adde386d9878423f40e9e",
+      "legacyMs": 2,
+      "compactMs": 4
+    },
+    {
+      "from": "San Isidro",
+      "to": "City of Tagum",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "e70b9f303af051a2d19c02722bfa6bc01dcae1f245c553b4a46ee40b847e4ae0",
+      "legacyMs": 17,
+      "compactMs": 16
+    },
+    {
+      "from": "City of Panabo",
+      "to": "Island Garden City of Samal",
+      "mode": "walk",
+      "ok": false,
+      "reason": "no-route",
+      "routeSha256": "065cc21359174a0fa7279424a81fcbc93853f52bfd6d020359b01a3464dfd9c0",
+      "legacyMs": 283,
+      "compactMs": 223
+    },
+    {
+      "from": "Asuncion",
+      "to": "Asuncion",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "98bb626fcc55ab55541e1a2b2d8ddbec235590849e1c1f1c468216212bacafcd",
+      "legacyMs": 2,
+      "compactMs": 2
+    },
+    {
+      "from": "Carmen",
+      "to": "Carmen",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "a8c96aa8aa2d961cbf09bf64c59f20b678d4a4c1838e04b0fd2e08e6f50ea2f9",
+      "legacyMs": 1,
+      "compactMs": 1
+    },
+    {
+      "from": "Kapalong",
+      "to": "Kapalong",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "6e747d164072610f3556117cf0b9c33aff79ac3abcb39a5abd48e42973801bfc",
+      "legacyMs": 3,
+      "compactMs": 2
+    },
+    {
+      "from": "New Corella",
+      "to": "New Corella",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "302ae7130d8401e269daf590c5c4c5058fc949317f1d54593744e43c29b4d576",
+      "legacyMs": 3,
+      "compactMs": 3
+    },
+    {
+      "from": "City of Panabo",
+      "to": "City of Panabo",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "a7966a11777c9a754bd667ecac47273aad47fb7d90299dd4b0840a62009cb56f",
+      "legacyMs": 3,
+      "compactMs": 3
+    },
+    {
+      "from": "Island Garden City of Samal",
+      "to": "Island Garden City of Samal",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "c9c3acf85bccf74dbb6e0520bb085fd908f2d36ecf16057434458484a8e1db0d",
+      "legacyMs": 4,
+      "compactMs": 4
+    },
+    {
+      "from": "Santo Tomas",
+      "to": "Santo Tomas",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "1dad7c9c9f2b8ae3f8efd185073d354db0cb138440ad0f2b9f6e7832b4568808",
+      "legacyMs": 1,
+      "compactMs": 1
+    },
+    {
+      "from": "City of Tagum",
+      "to": "City of Tagum",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "8c75773beeafb7548379dd5b3b658862f22c97c1ad1fb49b99cda662e36a84f7",
+      "legacyMs": 5,
+      "compactMs": 3
+    },
+    {
+      "from": "Talaingod",
+      "to": "Talaingod",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "1711ba542d0624b032f01ea58fa0785c315fde1120d3ce82516bfddc83b58988",
+      "legacyMs": 24,
+      "compactMs": 22
+    },
+    {
+      "from": "Braulio E. Dujali",
+      "to": "Braulio E. Dujali",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "6cfb44c977888b8e78d356951a8ab2f071bde7cc33645404a388cf3c690b6609",
+      "legacyMs": 1,
+      "compactMs": 1
+    },
+    {
+      "from": "San Isidro",
+      "to": "San Isidro",
+      "mode": "walk",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "ec21dcf2d018f66dd3fde0b4ab793363dd2648f16515fa4aa661299da9f8636e",
+      "legacyMs": 1,
+      "compactMs": 1
+    },
+    {
+      "from": "City of Panabo",
+      "to": "City of Tagum",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "8ae67f1a1390d9305992a24526755efe21ab00bb412e14afb2108f63270af568",
+      "legacyMs": 21,
+      "compactMs": 15
+    },
+    {
+      "from": "City of Tagum",
+      "to": "Talaingod",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "646308850ef66ea7fa2f2d6c3dde942770198a2ca0dc64097aab4170f586ff29",
+      "legacyMs": 80,
+      "compactMs": 60
+    },
+    {
+      "from": "Asuncion",
+      "to": "New Corella",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "586fc1be5604a72e52aad6f11d387c60429eca1e351f46c602dc3b664b11bec4",
+      "legacyMs": 4,
+      "compactMs": 7
+    },
+    {
+      "from": "Santo Tomas",
+      "to": "Kapalong",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "a23b194ceb487e52249b3e9fed6bd5c899d14b8bdfe6864f0401afce60088a34",
+      "legacyMs": 20,
+      "compactMs": 19
+    },
+    {
+      "from": "Carmen",
+      "to": "Braulio E. Dujali",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "73a49c241128a19be99af8e8800fda90bea260336a0afae829f58206ad2afd3b",
+      "legacyMs": 9,
+      "compactMs": 7
+    },
+    {
+      "from": "San Isidro",
+      "to": "City of Tagum",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "e5d8fcd630d748c095b1e0b20507ba7b214abd3fe4e5593ea1007e31cc1d5bb7",
+      "legacyMs": 16,
+      "compactMs": 14
+    },
+    {
+      "from": "City of Panabo",
+      "to": "Island Garden City of Samal",
+      "mode": "drive",
+      "ok": false,
+      "reason": "no-route",
+      "routeSha256": "065cc21359174a0fa7279424a81fcbc93853f52bfd6d020359b01a3464dfd9c0",
+      "legacyMs": 261,
+      "compactMs": 176
+    },
+    {
+      "from": "Asuncion",
+      "to": "Asuncion",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "39d92e1e16003e2e81806ce6ef856535176fe863d423c0671665b1632f3ab151",
+      "legacyMs": 26,
+      "compactMs": 24
+    },
+    {
+      "from": "Carmen",
+      "to": "Carmen",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "57c56c86ad538af0abb8c7287fe9d17132670cca69541a5e8672f6292af41a9b",
+      "legacyMs": 9,
+      "compactMs": 4
+    },
+    {
+      "from": "Kapalong",
+      "to": "Kapalong",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "80a1f48600d05945ce8e71a6407203f974a448df5caeedc834776c1e3ed118f8",
+      "legacyMs": 4,
+      "compactMs": 3
+    },
+    {
+      "from": "New Corella",
+      "to": "New Corella",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "ac9d81d698ffef9115125ba4c142af0bba12e922fbb2121554cf192a00b82863",
+      "legacyMs": 4,
+      "compactMs": 4
+    },
+    {
+      "from": "City of Panabo",
+      "to": "City of Panabo",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "50fb1d4151325d6c631a94f28975114538a53a6461383a5f62dcac0034e9cb71",
+      "legacyMs": 32,
+      "compactMs": 10
+    },
+    {
+      "from": "Island Garden City of Samal",
+      "to": "Island Garden City of Samal",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "e76127fdac73cac24b4865413b28b3b582aee90ae3f7eeddc621a00debf31a6f",
+      "legacyMs": 8,
+      "compactMs": 4
+    },
+    {
+      "from": "Santo Tomas",
+      "to": "Santo Tomas",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "e7d234224d9842ee06c1054072c5b9904c0ae5d57cb18fee52aad7e0d19b2615",
+      "legacyMs": 6,
+      "compactMs": 6
+    },
+    {
+      "from": "City of Tagum",
+      "to": "City of Tagum",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "5e34c49fa8cfb5a9e26a4608d5703658ee0e590a818ee3384294428d93141a4b",
+      "legacyMs": 21,
+      "compactMs": 14
+    },
+    {
+      "from": "Talaingod",
+      "to": "Talaingod",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "660074f925bdd936bed4768dda0af614adb27652c540b500faec3ef400a2abae",
+      "legacyMs": 18,
+      "compactMs": 21
+    },
+    {
+      "from": "Braulio E. Dujali",
+      "to": "Braulio E. Dujali",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "6707e6d7fbc172333d1f47d3f992cdf617d92125b86d3d9befef147361807a19",
+      "legacyMs": 2,
+      "compactMs": 2
+    },
+    {
+      "from": "San Isidro",
+      "to": "San Isidro",
+      "mode": "drive",
+      "ok": true,
+      "reason": null,
+      "routeSha256": "600b5dc8381e67114274ae9042c9fa5e7c340dd2e624d893c2e1733d02f28b5a",
+      "legacyMs": 4,
+      "compactMs": 3
+    }
+  ],
+  "limitations": [
+    "Fresh desktop processes using identical working-tree routing code, including pending navigation edits; not mobile measurements.",
+    "Retained memory measured after explicit garbage collection. Peak RSS includes parsing, Babel and the audit harness.",
+    "Compact format retains the entire province in memory; regional loading remains future work.",
+    "Turn restrictions and node barriers are retained but not enforced; candidate remains disabled."
+  ]
+}

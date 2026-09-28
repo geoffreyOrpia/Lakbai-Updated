@@ -17,10 +17,16 @@ const arg = name => process.argv.find(value => value.startsWith('--' + name + '=
 const graphPath = arg('graph');
 const auditPath = arg('report');
 if (!graphPath || !auditPath) throw new Error('Pass --graph=<candidate.json> and --report=<audit.json>');
-const graphContent = fs.readFileSync(graphPath);
 const audit = JSON.parse(fs.readFileSync(auditPath, 'utf8'));
-if (fingerprint(graphContent) !== audit.graphSha256) throw new Error('Graph does not match the geographic audit; regenerate that audit first');
-const graph = JSON.parse(graphContent);
+const loadGraph = () => {
+  const content = fs.readFileSync(graphPath);
+  return { graph: JSON.parse(content), sha256: fingerprint(content), bytes: content.length };
+};
+const { graph, sha256, bytes } = loadGraph();
+if ((graph.sourceGraphSha256 ?? sha256) !== audit.graphSha256) throw new Error('Graph does not match the geographic audit; regenerate that audit first');
+const memory = () => Object.fromEntries(Object.entries(process.memoryUsage()).map(([key,value]) => [key, Math.round(value / 1024 / 1024)]));
+if (global.gc) global.gc();
+const memoryAfterLoadMiB = memory();
 const pairs = [
   ['City of Panabo', 'City of Tagum'],
   ['City of Tagum', 'Talaingod'],
@@ -43,16 +49,22 @@ for (const mode of ['walk', 'drive']) {
     results.push({ mode, sample: start === end ? 'within-municipality' : 'between-municipalities', from: start, to: end, ok: route.ok, reason: route.reason ?? null,
       distanceKm: route.ok ? Math.round(route.distanceKm * 1000) / 1000 : null,
       durationMin: route.durationMin ?? null,
+      routeSha256: fingerprint(JSON.stringify({ ok: route.ok, reason: route.reason, nodeIds: route.nodeIds,
+        geometry: route.geometry, maneuvers: route.maneuvers, distanceKm: route.distanceKm, durationMin: route.durationMin })),
       desktopCalculationMs: Math.round(performance.now() - started),
     });
   }
 }
-audit.desktopRuntime = { nodeVersion: process.version, platform: process.platform,
+if (global.gc) global.gc();
+audit.desktopRuntime = { graphFormat: graph.format ?? 'legacy-json', graphSha256: sha256, graphBytes: bytes,
+  memoryAfterLoadMiB, garbageCollectionRequested: Boolean(global.gc),
+  peakResidentMiB: Math.round(process.resourceUsage().maxRSS / 1024),
+  nodeVersion: process.version, platform: process.platform,
   runtimeSourceSha256,
   runtimeSourceNote: 'Measured against working-tree routing sources; fingerprints include pending navigation edits.',
-  memoryAfterRoutesMiB: Object.fromEntries(Object.entries(process.memoryUsage()).map(([key,value]) => [key, Math.round(value / 1024 / 1024)])),
+  memoryAfterRoutesMiB: memory(),
   includesIndexBuildInFirstRoute: true,
   routes: results,
 };
-fs.writeFileSync(auditPath, JSON.stringify(audit, null, 2) + '\n');
+fs.writeFileSync(arg('output') ?? auditPath, JSON.stringify(audit, null, 2) + '\n');
 console.log(JSON.stringify(audit.desktopRuntime, null, 2));

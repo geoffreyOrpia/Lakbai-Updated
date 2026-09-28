@@ -8,6 +8,7 @@ import {
 import { routeGeometryFromPath, summarizeRoutePath } from "../../core/routing/routeGeometry.jsx";
 import { buildRouteManeuvers } from "../../core/routing/maneuvers.jsx";
 import { normalizeRoutePreference } from "../../core/routing/routingProfiles.jsx";
+import { RoutingMapOverlay } from "../../core/routing/routingMapOverlay.jsx";
 
 const indexCache = new WeakMap();
 
@@ -33,6 +34,7 @@ const scenicOsmIdsFor = (index, attractors) => {
 
 const samePhysicalEdge = (candidate, reference) => {
   if (!candidate || !reference) return false;
+  if (candidate.segmentId || reference.segmentId) return candidate.segmentId === reference.segmentId;
   if (candidate.osmId && reference.osmId) return candidate.osmId === reference.osmId;
   return candidate.highway === reference.highway && candidate.name === reference.name;
 };
@@ -40,7 +42,8 @@ const samePhysicalEdge = (candidate, reference) => {
 const matchingDirectedEdge = (index, fromId, toId, reference, mode) => {
   const candidates = (index.adjacency.get(String(fromId)) ?? [])
     .filter(edge => String(edge.to) === String(toId) && edgeSupportsMode(edge, mode));
-  return candidates.find(edge => samePhysicalEdge(edge, reference)) ?? candidates[0] ?? null;
+  return candidates.find(edge => samePhysicalEdge(edge, reference))
+    ?? (reference.segmentId ? null : candidates[0]) ?? null;
 };
 
 const partialEdge = (edge, from, to, startFraction, endFraction) => ({
@@ -74,8 +77,8 @@ const createSnappedRoutingIndex = (index, startSnap, endSnap, mode) => {
   const snappedEndNodeId = endpointNodeId(endSnap);
   const startId = snappedStartNodeId ?? '__lakbai_route_start__';
   const endId = snappedEndNodeId ?? '__lakbai_route_end__';
-  const nodesById = new Map(index.nodesById);
-  const adjacency = new Map(index.adjacency);
+  const nodesById = new RoutingMapOverlay(index.nodesById);
+  const adjacency = new RoutingMapOverlay(index.adjacency);
 
   if (!snappedStartNodeId) {
     nodesById.set(startId, { id: startId, ...startSnap.projected });

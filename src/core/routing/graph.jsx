@@ -1,5 +1,6 @@
 import { haversineKm } from "../utils/geo.jsx";
 import { coordinatePoint, edgeCoordinates, geometryDistances, normalizeEdgeGeometry } from "./edgeGeometry.jsx";
+import { COMPACT_GRAPH_FORMAT, compactNodes, compactEdges, validateCompactRoutingGraph } from './compactGraph.jsx';
 
 const SPATIAL_CELL_DEGREES = 0.0025;
 
@@ -34,37 +35,39 @@ const addEdgeToSpatialIndex = (spatialIndex, edge, fromNode, toNode) => {
 };
 
 export const buildRoutingIndex = graph => {
+  const compact = graph.format === COMPACT_GRAPH_FORMAT;
+  if (graph.format && !compact) throw new Error('Unsupported routing graph format');
+  if (compact) validateCompactRoutingGraph(graph);
   const nodesById = new Map();
   const adjacency = new Map();
   const modeNodes = {
     walk: new Set(),
     drive: new Set(),
   };
-  const edgeSpatialIndex = {
-    walk: new Map(),
-    drive: new Map(),
-  };
+  // Modes share cell buckets; nearestGraphEdge filters permissions at query time.
+  const spatialIndex = new Map();
+  const edgeSpatialIndex = { walk: spatialIndex, drive: spatialIndex };
 
-  for (const node of graph.nodes ?? []) {
+  for (const node of compact ? compactNodes(graph) : graph.nodes ?? []) {
     nodesById.set(String(node.id), node);
     adjacency.set(String(node.id), []);
   }
 
-  for (const edge of graph.edges ?? []) {
+  for (const edge of compact ? compactEdges(graph) : graph.edges ?? []) {
     const from = String(edge.from);
     const to = String(edge.to);
     if (!nodesById.has(from) || !nodesById.has(to)) continue;
     if (!adjacency.has(from)) adjacency.set(from, []);
-    const normalized = {
+    const normalized = compact ? edge : {
       ...edge,
       from,
       to,
     };
-    const geometry = normalizeEdgeGeometry(edge.geometry, nodesById.get(from), nodesById.get(to));
+    const geometry = compact ? null : normalizeEdgeGeometry(edge.geometry, nodesById.get(from), nodesById.get(to));
     if (geometry) {
       normalized.geometry = geometry;
       normalized.distanceKm = geometryDistances(geometry.coordinates).at(-1);
-    } else {
+    } else if (!compact) {
       delete normalized.geometry;
     }
     adjacency.get(from).push(normalized);
@@ -73,12 +76,13 @@ export const buildRoutingIndex = graph => {
     if (edgeSupportsMode(normalized, 'walk')) {
       modeNodes.walk.add(from);
       modeNodes.walk.add(to);
-      addEdgeToSpatialIndex(edgeSpatialIndex.walk, normalized, fromNode, toNode);
     }
     if (edgeSupportsMode(normalized, 'drive')) {
       modeNodes.drive.add(from);
       modeNodes.drive.add(to);
-      addEdgeToSpatialIndex(edgeSpatialIndex.drive, normalized, fromNode, toNode);
+    }
+    if (edgeSupportsMode(normalized, 'walk') || edgeSupportsMode(normalized, 'drive')) {
+      addEdgeToSpatialIndex(spatialIndex, normalized, fromNode, toNode);
     }
   }
 
@@ -157,14 +161,15 @@ export const nearestGraphEdge = (index, position, mode = 'walk', maxDistanceKm =
     if (!fromNode || !toNode) continue;
 
     // Keep the common legacy two-node edge on the original fast path.
-    if (!edge.geometry) {
+    const geometry = edge.geometry;
+    if (!geometry) {
       const projection = projectOntoSegment(position, fromNode, toNode);
       if (!best || projection.distanceKm < best.distanceKm) {
         best = { edge, fromNode, toNode, ...projection };
       }
       continue;
     }
-    const coordinates = edge.geometry.coordinates;
+    const coordinates = geometry.coordinates;
     const cumulative = geometryDistances(coordinates);
     const total = cumulative.at(-1);
     for (let segment = 1; segment < coordinates.length; segment += 1) {

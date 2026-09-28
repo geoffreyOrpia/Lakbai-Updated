@@ -1,3 +1,4 @@
+import { validateCompactRoutingGraph } from '../../core/routing/compactGraph.jsx';
 import { File } from 'expo-file-system';
 import { getBundledRoutingGraph } from "../assets/routingGraphs.jsx";
 
@@ -13,6 +14,7 @@ export class BundledRoutingGraphRepository {
       try {
         const savedGraph = JSON.parse(this.readText(savedGraphUri));
         if (savedGraph?.nodes?.length && savedGraph?.edges?.length) {
+          if (savedGraph.format) validateCompactRoutingGraph(savedGraph);
           return savedGraph;
         }
       } catch {
