@@ -77,9 +77,16 @@ export const nextRouteManeuver = (route, distanceAlongKm) => {
   };
 };
 
-export const remainingDurationMin = (route, remainingKm) => {
+export const remainingDurationMin = (route, remainingKm, speedMps = null) => {
   if (!route?.distanceKm || !route?.durationMin) return 0;
-  return Math.max(0, Math.ceil(route.durationMin * remainingKm / route.distanceKm));
+  const profileEstimate = route.durationMin * remainingKm / route.distanceKm;
+  if (!Number.isFinite(speedMps) || speedMps <= 0) {
+    return Math.max(0, Math.ceil(profileEstimate));
+  }
+
+  const liveEstimate = remainingKm / (speedMps * 3.6) * 60;
+  const blendedEstimate = liveEstimate * 0.65 + profileEstimate * 0.35;
+  return Math.max(0, Math.ceil(blendedEstimate));
 };
 
 export const placesAlongRoute = (

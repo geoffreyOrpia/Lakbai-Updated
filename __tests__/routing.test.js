@@ -10,6 +10,7 @@ import {
   nextRouteManeuver,
   placesAlongRoute,
   projectPositionOntoRoute,
+  remainingDurationMin,
 } from '../src/core/routing/routeProgress.jsx';
 import { calculateOfflineRoute } from '../src/domain/usecases/offlineNavigation.jsx';
 
@@ -170,6 +171,16 @@ describe('offline routing core', () => {
     expect(result.maneuvers[0].instruction).toBe('Start on First Road');
     expect(result.maneuvers.some(maneuver => maneuver.instruction === 'Continue onto Second Road')).toBe(true);
     expect(result.maneuvers.at(-1).instruction).toBe('Arrive at Test Destination');
+  });
+
+  test('blends live GPS pace into the remaining ETA when speed is available', () => {
+    const route = {
+      distanceKm: 4,
+      durationMin: 60,
+    };
+
+    expect(remainingDurationMin(route, 2)).toBe(30);
+    expect(remainingDurationMin(route, 2, 2)).toBe(22);
   });
 
   test('routes between projected points instead of jumping to the nearest junctions', () => {

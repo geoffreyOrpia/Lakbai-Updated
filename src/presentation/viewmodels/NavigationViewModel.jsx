@@ -58,6 +58,7 @@ export class NavigationViewModel extends ViewModel {
   offRouteSamples = 0;
   spokenManeuverId = null;
   spokenStage = null;
+  speedSamples = [];
 
   constructor(routingDeps, destinationDeps, locationService, route, nav) {
     super({
@@ -88,6 +89,7 @@ export class NavigationViewModel extends ViewModel {
       progressPct: 0,
       remainingKm: null,
       remainingMin: null,
+      usingLiveEta: false,
       offRouteM: null,
       nextManeuver: null,
       distanceToNextManeuverKm: null,
@@ -310,10 +312,12 @@ export class NavigationViewModel extends ViewModel {
   stopNavigation = () => {
     this.stopLocationWatch();
     this.stopSpeech();
+    this.speedSamples = [];
     this.offRouteSamples = 0;
     this.setState({
       tracking: false,
       rerouting: false,
+      usingLiveEta: false,
       gpsError: null,
     });
   };
@@ -385,6 +389,19 @@ export class NavigationViewModel extends ViewModel {
     }
   };
 
+  recordSpeedEstimate = speedMps => {
+    const minSpeed = this.state.mode === 'drive' ? 2 : 0.55;
+    const maxSpeed = this.state.mode === 'drive' ? 45 : 2.5;
+    if (!Number.isFinite(speedMps) || speedMps < minSpeed || speedMps > maxSpeed) {
+      this.speedSamples = [];
+      return null;
+    }
+
+    this.speedSamples.push(speedMps);
+    if (this.speedSamples.length > 5) this.speedSamples.shift();
+    return this.speedSamples.reduce((sum, speed) => sum + speed, 0) / this.speedSamples.length;
+  };
+
   applyFix = fix => {
     const route = this.state.route;
     const accuracyM = fix.accuracy ?? null;
@@ -410,6 +427,7 @@ export class NavigationViewModel extends ViewModel {
     const targetDistanceM = haversineKm(fix, this.state.target) * 1000;
     const arrivalThresholdM = Math.max(35, (accuracyM ?? 0) * 1.5);
     const arrived = projection.remainingKm <= 0.08 && targetDistanceM <= arrivalThresholdM;
+    const liveSpeedMps = this.state.tracking ? this.recordSpeedEstimate(fix.speed) : null;
 
     if (offRoute && this.state.tracking && !arrived) {
       this.offRouteSamples += 1;
@@ -422,7 +440,8 @@ export class NavigationViewModel extends ViewModel {
       accuracyM,
       progressPct: Math.round(projection.progress * 100),
       remainingKm: projection.remainingKm,
-      remainingMin: remainingDurationMin(route, projection.remainingKm),
+      remainingMin: remainingDurationMin(route, projection.remainingKm, liveSpeedMps),
+      usingLiveEta: liveSpeedMps != null,
       offRouteM: projection.distanceToRouteM,
       nextManeuver: next.maneuver,
       distanceToNextManeuverKm: next.distanceKm,
@@ -494,6 +513,7 @@ export class NavigationViewModel extends ViewModel {
     this.stopLocationWatch();
     this.stopSpeech();
     this.resetSpokenGuidance();
+    this.speedSamples = [];
     this.offRouteSamples = 0;
     this.setState({
       fix: null,
@@ -504,6 +524,7 @@ export class NavigationViewModel extends ViewModel {
       progressPct: 0,
       remainingKm: null,
       remainingMin: null,
+      usingLiveEta: false,
       offRouteM: null,
       nextManeuver: null,
       distanceToNextManeuverKm: null,

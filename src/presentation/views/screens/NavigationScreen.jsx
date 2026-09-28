@@ -190,7 +190,7 @@ export const NavigationScreen = ({ viewModel }) => {
             <Summary
               icon="time-outline"
               value={formatDurationMinutes(shownDurationMin ?? 0)}
-              label={state.tracking || state.arrived ? 'ETA' : 'Est. time'}
+              label={state.tracking && state.usingLiveEta ? 'Live ETA' : state.tracking || state.arrived ? 'ETA' : 'Est. time'}
             />
             <Summary
               icon="locate-outline"

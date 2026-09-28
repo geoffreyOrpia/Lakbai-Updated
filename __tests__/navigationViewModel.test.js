@@ -196,6 +196,21 @@ describe('NavigationViewModel', () => {
     expect(vm.state.gpsError).toBeNull();
   });
 
+  test('uses a smoothed GPS pace for live ETA when speed is reliable', async () => {
+    const { vm, emitFix } = createVm();
+    await vm.load();
+    await vm.startFromGps();
+    await vm.startNavigation();
+
+    emitFix({ lat: 7.285, lng: 125.6805, accuracy: 6, speed: 1.8 });
+
+    expect(vm.state.usingLiveEta).toBe(true);
+    expect(vm.state.remainingMin).toBeGreaterThan(0);
+
+    emitFix({ lat: 7.2849, lng: 125.6805, accuracy: 6, speed: 0.1 });
+    expect(vm.state.usingLiveEta).toBe(false);
+  });
+
   test('speaks staged maneuver guidance without repeating every GPS fix', async () => {
     const { vm, speechService, emitFix } = createVm();
     await vm.load();
