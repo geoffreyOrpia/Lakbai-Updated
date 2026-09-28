@@ -14,6 +14,7 @@ const maneuverIcon = kind => {
   if (kind === 'left' || kind === 'sharp-left' || kind === 'slight-left') return 'return-up-back-outline';
   if (kind === 'right' || kind === 'sharp-right' || kind === 'slight-right') return 'return-up-forward-outline';
   if (kind === 'uturn') return 'refresh-outline';
+  if (kind === 'roundabout-enter' || kind === 'roundabout-exit') return 'sync-outline';
   if (kind === 'arrive') return 'flag-outline';
   return 'arrow-up-outline';
 };

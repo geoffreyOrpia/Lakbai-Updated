@@ -9,6 +9,7 @@ import { routeGeometryFromPath, summarizeRoutePath } from "../../core/routing/ro
 import { buildRouteManeuvers } from "../../core/routing/maneuvers.jsx";
 import { normalizeRoutePreference } from "../../core/routing/routingProfiles.jsx";
 import { RoutingMapOverlay } from "../../core/routing/routingMapOverlay.jsx";
+import { advanceTurnState, normalizeTurnState } from "../../core/routing/turnRestrictions.jsx";
 
 import { regionForPosition } from "../../core/routing/regionCoverage.jsx";
 
@@ -213,6 +214,7 @@ export const calculateOfflineRoute = ({
   routeAttractors = [],
   maxSnapDistanceKm = 1.5,
   targetLabel = 'destination',
+  initialTurnState = [],
 }) => {
   if (graph.meta?.regionId && graph.meta?.samalBoundary) {
     const originRegion = regionForPosition(from, graph.meta);
@@ -240,13 +242,14 @@ export const calculateOfflineRoute = ({
   }
 
   const snapped = createSnappedRoutingIndex(index, startSnap, endSnap, mode);
+  const seededTurnState = normalizeTurnState(index.turnPolicy?.[mode], initialTurnState);
   const path = aStarRoute(
     snapped.index,
     snapped.startId,
     snapped.endId,
     mode,
     normalizedPreference,
-    { scenicOsmIds },
+    { scenicOsmIds, initialTurnState: seededTurnState },
   );
   if (!path) {
     return {
@@ -265,6 +268,7 @@ export const calculateOfflineRoute = ({
     mode,
     preference: normalizedPreference,
     scenicAnchorCount: scenicOsmIds.size,
+    initialTurnState: seededTurnState,
     startSnap,
     endSnap,
     nodeIds: path.nodeIds,
@@ -274,4 +278,32 @@ export const calculateOfflineRoute = ({
     distanceKm: summary.distanceKm,
     durationMin: summary.durationMin,
   };
+};
+
+export const turnStateBeforeRoutePosition = ({
+  graph,
+  route,
+  distanceAlongKm = 0,
+  mode = route?.mode ?? 'drive',
+}) => {
+  if (!graph || !route?.edges?.length) return [];
+  const index = routingIndexFor(graph);
+  const policy = index.turnPolicy?.[mode];
+  if (!policy?.patterns?.length) return [];
+
+  let active = normalizeTurnState(policy, route.initialTurnState);
+  let cumulativeKm = 0;
+  const progressKm = Math.max(0, Number(distanceAlongKm) || 0);
+
+  for (const edge of route.edges) {
+    const edgeDistanceKm = Math.max(0, Number(edge?.distanceKm) || 0);
+    const edgeEndKm = cumulativeKm + edgeDistanceKm;
+    if (progressKm + 1e-6 < edgeEndKm) break;
+    const next = advanceTurnState(policy, active, edge?._turnKey);
+    if (next === null) return [];
+    active = next;
+    cumulativeKm = edgeEndKm;
+  }
+
+  return active;
 };

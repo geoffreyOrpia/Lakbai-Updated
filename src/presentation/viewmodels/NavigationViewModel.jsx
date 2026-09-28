@@ -8,7 +8,10 @@ import {
   remainingDurationMin,
 } from "../../core/routing/routeProgress.jsx";
 import { normalizeRoutePreference } from "../../core/routing/routingProfiles.jsx";
-import { calculateOfflineRoute } from "../../domain/usecases/offlineNavigation.jsx";
+import {
+  calculateOfflineRoute,
+  turnStateBeforeRoutePosition,
+} from "../../domain/usecases/offlineNavigation.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 
 const MAX_NAVIGATION_ACCURACY_M = 60;
@@ -78,6 +81,7 @@ export class NavigationViewModel extends ViewModel {
   lastFixTimestamp = null;
   lastRerouteAtMs = null;
   gpsLost = false;
+  lastConfirmedRouteDistanceKm = 0;
 
   constructor(routingDeps, destinationDeps, locationService, route, nav) {
     super({
@@ -389,6 +393,7 @@ export class NavigationViewModel extends ViewModel {
     this.wrongWayDistanceM = 0;
     this.lastAcceptedFix = null;
     this.lastFixTimestamp = null;
+    this.lastConfirmedRouteDistanceKm = 0;
     this.gpsLost = false;
     if (!preserveRerouteCooldown) this.lastRerouteAtMs = null;
   };
@@ -607,6 +612,9 @@ export class NavigationViewModel extends ViewModel {
     } else {
       this.offRouteSamples = 0;
     }
+    if (this.state.tracking && !offRoute && !wrongWay) {
+      this.lastConfirmedRouteDistanceKm = stableProjection.distanceAlongKm;
+    }
 
     this.lastAcceptedFix = fix;
     this.gpsLost = false;
@@ -660,6 +668,12 @@ export class NavigationViewModel extends ViewModel {
 
   rerouteFrom = async fix => {
     if (!this.state.graph || !this.state.route) return;
+    const initialTurnState = turnStateBeforeRoutePosition({
+      graph: this.state.graph,
+      route: this.state.route,
+      distanceAlongKm: this.lastConfirmedRouteDistanceKm,
+      mode: this.state.mode,
+    });
     this.setState({ rerouting: true, gpsError: null });
     try {
       const result = calculateOfflineRoute({
@@ -671,6 +685,7 @@ export class NavigationViewModel extends ViewModel {
         routeAttractors: this.state.scenicPois,
         maxSnapDistanceKm: 1,
         targetLabel: this.state.target.label ?? this.state.destinationName,
+        initialTurnState,
       });
       if (!result.ok) {
         this.setState({

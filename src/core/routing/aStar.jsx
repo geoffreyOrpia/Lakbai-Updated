@@ -3,7 +3,7 @@ import { edgeSupportsMode } from "./graph.jsx";
 import { routingProfile } from "./routingProfiles.jsx";
 
 import { nodePassageAllowed } from "./accessRules.jsx";
-import { advanceTurnState } from "./turnRestrictions.jsx";
+import { advanceTurnState, normalizeTurnState } from "./turnRestrictions.jsx";
 
 class MinHeap {
   items = [];
@@ -78,12 +78,19 @@ export const aStarRoute = (
   const profile = routingProfile(mode, preference, context);
   const frontier = new MinHeap();
   const cameFrom = new Map();
-  const costSoFar = new Map([[start, 0]]);
+  const costSoFar = new Map();
   const endNode = index.nodesById.get(end);
 
   const turnPolicy = index.turnPolicy?.[mode];
   const hasTurns = Boolean(turnPolicy?.patterns.length);
-  frontier.push({ id: start, key: start, active: [], cost: 0, priority: 0 });
+  const initialActive = hasTurns
+    ? normalizeTurnState(turnPolicy, context.initialTurnState)
+    : [];
+  const startKey = initialActive.length
+    ? JSON.stringify([start, initialActive])
+    : start;
+  costSoFar.set(startKey, 0);
+  frontier.push({ id: start, key: startKey, active: initialActive, cost: 0, priority: 0 });
 
   while (frontier.size) {
     const current = frontier.pop();

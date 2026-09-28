@@ -133,3 +133,24 @@ export const advanceTurnState = (policy, active, edgeKey) => {
   next.push(...(policy.starts.get(edgeKey) ?? []));
   return [...new Map(next.map(item => [item.join(':'), item])).values()].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
 };
+
+export const normalizeTurnState = (policy, active = []) => {
+  if (!policy?.patterns?.length || !Array.isArray(active)) return [];
+  const valid = [];
+  for (const item of active) {
+    if (!Array.isArray(item) || item.length !== 2) continue;
+    const id = Number(item[0]);
+    const position = Number(item[1]);
+    const pattern = policy.patterns[id];
+    if (
+      !Number.isInteger(id)
+      || !Number.isInteger(position)
+      || !pattern
+      || position < 1
+      || position >= pattern.path.length
+    ) continue;
+    valid.push([id, position]);
+  }
+  return [...new Map(valid.map(item => [item.join(':'), item])).values()]
+    .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+};

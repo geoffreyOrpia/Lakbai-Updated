@@ -18,6 +18,47 @@ const graph = {
   ],
 };
 
+const restrictedRerouteGraph = {
+  meta: { id: 'restricted-reroute-fixture' },
+  nodes: [
+    { id: 'a', lat: 7, lng: 125 },
+    { id: 'v', lat: 7, lng: 125.01 },
+    { id: 'x', lat: 7, lng: 125.013 },
+    { id: 'y', lat: 7, lng: 125.016 },
+    { id: 'b', lat: 7, lng: 125.02 },
+    { id: 'c', lat: 7.01, lng: 125.02 },
+    { id: 'd', lat: 7.01, lng: 125.03 },
+  ],
+  edges: [
+    ['a','v','in'], ['v','x','via1'], ['x','y','via1'], ['y','b','via2'],
+    ['b','d','out'], ['b','c','escape'], ['c','d','detour'],
+  ].map(([from,to,osmId], index) => {
+    const fromNode = {
+      a:[125,7], v:[125.01,7], x:[125.013,7], y:[125.016,7],
+      b:[125.02,7], c:[125.02,7.01], d:[125.03,7.01],
+    }[from];
+    const toNode = {
+      a:[125,7], v:[125.01,7], x:[125.013,7], y:[125.016,7],
+      b:[125.02,7], c:[125.02,7.01], d:[125.03,7.01],
+    }[to];
+    return {
+      id: String(index), from, to, osmId, segmentId: `${osmId}:${from}:${to}`,
+      distanceKm: 1, highway: 'residential', walk: true, drive: true,
+      geometry: { type: 'LineString', coordinates: [fromNode, toNode] },
+    };
+  }),
+  turnRestrictions: [{
+    id: 'multi-way-rule',
+    tags: { type: 'restriction', restriction: 'no_left_turn' },
+    members: [
+      { type: 'w', ref: 'in', role: 'from' },
+      { type: 'w', ref: 'via1', role: 'via' },
+      { type: 'w', ref: 'via2', role: 'via' },
+      { type: 'w', ref: 'out', role: 'to' },
+    ],
+  }],
+};
+
 const verifiedTrail = {
   id: 'panabo-mangrove-boardwalk',
   name: 'Panabo Mangrove Boardwalk — mapped segment',
@@ -113,6 +154,44 @@ const createVm = ({
     emitFix: next => watchCallback?.(next),
     emitLocationError: message => watchError?.(message),
   };
+};
+
+const createRestrictedVm = () => {
+  const routingDeps = {
+    routingGraphRepository: {
+      getForDestination: jest.fn().mockResolvedValue(restrictedRerouteGraph),
+    },
+    speechService: {
+      speak: jest.fn().mockResolvedValue(true),
+      stop: jest.fn().mockResolvedValue(),
+    },
+  };
+  const destinationDeps = {
+    packRepository: {
+      getOfflineBundleStatus: jest.fn().mockResolvedValue({
+        basemapUri: 'file:///maps/restricted.pmtiles',
+        routingGraphUri: 'file:///packs/restricted/routing.graph.json',
+      }),
+      getSavedPack: jest.fn().mockResolvedValue({ trails: [], spots: [] }),
+    },
+  };
+  const locationService = {
+    requestPermissions: jest.fn().mockResolvedValue(true),
+    getCurrentFix: jest.fn().mockResolvedValue({ lat: 7, lng: 125, accuracy: 5, timestamp: 1_000 }),
+    watchFix: jest.fn().mockResolvedValue(jest.fn()),
+  };
+  return new NavigationViewModel(
+    routingDeps,
+    destinationDeps,
+    locationService,
+    {
+      destinationId: 'restricted',
+      destinationName: 'Restricted fixture',
+      target: { label: 'Target', lat: 7.01, lng: 125.03 },
+      mode: 'drive',
+    },
+    { onBack: jest.fn(), onOpenTrail: jest.fn() },
+  );
 };
 
 describe('NavigationViewModel', () => {
@@ -420,6 +499,30 @@ describe('NavigationViewModel', () => {
 
     vm.applyFix(offRouteFix(19_000));
     expect(reroute).toHaveBeenCalledTimes(2);
+  });
+
+  test('carries confirmed restriction approach history into an in-progress reroute', async () => {
+    const vm = createRestrictedVm();
+    await vm.load();
+    await vm.startFromGps();
+
+    expect(vm.state.route?.ok).toBe(true);
+    expect(vm.state.route.edges.some(edge => edge.osmId === 'out')).toBe(false);
+    vm.lastConfirmedRouteDistanceKm = vm.state.route.edges[0].distanceKm
+      + vm.state.route.edges[1].distanceKm * 0.5;
+
+    await vm.rerouteFrom({
+      lat: 7,
+      lng: 125.0115,
+      accuracy: 5,
+      timestamp: 5_000,
+    });
+
+    expect(vm.state.rerouteCount).toBe(1);
+    expect(vm.state.route.initialTurnState.length).toBeGreaterThan(0);
+    expect(vm.state.route.edges.some(edge => edge.osmId === 'out')).toBe(false);
+    expect(vm.state.route.edges.some(edge => edge.osmId === 'escape')).toBe(true);
+    expect(vm.state.route.edges.some(edge => edge.osmId === 'detour')).toBe(true);
   });
 
   test('marks arrival, stops tracking, and can hand off to the verified trail', async () => {

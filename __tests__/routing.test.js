@@ -67,6 +67,25 @@ const preferenceGraph = {
   ],
 };
 
+const roundaboutGraph = {
+  meta: { id: 'roundabout-fixture' },
+  nodes: [
+    { id: 'a', lat: 7, lng: 125 },
+    { id: 'r1', lat: 7, lng: 125.01 },
+    { id: 'r2', lat: 7.005, lng: 125.015 },
+    { id: 'r3', lat: 7, lng: 125.02 },
+    { id: 'side', lat: 7.012, lng: 125.015 },
+    { id: 'd', lat: 7, lng: 125.03 },
+  ],
+  edges: [
+    { from: 'a', to: 'r1', distanceKm: 1, walk: true, drive: true, highway: 'primary', name: 'Approach Road' },
+    { from: 'r1', to: 'r2', distanceKm: 0.8, walk: true, drive: true, highway: 'primary', osmTags: { junction: 'roundabout' } },
+    { from: 'r2', to: 'r3', distanceKm: 0.8, walk: true, drive: true, highway: 'primary', osmTags: { junction: 'roundabout' } },
+    { from: 'r2', to: 'side', distanceKm: 0.7, walk: true, drive: true, highway: 'secondary', name: 'First Exit Road' },
+    { from: 'r3', to: 'd', distanceKm: 1, walk: true, drive: true, highway: 'primary', name: 'Destination Road' },
+  ],
+};
+
 const forkGraph = {
   meta: { id: 'fork-fixture' },
   nodes: [
@@ -303,6 +322,36 @@ describe('offline routing core', () => {
       maneuver.kind === 'slight-right'
       && maneuver.instruction === 'Keep slightly right onto Fork Road'
     ))).toBe(true);
+  });
+
+  test('announces roundabout entry and the numbered route exit', () => {
+    const result = calculateOfflineRoute({
+      graph: roundaboutGraph,
+      from: { lat: 7, lng: 125 },
+      to: { lat: 7, lng: 125.03 },
+      mode: 'drive',
+      maxSnapDistanceKm: 0.2,
+      targetLabel: 'Roundabout destination',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.maneuvers).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: 'roundabout-enter',
+        instruction: 'Enter the roundabout',
+      }),
+      expect.objectContaining({
+        kind: 'roundabout-exit',
+        exitNumber: 2,
+        instruction: 'Take the 2nd exit onto Destination Road',
+      }),
+    ]));
+    expect(result.maneuvers.filter(maneuver => (
+      maneuver.kind !== 'depart'
+      && maneuver.kind !== 'roundabout-enter'
+      && maneuver.kind !== 'roundabout-exit'
+      && maneuver.kind !== 'arrive'
+    ))).toHaveLength(0);
   });
 
   test('projects live position onto a route and advances to the next maneuver', () => {

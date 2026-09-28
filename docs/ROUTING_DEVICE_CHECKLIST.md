@@ -37,7 +37,8 @@ This gate is ready for device testing. Do not mark it passed from Panabo results
 - Local Samal journeys work independently. Mainland–Samal must remain unavailable until verified ferry legs are modeled; no line across water.
 - Curved roads, parallel roads and loops: snaps stay on the intended physical segment, and a reverse one-way movement is not offered.
 - Known prohibited turns, only-turn junctions, access-restricted segments and barriers are handled according to verified local rules. Compare walking/driving at bollards, public gates and private gates; record conservative exclusions caused by missing access tags. Check that a destination before a barrier is reachable without crossing it.
-- Recalculate from midway along the approach road to a restricted junction. Also record the behavior of a reroute starting inside a multi-way restricted maneuver: prior traversal history is not yet reconstructed.
+- Recalculate from midway along the approach road to a restricted junction. Then trigger a reroute after entering a mapped multi-way restricted maneuver and confirm the legal continuation still reflects the approach already traveled. A fresh navigation session started inside the maneuver has no pre-session history and must not invent one.
+- On mapped `junction=roundabout` routes, verify the entry prompt, numbered exit, exit road name when available, and spoken instruction against the physical junction. Record mapping errors instead of treating generated exit numbering as field verification.
 - Measure cold-load memory, first/warm calculation time, repeated-reroute memory, battery behavior and recovery on the lowest-memory supported device.
 
 A missing result remains unverified. Record the location and failure rather than generalizing one successful journey to a whole municipality.

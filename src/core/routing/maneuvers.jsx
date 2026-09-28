@@ -53,6 +53,26 @@ const instructionFor = (kind, streetName) => {
 };
 
 const normalizedName = edge => edge?.name?.trim() || null;
+const isRoundaboutEdge = edge => (
+  edge?.junction === 'roundabout'
+  || edge?.osmTags?.junction === 'roundabout'
+);
+
+const ordinal = value => {
+  const mod100 = value % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${value}th`;
+  if (value % 10 === 1) return `${value}st`;
+  if (value % 10 === 2) return `${value}nd`;
+  if (value % 10 === 3) return `${value}rd`;
+  return `${value}th`;
+};
+
+const roundaboutExitCountAt = (index, junctionId, mode) => {
+  const exits = (index.adjacency.get(String(junctionId)) ?? [])
+    .filter(edge => edgeSupportsMode(edge, mode))
+    .filter(edge => !isRoundaboutEdge(edge));
+  return new Set(exits.map(edge => String(edge.to))).size;
+};
 
 const junctionRequiresChoice = (
   index,
@@ -89,6 +109,9 @@ export const buildRouteManeuvers = (
 
   let cumulativeKm = 0;
   let previousAddedAtKm = -1;
+  let insideRoundabout = isRoundaboutEdge(firstEdge);
+  let roundaboutExitCount = 0;
+  let enteredRoundaboutOnRoute = false;
 
   for (let indexInPath = 1; indexInPath < path.nodeIds.length - 1; indexInPath += 1) {
     const previousEdge = path.edges[indexInPath - 1];
@@ -107,6 +130,66 @@ export const buildRouteManeuvers = (
     const delta = signedBearingDelta(previousBearing, nextBearing);
     const previousName = normalizedName(previousEdge);
     const nextName = normalizedName(nextEdge);
+    const previousRoundabout = isRoundaboutEdge(previousEdge);
+    const nextRoundabout = isRoundaboutEdge(nextEdge);
+
+    if (!previousRoundabout && nextRoundabout) {
+      maneuvers.push({
+        id: `roundabout-enter-${indexInPath}`,
+        kind: 'roundabout-enter',
+        instruction: 'Enter the roundabout',
+        streetName: null,
+        distanceAlongKm: cumulativeKm,
+        turnDegrees: delta,
+        location: {
+          lat: junctionNode.lat,
+          lng: junctionNode.lng,
+        },
+      });
+      insideRoundabout = true;
+      enteredRoundaboutOnRoute = true;
+      roundaboutExitCount = 0;
+      previousAddedAtKm = cumulativeKm;
+      continue;
+    }
+
+    if (previousRoundabout && nextRoundabout) {
+      if (insideRoundabout) {
+        roundaboutExitCount += roundaboutExitCountAt(
+          index,
+          path.nodeIds[indexInPath],
+          mode,
+        );
+      }
+      continue;
+    }
+
+    if (previousRoundabout && !nextRoundabout) {
+      roundaboutExitCount += 1;
+      const exitName = normalizedName(nextEdge);
+      const suffix = exitName ? ` onto ${exitName}` : '';
+      maneuvers.push({
+        id: `roundabout-exit-${indexInPath}`,
+        kind: 'roundabout-exit',
+        instruction: enteredRoundaboutOnRoute
+          ? `Take the ${ordinal(roundaboutExitCount)} exit${suffix}`
+          : `Exit the roundabout${suffix}`,
+        streetName: exitName,
+        exitNumber: enteredRoundaboutOnRoute ? roundaboutExitCount : null,
+        distanceAlongKm: cumulativeKm,
+        turnDegrees: delta,
+        location: {
+          lat: junctionNode.lat,
+          lng: junctionNode.lng,
+        },
+      });
+      insideRoundabout = false;
+      enteredRoundaboutOnRoute = false;
+      roundaboutExitCount = 0;
+      previousAddedAtKm = cumulativeKm;
+      continue;
+    }
+
     const nameChanged = Boolean(nextName && nextName !== previousName);
     const significantTurn = Math.abs(delta) >= (nameChanged ? 25 : 55);
     const forkDecision = Math.abs(delta) >= 20

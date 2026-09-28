@@ -1,6 +1,9 @@
 import { buildRoutingIndex } from '../src/core/routing/graph.jsx';
 import { aStarRoute } from '../src/core/routing/aStar.jsx';
-import { calculateOfflineRoute } from '../src/domain/usecases/offlineNavigation.jsx';
+import {
+  calculateOfflineRoute,
+  turnStateBeforeRoutePosition,
+} from '../src/domain/usecases/offlineNavigation.jsx';
 import { compactRoutingGraph } from '../src/core/routing/compactGraph.jsx';
 import { nodePassageAllowed } from '../src/core/routing/accessRules.jsx';
 
@@ -75,6 +78,58 @@ describe('turn and passage enforcement', () => {
     expect(route(data,'a','d').nodeIds).toEqual(['a','v','x','y','b','c','d']);
     expect(route(data,'v','d').nodeIds).toEqual(['v','x','y','b','d']);
     expect(buildRoutingIndex(data).turnPolicy.summary.unresolved).toEqual([]);
+  });
+
+  test.each([false,true])('reroutes preserve confirmed approach state inside multi-way restrictions (%s)', compact => {
+    const g = junction();
+    g.nodes.push(node('x',1.3,0),node('y',1.6,0));
+    g.edges = [];
+    road(g,'a','v','in'); road(g,'v','x','via1'); road(g,'x','y','via1'); road(g,'y','b','via2');
+    road(g,'b','d','out'); road(g,'b','c','escape'); road(g,'c','d','detour');
+    g.turnRestrictions = [restriction('no_left_turn','in','out',[
+      {type:'w',ref:'via1',role:'via'},{type:'w',ref:'via2',role:'via'}])];
+    const data = compact ? compactRoutingGraph(g) : g;
+    const original = calculateOfflineRoute({
+      graph:data,
+      from:{lng:125,lat:7},
+      to:{lng:125.01,lat:7.01},
+      mode:'drive',
+      maxSnapDistanceKm:0.001,
+    });
+    expect(original.ok).toBe(true);
+    const confirmedProgressKm = original.edges[0].distanceKm + original.edges[1].distanceKm * 0.5;
+    const initialTurnState = turnStateBeforeRoutePosition({
+      graph:data,
+      route:original,
+      distanceAlongKm:confirmedProgressKm,
+      mode:'drive',
+    });
+    expect(initialTurnState.length).toBeGreaterThan(0);
+
+    const midway = { lng:125.0115, lat:7 };
+    const unseeded = calculateOfflineRoute({
+      graph:data,
+      from:midway,
+      to:{lng:125.02,lat:7.01},
+      mode:'drive',
+      maxSnapDistanceKm:0.001,
+    });
+    const seeded = calculateOfflineRoute({
+      graph:data,
+      from:midway,
+      to:{lng:125.02,lat:7.01},
+      mode:'drive',
+      maxSnapDistanceKm:0.001,
+      initialTurnState,
+    });
+
+    expect(unseeded.ok).toBe(true);
+    expect(unseeded.edges.some(edge => edge.osmId === 'out')).toBe(true);
+    expect(seeded.ok).toBe(true);
+    expect(seeded.initialTurnState).toEqual(initialTurnState);
+    expect(seeded.edges.some(edge => edge.osmId === 'out')).toBe(false);
+    expect(seeded.edges.some(edge => edge.osmId === 'escape')).toBe(true);
+    expect(seeded.edges.some(edge => edge.osmId === 'detour')).toBe(true);
   });
 
   test('only-via-way restrictions reject early exits but allow stopping along the required road', () => {
