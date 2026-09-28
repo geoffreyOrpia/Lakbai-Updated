@@ -1,4 +1,5 @@
 import { haversineKm } from "../utils/geo.jsx";
+import { coordinatePoint, edgeCoordinates, geometryDistances, normalizeEdgeGeometry } from "./edgeGeometry.jsx";
 
 const SPATIAL_CELL_DEGREES = 0.0025;
 
@@ -19,10 +20,11 @@ const cellRangeForBounds = (west, south, east, north) => {
 };
 
 const addEdgeToSpatialIndex = (spatialIndex, edge, fromNode, toNode) => {
-  const west = Math.min(fromNode.lng, toNode.lng);
-  const east = Math.max(fromNode.lng, toNode.lng);
-  const south = Math.min(fromNode.lat, toNode.lat);
-  const north = Math.max(fromNode.lat, toNode.lat);
+  const coordinates = edgeCoordinates(edge, fromNode, toNode);
+  const west = Math.min(...coordinates.map(point => point[0]));
+  const east = Math.max(...coordinates.map(point => point[0]));
+  const south = Math.min(...coordinates.map(point => point[1]));
+  const north = Math.max(...coordinates.map(point => point[1]));
 
   for (const key of cellRangeForBounds(west, south, east, north)) {
     const bucket = spatialIndex.get(key) ?? [];
@@ -58,6 +60,13 @@ export const buildRoutingIndex = graph => {
       from,
       to,
     };
+    const geometry = normalizeEdgeGeometry(edge.geometry, nodesById.get(from), nodesById.get(to));
+    if (geometry) {
+      normalized.geometry = geometry;
+      normalized.distanceKm = geometryDistances(geometry.coordinates).at(-1);
+    } else {
+      delete normalized.geometry;
+    }
     adjacency.get(from).push(normalized);
     const fromNode = nodesById.get(from);
     const toNode = nodesById.get(to);
@@ -147,16 +156,33 @@ export const nearestGraphEdge = (index, position, mode = 'walk', maxDistanceKm =
     const toNode = index.nodesById.get(String(edge.to));
     if (!fromNode || !toNode) continue;
 
-    const projection = projectOntoSegment(position, fromNode, toNode);
-    if (!best || projection.distanceKm < best.distanceKm) {
-      best = {
-        edge,
-        fromNode,
-        toNode,
-        fraction: projection.fraction,
-        projected: projection.projected,
-        distanceKm: projection.distanceKm,
-      };
+    // Keep the common legacy two-node edge on the original fast path.
+    if (!edge.geometry) {
+      const projection = projectOntoSegment(position, fromNode, toNode);
+      if (!best || projection.distanceKm < best.distanceKm) {
+        best = { edge, fromNode, toNode, ...projection };
+      }
+      continue;
+    }
+    const coordinates = edge.geometry.coordinates;
+    const cumulative = geometryDistances(coordinates);
+    const total = cumulative.at(-1);
+    for (let segment = 1; segment < coordinates.length; segment += 1) {
+      const projection = projectOntoSegment(
+        position, coordinatePoint(coordinates[segment - 1]), coordinatePoint(coordinates[segment]),
+      );
+      if (!best || projection.distanceKm < best.distanceKm) {
+        const alongKm = cumulative[segment - 1]
+          + (cumulative[segment] - cumulative[segment - 1]) * projection.fraction;
+        best = {
+          edge,
+          fromNode,
+          toNode,
+          fraction: total > 0 ? alongKm / total : 0,
+          projected: projection.projected,
+          distanceKm: projection.distanceKm,
+        };
+      }
     }
   }
 

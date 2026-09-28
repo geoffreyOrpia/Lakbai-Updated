@@ -1,4 +1,5 @@
 import { aStarRoute } from "../../core/routing/aStar.jsx";
+import { sliceEdgeGeometry } from "../../core/routing/edgeGeometry.jsx";
 import {
   buildRoutingIndex,
   edgeSupportsMode,
@@ -42,11 +43,12 @@ const matchingDirectedEdge = (index, fromId, toId, reference, mode) => {
   return candidates.find(edge => samePhysicalEdge(edge, reference)) ?? candidates[0] ?? null;
 };
 
-const partialEdge = (edge, from, to, fraction) => ({
+const partialEdge = (edge, from, to, startFraction, endFraction) => ({
   ...edge,
   from,
   to,
-  distanceKm: Math.max(0, (edge.distanceKm ?? 0) * fraction),
+  distanceKm: Math.max(0, (edge.distanceKm ?? 0) * (endFraction - startFraction)),
+  geometry: sliceEdgeGeometry(edge.geometry, startFraction, endFraction),
   virtual: true,
 });
 
@@ -113,7 +115,8 @@ const createSnappedRoutingIndex = (index, startSnap, endSnap, mode) => {
         startForward,
         startId,
         String(startSnap.edge.to),
-        1 - startSnap.fraction,
+        startSnap.fraction,
+        1,
       ));
     }
     if (startReverse) {
@@ -121,7 +124,8 @@ const createSnappedRoutingIndex = (index, startSnap, endSnap, mode) => {
         startReverse,
         startId,
         String(startSnap.edge.from),
-        startSnap.fraction,
+        1 - startSnap.fraction,
+        1,
       ));
     }
   }
@@ -148,13 +152,13 @@ const createSnappedRoutingIndex = (index, startSnap, endSnap, mode) => {
     if (endForward) {
       appendEdge(
         String(endSnap.edge.from),
-        partialEdge(endForward, String(endSnap.edge.from), endId, endSnap.fraction),
+        partialEdge(endForward, String(endSnap.edge.from), endId, 0, endSnap.fraction),
       );
     }
     if (endReverse) {
       appendEdge(
         String(endSnap.edge.to),
-        partialEdge(endReverse, String(endSnap.edge.to), endId, 1 - endSnap.fraction),
+        partialEdge(endReverse, String(endSnap.edge.to), endId, 0, 1 - endSnap.fraction),
       );
     }
   }
@@ -170,14 +174,16 @@ const createSnappedRoutingIndex = (index, startSnap, endSnap, mode) => {
         startForward,
         startId,
         endId,
-        endFraction - startSnap.fraction,
+        startSnap.fraction,
+        endFraction,
       ));
     } else if (endFraction < startSnap.fraction && startReverse) {
       appendEdge(startId, partialEdge(
         startReverse,
         startId,
         endId,
-        startSnap.fraction - endFraction,
+        1 - startSnap.fraction,
+        1 - endFraction,
       ));
     }
   }

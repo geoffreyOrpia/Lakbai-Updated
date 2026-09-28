@@ -1,4 +1,5 @@
 import { haversineKm } from "../utils/geo.jsx";
+import { coordinatePoint, edgeCoordinates } from "./edgeGeometry.jsx";
 
 const toRad = value => value * Math.PI / 180;
 const toDeg = value => value * 180 / Math.PI;
@@ -77,8 +78,10 @@ export const buildRouteManeuvers = (index, path, targetLabel = 'destination') =>
     const nextNode = index.nodesById.get(String(path.nodeIds[indexInPath + 1]));
     if (!previousNode || !junctionNode || !nextNode || !nextEdge) continue;
 
-    const previousBearing = bearingDegrees(previousNode, junctionNode);
-    const nextBearing = bearingDegrees(junctionNode, nextNode);
+    const incoming = edgeCoordinates(previousEdge, previousNode, junctionNode);
+    const outgoing = edgeCoordinates(nextEdge, junctionNode, nextNode);
+    const previousBearing = bearingDegrees(coordinatePoint(incoming.at(-2)), junctionNode);
+    const nextBearing = bearingDegrees(junctionNode, coordinatePoint(outgoing[1]));
     const delta = signedBearingDelta(previousBearing, nextBearing);
     const previousName = normalizedName(previousEdge);
     const nextName = normalizedName(nextEdge);
