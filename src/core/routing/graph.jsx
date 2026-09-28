@@ -2,6 +2,9 @@ import { haversineKm } from "../utils/geo.jsx";
 import { coordinatePoint, edgeCoordinates, geometryDistances, normalizeEdgeGeometry } from "./edgeGeometry.jsx";
 import { COMPACT_GRAPH_FORMAT, compactNodes, compactEdges, validateCompactRoutingGraph } from './compactGraph.jsx';
 
+import { edgeAccessAllowed } from "./accessRules.jsx";
+import { buildTurnPolicy } from "./turnRestrictions.jsx";
+
 const SPATIAL_CELL_DEGREES = 0.0025;
 
 const spatialCellKey = (lngIndex, latIndex) => `${lngIndex}:${latIndex}`;
@@ -53,6 +56,7 @@ export const buildRoutingIndex = graph => {
     adjacency.set(String(node.id), []);
   }
 
+  let turnKey = 0;
   for (const edge of compact ? compactEdges(graph) : graph.edges ?? []) {
     const from = String(edge.from);
     const to = String(edge.to);
@@ -70,6 +74,7 @@ export const buildRoutingIndex = graph => {
     } else if (!compact) {
       delete normalized.geometry;
     }
+    normalized._turnKey = turnKey++;
     adjacency.get(from).push(normalized);
     const fromNode = nodesById.get(from);
     const toNode = nodesById.get(to);
@@ -92,10 +97,12 @@ export const buildRoutingIndex = graph => {
     adjacency,
     modeNodes,
     edgeSpatialIndex,
+    turnPolicy: buildTurnPolicy(graph, nodesById, adjacency),
   };
 };
 
 export const edgeSupportsMode = (edge, mode) => {
+  if (!edgeAccessAllowed(edge, mode)) return false;
   if (mode === 'drive') return edge.drive !== false;
   return edge.walk !== false;
 };

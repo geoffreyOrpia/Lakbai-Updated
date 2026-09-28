@@ -30,6 +30,7 @@ class ImportTest(unittest.TestCase):
 <way id="12"><nd ref="3"/><nd ref="4"/><tag k="highway" v="residential"/><tag k="bridge" v="yes"/></way>
 <way id="13"><nd ref="5"/><nd ref="6"/><tag k="highway" v="residential"/></way>
 <relation id="99"><member type="way" ref="11" role="from"/><member type="node" ref="2" role="via"/><member type="way" ref="12" role="to"/><tag k="type" v="restriction"/><tag k="restriction" v="no_left_turn"/></relation>
+<relation id="100"><member type="way" ref="11" role="from"/><member type="node" ref="2" role="via"/><member type="way" ref="12" role="to"/><tag k="type" v="restriction:foot"/><tag k="restriction" v="no_right_turn"/></relation>
 </osm>''', encoding='utf-8')
             pbf = folder / 'source.osm.pbf'
             with osmium.SimpleWriter(str(pbf)) as writer:
@@ -49,6 +50,7 @@ class ImportTest(unittest.TestCase):
             self.assertEqual(metadata['nodeTags']['2']['barrier'], 'gate')
             self.assertEqual(metadata['restrictions'][0]['id'], '99')
             self.assertEqual(metadata['restrictions'][0]['members'][1]['role'], 'via')
+            self.assertEqual(metadata['restrictions'][1]['tags']['type'], 'restriction:foot')
             self.assertEqual(metadata['sourceSha256'], digest(pbf))
             self.assertEqual(metadata['roadsSha256'], digest(output))
 

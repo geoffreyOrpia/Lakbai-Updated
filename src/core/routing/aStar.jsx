@@ -2,6 +2,9 @@ import { haversineKm } from "../utils/geo.jsx";
 import { edgeSupportsMode } from "./graph.jsx";
 import { routingProfile } from "./routingProfiles.jsx";
 
+import { nodePassageAllowed } from "./accessRules.jsx";
+import { advanceTurnState } from "./turnRestrictions.jsx";
+
 class MinHeap {
   items = [];
 
@@ -45,14 +48,14 @@ class MinHeap {
   }
 }
 
-const reconstruct = (cameFrom, current) => {
-  const nodes = [current];
+const reconstruct = (cameFrom, current, endId) => {
+  const nodes = [endId];
   const edges = [];
   while (cameFrom.has(current)) {
     const step = cameFrom.get(current);
     edges.push(step.edge);
-    current = step.from;
-    nodes.push(current);
+    nodes.push(step.edge.from);
+    current = step.previous;
   }
   nodes.reverse();
   edges.reverse();
@@ -78,34 +81,41 @@ export const aStarRoute = (
   const costSoFar = new Map([[start, 0]]);
   const endNode = index.nodesById.get(end);
 
-  frontier.push({ id: start, priority: 0 });
+  const turnPolicy = index.turnPolicy?.[mode];
+  const hasTurns = Boolean(turnPolicy?.patterns.length);
+  frontier.push({ id: start, key: start, active: [], cost: 0, priority: 0 });
 
   while (frontier.size) {
     const current = frontier.pop();
+    if (current.cost !== costSoFar.get(current.key)) continue;
     if (current.id === end) {
-      const path = reconstruct(cameFrom, end);
+      const path = reconstruct(cameFrom, current.key, end);
       return {
         nodeIds: path.nodes,
         edges: path.edges,
-        cost: costSoFar.get(end),
+        cost: current.cost,
       };
     }
 
-    const currentCost = costSoFar.get(current.id);
+    if (!nodePassageAllowed(index.nodesById.get(current.id), mode)) continue;
+    const currentCost = current.cost;
     for (const edge of index.adjacency.get(current.id) ?? []) {
       if (!edgeSupportsMode(edge, mode)) continue;
+      const active = hasTurns ? advanceTurnState(turnPolicy, current.active, edge._turnKey) : [];
+      if (active === null) continue;
+      const key = active.length ? JSON.stringify([edge.to, active]) : edge.to;
       const nextCost = currentCost + profile.edgeCost(edge);
-      if (nextCost >= (costSoFar.get(edge.to) ?? Number.POSITIVE_INFINITY)) continue;
+      if (nextCost >= (costSoFar.get(key) ?? Number.POSITIVE_INFINITY)) continue;
 
-      costSoFar.set(edge.to, nextCost);
-      cameFrom.set(edge.to, {
-        from: current.id,
+      costSoFar.set(key, nextCost);
+      cameFrom.set(key, {
+        previous: current.key,
         edge,
       });
       const nextNode = index.nodesById.get(edge.to);
       const heuristic = profile.heuristicHours(haversineKm(nextNode, endNode));
       frontier.push({
-        id: edge.to,
+        id: edge.to, key, active, cost: nextCost,
         priority: nextCost + heuristic,
       });
     }

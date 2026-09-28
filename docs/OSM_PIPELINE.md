@@ -42,11 +42,11 @@ The builder applies basic mode access and directional rules, including mode-spec
 
 ## Release limits
 
-Generated data is an **unverified candidate**, not automatically registered or shipped. Road presence in all municipalities does not prove complete coverage. The graph retains turn restrictions and node barriers, but the current routing engine does not enforce those records. Ferry ways are excluded from the road network. Conditional restrictions and country-specific defaults need further work.
+Generated data is an **unverified candidate**, not automatically registered or shipped. Road presence in all municipalities does not prove complete coverage. The engine now enforces supported turn restrictions and node passage rules. Incomplete relations remain explicit validation failures; see the restriction audit below. Ferry ways are excluded from the road network. Conditional timing and country-specific defaults need further work.
 
 The geographic audit reports road-node counts, weak components, directed reachability between automatically selected anchors, source fingerprints, and graph size. Weak connectivity alone ignores travel direction. Anchors are test coordinates on the graph, not verified destination entrances. The runtime audit executes the actual JS routing engine on walking and driving samples within all 11 municipalities, representative mainland pairs, and a mainland-to-Samal pair. It checks the graph fingerprint and records the working-tree routing source fingerprints; this audit includes the pending navigation edits. Timing and memory are desktop measurements, not mobile performance claims.
 
-Same-road snap matching now distinguishes imported segment IDs so parallel sections of one OSM way remain distinct. Do not activate the provincial candidate until restriction/barrier handling, shared storage, mobile memory and route latency, coverage failures, and real-device offline behavior have been addressed. Keep the shipped Panabo data available during that transition.
+Same-road snap matching now distinguishes imported segment IDs so parallel sections of one OSM way remain distinct. Do not activate the provincial candidate until unresolved source restrictions, shared storage, mobile memory and route latency, coverage failures, and real-device offline behavior have been addressed. Keep the shipped Panabo data available during that transition.
 
 ## Compact storage and memory audit
 
@@ -76,7 +76,29 @@ Each audit runs in a fresh Node process using identical working-tree routing sou
 
 Peak memory includes parsing, Babel, routing and the audit harness. The older geographic audit used a different harness that retained the raw source buffer, so its RSS number is not the comparison baseline. Measurements are observations from this Windows/Node run, not mobile limits or guaranteed speedups. See [the memory comparison](data/davao-del-norte-memory-audit.json) for fingerprints and per-route timings.
 
-Compact graphs still load the whole province. Selective regional loading, shared provincial pack storage, turn/barrier enforcement, and device validation remain release gates. The candidate is still ignored under `.tmp-routing/osm/`, with no provincial runtime registration. Use [the device checklist](ROUTING_DEVICE_CHECKLIST.md) for current shipped-pack regressions and the later provincial gate.
+Compact graphs still load the whole province. Selective regional loading, shared provincial pack storage, unresolved source restrictions, and device validation remain release gates. The candidate is still ignored under `.tmp-routing/osm/`, with no provincial runtime registration. Use [the device checklist](ROUTING_DEVICE_CHECKLIST.md) for current shipped-pack regressions and the later provincial gate.
+
+## Turn restrictions and node passage
+
+Routing search now retains restriction progress as part of its search state. Reaching the same junction from another road can have a different legal continuation. Relations compile into directed edge sequences through a via node or ordered via ways, including ways split into several graph edges. Partial snapped edges retain their original transition identity. This applies to both compact and legacy graphs that contain the required OSM records.
+
+Supported values are `no_left_turn`, `no_right_turn`, `no_u_turn`, `no_straight_on`, `only_left_turn`, `only_right_turn`, `only_straight_on`, `only_u_turn`, `no_entry` and `no_exit`. Mode-specific keys/types and semicolon-separated exceptions select the applicable rules. Walking does not inherit generic vehicle turn restrictions. Source references: [OSM restriction relations](https://wiki.openstreetmap.org/wiki/Relation:restriction), [access](https://wiki.openstreetmap.org/wiki/Key:access), and [barriers](https://wiki.openstreetmap.org/wiki/Key:barrier).
+
+Conditional turn prohibitions/obligations are conservatively applied all day; there is no schedule evaluator. Conditional access does not establish permission. Malformed, disconnected or excessively complex relation paths are recorded in `routingPolicy.unresolved`, not guessed. Compilation caps at 256 path edges, 256 alternatives and 10,000 traversal visits per applicable rule. Unresolved records remain a provincial release gate.
+
+Node policy uses `foot` for walking, and `motorcar`, `motor_vehicle`, then `vehicle` for driving, ahead of general `access`. Private/destination/customer-only or unknown access is excluded from public through-routing. Bollards and common pedestrian-passable barriers allow walking but block driving unless explicit mode permission establishes passage. Gates require mapped public permission; locked gates block passage. Unknown barriers, fences and walls block passage by default. A generic `access=yes` does not make a physical bollard passable by car. These are deliberately conservative app defaults, not assertions about unmapped real-world gate access. Vehicle dimensions, permits, opening hours and live gate status are not modeled.
+
+Routes can end at a blocked node on its approach side, but cannot expand through or depart from that node. A route ending immediately before a barrier remains possible. Starting a new calculation midway along a road preserves restrictions ahead; it cannot infer an approach driven before that starting position. Carrying confirmed traversal history across a reroute that begins inside a multi-way restricted maneuver remains future navigation-state work.
+
+The dated provincial candidate contains 328 relations: 321 driving rules compile (13 conditional rules use the conservative policy), one public-service-vehicle-only relation is inapplicable to car mode, and six relations have incomplete member lists. Their IDs and reasons are retained in [the restriction audit](data/davao-del-norte-restriction-audit.json). No pedestrian-specific relation occurs in this candidate; dedicated fixtures exercise that behavior. The importer now also preserves `type=restriction:foot` and other mode-specific relation types in future imports.
+
+The audit identifies 3,971 tagged barrier nodes. Passage is blocked at 3,196 nodes for walking and 3,354 for driving, including access-tagged nodes. All 34 successful geographic route samples still succeed; both mainland-to-Samal samples still return no route. These samples do not traverse every restricted junction; dedicated junction fixtures establish rule behavior. Historical audit files and source metadata describe the engine at their original build time; the latest runtime policy summary is authoritative for enforcement capability.
+
+```powershell
+node --expose-gc --max-old-space-size=4096 scripts/audit-routing-runtime.cjs --graph=.tmp-routing/osm/davaoDelNorteRoutingGraph.compact.json --report=docs/data/davao-del-norte-routing-audit.json --output=docs/data/davao-del-norte-restriction-audit.json
+```
+
+The candidate remains disabled pending source cleanup, pack integration and device validation.
 
 ## Checks
 

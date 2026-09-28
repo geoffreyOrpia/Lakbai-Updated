@@ -4,7 +4,7 @@ import { calculateOfflineRoute } from '../src/domain/usecases/offlineNavigation.
 import { BundledRoutingGraphRepository } from '../src/data/repositories/routingGraphRepository.jsx';
 
 const nodes = [
-  { id: 'a', lng: 125.6, lat: 7.3, osmTags: { barrier: 'gate' } },
+  { id: 'a', lng: 125.6, lat: 7.3, osmTags: { barrier: 'gate', foot: 'yes', motorcar: 'yes' } },
   { id: 'b', lng: 125.62, lat: 7.3 },
   { id: 'c', lng: 125.63, lat: 7.3 },
 ];

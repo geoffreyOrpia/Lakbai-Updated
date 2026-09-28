@@ -89,7 +89,7 @@ class Roads(osmium.SimpleHandler):
 
     def relation(self, relation):
         tags = dict(relation.tags)
-        if tags.get('type') != 'restriction':
+        if tags.get('type') != 'restriction' and not tags.get('type', '').startswith('restriction:'):
             return
         members = [{'type': member.type, 'ref': str(member.ref), 'role': member.role}
                    for member in relation.members]

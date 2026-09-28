@@ -12,6 +12,8 @@ require.extensions['.jsx'] = (module, filename) => {
   });
   module._compile(transformed.code, filename);
 };
+const { nodePassageAllowed } = require(path.resolve('src/core/routing/accessRules.jsx'));
+const { compactNodes, COMPACT_GRAPH_FORMAT } = require(path.resolve('src/core/routing/compactGraph.jsx'));
 const { calculateOfflineRoute } = require(path.resolve('src/domain/usecases/offlineNavigation.jsx'));
 const arg = name => process.argv.find(value => value.startsWith('--' + name + '='))?.split('=').slice(1).join('=');
 const graphPath = arg('graph');
@@ -27,6 +29,11 @@ if ((graph.sourceGraphSha256 ?? sha256) !== audit.graphSha256) throw new Error('
 const memory = () => Object.fromEntries(Object.entries(process.memoryUsage()).map(([key,value]) => [key, Math.round(value / 1024 / 1024)]));
 if (global.gc) global.gc();
 const memoryAfterLoadMiB = memory();
+const nodePassage = { barrierNodes: 0, blockedThroughNodes: { walk: 0, drive: 0 } };
+for (const node of graph.format === COMPACT_GRAPH_FORMAT ? compactNodes(graph) : graph.nodes) {
+  if (node.osmTags?.barrier) nodePassage.barrierNodes += 1;
+  for (const mode of ['walk', 'drive']) if (!nodePassageAllowed(node, mode)) nodePassage.blockedThroughNodes[mode] += 1;
+}
 const pairs = [
   ['City of Panabo', 'City of Tagum'],
   ['City of Tagum', 'Talaingod'],
@@ -37,6 +44,7 @@ const pairs = [
   ['City of Panabo', 'Island Garden City of Samal'],
 ];
 const results = [];
+let routingPolicy;
 for (const mode of ['walk', 'drive']) {
   const areas = audit.modeConnectivity[mode].areas;
   const localPairs = areas.map(area => [area.name, area.name]);
@@ -46,6 +54,7 @@ for (const mode of ['walk', 'drive']) {
     const to = start === end ? targetArea.sampleDestination : targetArea.anchor;
     const started = performance.now();
     const route = calculateOfflineRoute({ graph, from, to, mode, maxSnapDistanceKm: 0.05 });
+    routingPolicy = route.routingPolicy ?? routingPolicy;
     results.push({ mode, sample: start === end ? 'within-municipality' : 'between-municipalities', from: start, to: end, ok: route.ok, reason: route.reason ?? null,
       distanceKm: route.ok ? Math.round(route.distanceKm * 1000) / 1000 : null,
       durationMin: route.durationMin ?? null,
@@ -61,10 +70,13 @@ audit.desktopRuntime = { graphFormat: graph.format ?? 'legacy-json', graphSha256
   peakResidentMiB: Math.round(process.resourceUsage().maxRSS / 1024),
   nodeVersion: process.version, platform: process.platform,
   runtimeSourceSha256,
+  routingPolicy, nodePassage,
   runtimeSourceNote: 'Measured against working-tree routing sources; fingerprints include pending navigation edits.',
   memoryAfterRoutesMiB: memory(),
   includesIndexBuildInFirstRoute: true,
   routes: results,
 };
+audit.limitations = audit.limitations.map(item => item.includes('not enforced by the current engine')
+  ? 'See desktopRuntime.routingPolicy for compiled, conservative conditional and unresolved restrictions; blocked-through nodes are reported separately.' : item);
 fs.writeFileSync(arg('output') ?? auditPath, JSON.stringify(audit, null, 2) + '\n');
 console.log(JSON.stringify(audit.desktopRuntime, null, 2));

@@ -244,6 +244,7 @@ export const calculateOfflineRoute = ({
     return {
       ok: false,
       reason: 'no-route',
+      routingPolicy: index.turnPolicy.summary,
       startSnap,
       endSnap,
     };
@@ -252,6 +253,7 @@ export const calculateOfflineRoute = ({
   const summary = summarizeRoutePath(path, mode);
   return {
     ok: true,
+    routingPolicy: index.turnPolicy.summary,
     mode,
     preference: normalizedPreference,
     scenicAnchorCount: scenicOsmIds.size,
