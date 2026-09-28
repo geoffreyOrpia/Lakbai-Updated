@@ -9,6 +9,7 @@ import {
 import { OFFLINE_BASEMAP_META } from '../src/data/assets/offlineBasemapAsset.jsx';
 import {
   createOfflineContextMapData,
+  offlineContextContainsPosition,
   offlineContextMapBounds,
 } from '../src/core/maps/offlineContextMapData.jsx';
 
@@ -69,6 +70,12 @@ describe('destination planning map data', () => {
     const [west, south, east, north] = offlineContextMapBounds(context);
     expect(east).toBeGreaterThan(west);
     expect(north).toBeGreaterThan(south);
+  });
+
+  test('recognizes positions inside Davao del Norte and rejects nearby outside points', () => {
+    expect(offlineContextContainsPosition({ lat: 7.4477, lng: 125.8071 })).toBe(true);
+    expect(offlineContextContainsPosition({ lat: 7.1336, lng: 125.6847 })).toBe(true);
+    expect(offlineContextContainsPosition({ lat: 7.0807, lng: 125.608 })).toBe(false);
   });
 
   test('normalizes city naming when selecting municipality context', () => {

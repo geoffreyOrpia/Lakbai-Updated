@@ -35,7 +35,7 @@ export const HomeScreen = ({
         <Text style={styles.eyebrow}>DAVAO DEL NORTE</Text>
         <Text style={styles.title}>Explore confidently, even beyond the signal.</Text>
         <Text style={styles.subtitle}>
-          Saved maps, destination guides, itineraries, and nearby-place data keep working when your signal does not.
+          Saved maps, destination guides, itineraries, and province-wide offline discovery keep working when your signal does not.
         </Text>
       </View>
 
@@ -58,15 +58,15 @@ export const HomeScreen = ({
         <Ionicons name="chevron-forward" size={18} color={colors.primary} />
       </Pressable>
 
-      <Pressable accessibilityRole="button" accessibilityLabel="Find nearby saved places" style={({
+      <Pressable accessibilityRole="button" accessibilityLabel="Open offline discovery" style={({
       pressed
     }) => [styles.nearby, shadows.card, pressed && styles.pressed]} onPress={() => viewModel.openNearby()}>
         <View style={styles.nearbyIcon}>
           <Ionicons name="location" size={21} color={colors.accent} />
         </View>
         <View style={styles.readinessCopy}>
-          <Text style={styles.nearbyTitle}>Nearby Places</Text>
-          <Text style={styles.readinessText}>Use GPS to rank attractions from your saved destination packs—even without internet.</Text>
+          <Text style={styles.nearbyTitle}>Offline Discovery</Text>
+          <Text style={styles.readinessText}>Search local places and provincial streets, drop pins, or use GPS to rank saved-pack places—without internet.</Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color={colors.accent} />
       </Pressable>

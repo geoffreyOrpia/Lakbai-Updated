@@ -99,6 +99,9 @@ export const AppNavigator = () => {
     return <NearbyFlow onOpenDestination={destinationId => push({
       name: 'destination',
       destinationId
+    })} onOpenNavigation={navigation => push({
+      name: 'navigation',
+      ...navigation
     })} onOpenLibrary={() => {
       setStack([]);
       setTab('library');
@@ -205,12 +208,14 @@ const HomeTab = ({
 };
 const NearbyFlow = ({
   onOpenDestination,
+  onOpenNavigation,
   onOpenLibrary,
   onBack
 }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new NearbyViewModel(container.destinationDeps, container.locationService, {
     onOpenDestination,
+    onOpenNavigation,
     onOpenLibrary,
     onBack
   }));

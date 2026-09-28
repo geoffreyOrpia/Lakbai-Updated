@@ -129,6 +129,10 @@ const writePackDirectory = async (pack, directory) => {
 };
 
 export const createOfflinePackStorage = () => ({
+  getBasemapStatus: async () => {
+    await ensureSharedBasemap();
+    return sharedBasemapStatus();
+  },
   savePack: async pack => {
     await ensureSharedBasemap();
     recoverPack(pack.id);

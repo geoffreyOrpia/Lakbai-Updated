@@ -94,6 +94,8 @@ The dated provincial candidate contains 328 relations: 321 driving rules compile
 
 The audit identifies 3,971 tagged barrier nodes. Passage is blocked at 3,196 nodes for walking and 3,354 for driving, including access-tagged nodes. All 34 successful geographic route samples still succeed; both mainland-to-Samal samples still return no route. These samples do not traverse every restricted junction; dedicated junction fixtures establish rule behavior. Historical audit files and source metadata describe the engine at their original build time; the latest runtime policy summary is authoritative for enforcement capability.
 
+Offline street discovery is generated from the compact regional routing assets with `npm run discovery:prepare`, then clipped against the bundled 11 Davao del Norte municipal/city boundaries so broader routing-asset bounds do not leak adjacent-city street names into provincial search. The generated index stores named OSM road-way references, alternate/local/official names and road refs where available, plus one representative coordinate for opening the route planner. It deliberately does not treat a representative street coordinate as a verified entrance or destination point, and it does not replace the routing graph for actual path calculation.
+
 ```powershell
 node --expose-gc --max-old-space-size=4096 scripts/audit-routing-runtime.cjs --graph=.tmp-routing/osm/davaoDelNorteRoutingGraph.compact.json --report=docs/data/davao-del-norte-routing-audit.json --output=docs/data/davao-del-norte-restriction-audit.json
 ```

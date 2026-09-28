@@ -57,6 +57,7 @@ export const packs = [{
   spots: [{
     id: 'spot-samal-ferry',
     name: 'Port of Babak',
+    aliases: ['Babak Port', 'Babak Ferry Port'],
     category: 'transport',
     lat: 7.1336203,
     lng: 125.6847488,
@@ -348,6 +349,7 @@ export const packs = [{
   spots: [{
     id: 'spot-tag-cathedral',
     name: 'Christ the King Cathedral',
+    aliases: ['Tagum Cathedral', 'Christ the King Cathedral Tagum'],
     category: 'landmark',
     lat: 7.4477,
     lng: 125.8071,
@@ -454,6 +456,7 @@ export const packs = [{
   spots: [{
     id: 'spot-pan-entrance',
     name: 'Panabo Mangrove Park',
+    aliases: ['J.P. Laurel Mangrove Reforestation Area', 'Panabo Mangrove Boardwalk'],
     category: 'park',
     lat: 7.272383,
     lng: 125.680829,

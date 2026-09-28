@@ -28,6 +28,17 @@ Deterministic automated GPS-trace fixtures now exercise forward travel, stationa
 - Move through an area with degraded GPS or temporarily disable location services, then restore a good fix. Confirm progress, remaining distance/ETA and spoken guidance pause rather than jump, and resume from the recovered position without replaying obsolete instructions.
 - If device logs expose delayed or out-of-order location callbacks, confirm older timestamps are ignored. Do not treat simulator-injected coordinates as evidence for this device check.
 
+## Offline discovery gate — device pending
+
+Offline Discovery uses bundled catalog content plus a generated street-name index from the same mainland and Samal routing datasets. Search results and dropped pins are routing references, not automatically verified entrances.
+
+- With airplane mode enabled, search several known place aliases and named roads in Tagum, Panabo, northern mainland municipalities and Samal. Confirm results appear without a network request and opening a street/pin stays inside LakBai.
+- Deny foreground location and confirm place/street search, recent targets and saved dropped pins still work. GPS denial should affect distance ordering only.
+- Long-press the provincial offline map in both mainland and Samal coverage. Confirm the pin persists after an app restart and remains clearly labeled as a user-selected coordinate.
+- Route to a named street and dropped pin. Confirm the navigation screen displays the unverified-target notice and does not imply the coordinate is an entrance, parking area or legal access point.
+- Search an alias such as a local/alternate road name and confirm the canonical OSM road name is shown. Record duplicate or ambiguous road-name results rather than assuming one representative point identifies the whole road.
+- Verify recent destinations remain device-local and bounded; removing a dropped pin must not remove destination packs, favorites or itineraries.
+
 ## Provincial coverage and recovery gate
 
 This gate is ready for device testing. Do not mark it passed from Panabo results or the desktop audit. Six incomplete restriction relations are conservatively excluded by blocking driving on their known approach roads; no missing turn membership was guessed. The engine enforces supported restrictions and conservative barrier rules.

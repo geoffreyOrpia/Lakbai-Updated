@@ -3,15 +3,18 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { formatKm } from "../../../core/utils/format.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
 import { BackAction, SecondaryButton } from "../components/Buttons.jsx";
+import { DiscoveryMap } from "../components/DiscoveryMap.jsx";
 import { EmptyState } from "../components/EmptyState.jsx";
 import { InfoBanner } from "../components/InfoBanner.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
+import { SearchField } from "../components/SearchField.jsx";
 
 export const NearbyScreen = ({ viewModel }) => {
   const state = viewModel.state;
+  const searchResults = viewModel.searchResults;
   if (state.loading) {
     return <View style={styles.centerScreen}>
-        <LoadingState title="Finding nearby saved places" text="Using your current GPS position and destination packs in your local Library." />
+        <LoadingState title="Preparing offline discovery" text="Loading local places, provincial street names, saved pins, and optional GPS distance ranking." />
       </View>;
   }
 
@@ -19,23 +22,29 @@ export const NearbyScreen = ({ viewModel }) => {
       <BackAction label="Home" onPress={() => viewModel.back()} />
 
       <View style={styles.header}>
-        <Text style={styles.eyebrow}>OFFLINE GPS</Text>
-        <Text style={styles.title}>Nearby Places</Text>
-        <Text style={styles.subtitle}>Find attractions and useful stops from destination packs you already saved. Distance ranking works without an internet connection.</Text>
+        <Text style={styles.eyebrow}>DAVAO DEL NORTE · OFFLINE</Text>
+        <Text style={styles.title}>Offline Discovery</Text>
+        <Text style={styles.subtitle}>Search LakBai’s bundled local places and provincial OSM street index, keep recent targets, or long-press the local map to save a dropped pin.</Text>
       </View>
 
-      {state.savedPackCount === 0 ? <EmptyState
-        icon="bookmark-outline"
-        title="Save a destination first"
-        text="Nearby Places only uses destination packs in your local Library, so the feature remains useful when you lose signal."
-        actionLabel="Open Library"
-        onAction={() => viewModel.openLibrary()}
-      /> : null}
+      <SearchField
+        value={state.query}
+        onChangeText={value => viewModel.setQuery(value)}
+        placeholder="Search local places or streets"
+        onSubmit={() => undefined}
+      />
+
+      <DiscoveryMap
+        basemapUri={state.basemapUri}
+        fix={state.fix}
+        pins={state.pins}
+        onDropPin={point => viewModel.dropPin(point)}
+      />
 
       {state.permission === 'denied' ? <EmptyState
         icon="location-outline"
-        title="Location permission is needed"
-        text="Allow foreground location access to calculate distances to places stored on this device. Your position is not uploaded by this feature."
+        title="GPS distance sorting is off"
+        text="Offline search, street lookup, recents, and dropped pins still work. Allow foreground location only if you want nearby distance ranking. Your position is not uploaded by this feature."
         actionLabel="Try again"
         onAction={() => void viewModel.load()}
       /> : null}
@@ -45,6 +54,62 @@ export const NearbyScreen = ({ viewModel }) => {
         tone="warn"
         text={`Current GPS accuracy is about ${Math.round(state.fix.accuracy)} m, so nearby ordering is approximate. Move to an open area and refresh for a better fix.`}
       /> : null}
+
+      {state.query.trim() ? <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Offline search results</Text>
+            <Text style={styles.sectionMeta}>{searchResults.length} shown</Text>
+          </View>
+          {searchResults.length ? <View style={styles.list}>
+              {searchResults.map(entry => <DiscoveryEntry
+                key={entry.id}
+                entry={entry}
+                onOpen={() => viewModel.openEntry(entry)}
+                onRoute={entry.coordinateStatus === 'derived-area-center'
+                  ? null
+                  : () => viewModel.navigateToEntry(entry)}
+              />)}
+            </View> : <EmptyState
+              icon="search-outline"
+              title="No offline match"
+              text="Try another local name, road name, OSM road reference, or destination alias."
+            />}
+        </View> : <>
+          {state.recents.length ? <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Recent destinations</Text>
+                <Text style={styles.sectionMeta}>Device local</Text>
+              </View>
+              <View style={styles.compactList}>
+                {state.recents.slice(0, 5).map(entry => <DiscoveryEntry
+                  key={`recent:${entry.id}`}
+                  entry={entry}
+                  compact
+                  onOpen={() => viewModel.openEntry(entry)}
+                  onRoute={entry.coordinateStatus === 'derived-area-center'
+                    ? null
+                    : () => viewModel.navigateToEntry(entry)}
+                />)}
+              </View>
+            </View> : null}
+
+          {state.pins.length ? <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Dropped pins</Text>
+                <Text style={styles.sectionMeta}>{state.pins.length} saved</Text>
+              </View>
+              <View style={styles.compactList}>
+                {state.pins.map(pin => <DiscoveryEntry
+                  key={pin.id}
+                  entry={pin}
+                  compact
+                  onOpen={() => viewModel.navigateToEntry(pin)}
+                  onRoute={() => viewModel.navigateToEntry(pin)}
+                  onRemove={() => void viewModel.removePin(pin.id)}
+                />)}
+              </View>
+            </View> : null}
+        </>}
 
       {state.fix ? <View style={[styles.gpsCard, shadows.soft]}>
           <View style={styles.gpsIcon}>
@@ -59,7 +124,10 @@ export const NearbyScreen = ({ viewModel }) => {
           </Pressable>
         </View> : null}
 
-      {state.fix && state.places.length === 0 ? <EmptyState icon="location-outline" title="No saved places found" text="The saved destination packs do not contain coordinate-based places yet." /> : null}
+      {state.fix && state.savedPackCount === 0 ? <InfoBanner
+        tone="info"
+        text="Nearby ranking uses saved guide packs, but province-wide offline place/street search above uses bundled data even when your Library is empty."
+      /> : null}
 
       {state.places.length ? <View style={styles.list}>
           {state.places.map(place => <Pressable
@@ -90,12 +158,63 @@ export const NearbyScreen = ({ viewModel }) => {
 
       {state.savedPackCount > 0 ? <SecondaryButton label="Refresh GPS position" icon="locate-outline" onPress={() => void viewModel.load()} /> : null}
 
-      <InfoBanner tone="info" text="Nearby Places uses only your foreground GPS fix and coordinates bundled inside saved LakBai packs. It does not search the web for nearby businesses." />
+      <InfoBanner tone="info" text="Offline Discovery does not query Google or live business listings. Street matches come from LakBai’s bundled Davao del Norte OSM routing dataset; mapped place coordinates and dropped pins are not automatically verified entrances." />
     </ScrollView>;
 };
 
+const coordinateLabel = entry => {
+  if (entry.coordinateStatus === 'verified') return 'VERIFIED POINT';
+  if (entry.coordinateStatus === 'user-pin') return 'YOUR PIN';
+  if (entry.coordinateStatus === 'osm-road-reference') return 'OSM ROAD';
+  if (entry.coordinateStatus === 'derived-area-center') return 'AREA CENTER';
+  return 'MAPPED · CHECK ACCESS';
+};
+
+const DiscoveryEntry = ({ entry, onOpen, onRoute, onRemove, compact = false }) => (
+  <View style={[styles.discoveryCard, compact && styles.discoveryCardCompact, shadows.soft]}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${entry.name}`}
+      onPress={onOpen}
+      style={({ pressed }) => [styles.discoveryMain, pressed && styles.pressed]}
+    >
+      <View style={styles.placeIcon}>
+        <Ionicons name={iconForCategory(entry.category, entry.kind)} size={17} color={colors.primary} />
+      </View>
+      <View style={styles.placeCopy}>
+        <Text style={styles.placeName}>{entry.name}</Text>
+        {entry.subtitle ? <Text style={styles.placeMeta}>{entry.subtitle}</Text> : null}
+        <View style={styles.discoveryMetaRow}>
+          <Text style={styles.coordinateLabel}>{coordinateLabel(entry)}</Text>
+          {entry.distanceKm != null ? <Text style={styles.discoveryDistance}>{formatKm(entry.distanceKm)}</Text> : null}
+        </View>
+      </View>
+    </Pressable>
+    <View style={styles.discoveryActions}>
+      {onRoute ? <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Route to ${entry.name}`}
+        onPress={onRoute}
+        style={({ pressed }) => [styles.iconAction, pressed && styles.pressed]}
+      >
+        <Ionicons name="navigate-outline" size={18} color={colors.primary} />
+      </Pressable> : null}
+      {onRemove ? <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Remove ${entry.name}`}
+        onPress={onRemove}
+        style={({ pressed }) => [styles.iconAction, pressed && styles.pressed]}
+      >
+        <Ionicons name="trash-outline" size={17} color={colors.danger ?? colors.accentDark} />
+      </Pressable> : null}
+    </View>
+  </View>
+);
+
 const iconForCategory = (category, kind) => {
   if (kind === 'destination') return 'map-outline';
+  if (kind === 'street') return 'trail-sign-outline';
+  if (kind === 'pin') return 'pin-outline';
   if (['park', 'nature'].includes(category)) return 'leaf-outline';
   if (['beach', 'island'].includes(category)) return 'water-outline';
   if (category === 'viewpoint') return 'telescope-outline';
@@ -121,6 +240,27 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   header: {
+    gap: spacing.xs,
+  },
+  section: {
+    gap: spacing.sm,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sectionTitle: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  sectionMeta: {
+    color: colors.muted,
+    fontSize: 9.8,
+    fontWeight: '800',
+  },
+  compactList: {
     gap: spacing.xs,
   },
   eyebrow: {
@@ -183,6 +323,54 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: spacing.sm,
+  },
+  discoveryCard: {
+    minHeight: 76,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    backgroundColor: colors.white,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  discoveryCardCompact: {
+    minHeight: 68,
+  },
+  discoveryMain: {
+    flex: 1,
+    minWidth: 0,
+    padding: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  discoveryMetaRow: {
+    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  coordinateLabel: {
+    color: colors.muted,
+    fontSize: 8.5,
+    fontWeight: '900',
+    letterSpacing: 0.25,
+  },
+  discoveryDistance: {
+    color: colors.primary,
+    fontSize: 9.5,
+    fontWeight: '900',
+  },
+  discoveryActions: {
+    paddingRight: spacing.xs,
+    gap: 2,
+  },
+  iconAction: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   placeCard: {
     minHeight: 104,

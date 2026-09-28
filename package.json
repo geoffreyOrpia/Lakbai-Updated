@@ -42,7 +42,8 @@
     "maps:prepare": "node scripts/prepare-offline-basemap.mjs",
     "routing:prepare": "node scripts/prepare-routing-graph.mjs",
     "check": "npm run deps:check && npm run lint && npm test && npm run doctor",
-    "routing:prepare:province": "node scripts/prepare-routing-graph.mjs --region=davao-del-norte"
+    "routing:prepare:province": "node scripts/prepare-routing-graph.mjs --region=davao-del-norte",
+    "discovery:prepare": "node scripts/prepare-offline-discovery-index.mjs"
   },
   "private": true
 }

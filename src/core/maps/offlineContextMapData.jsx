@@ -19,6 +19,36 @@ const collectPositions = coordinates => {
   return coordinates.flatMap(collectPositions);
 };
 
+const pointInRing = (point, ring) => {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    const intersects = ((yi > point.lat) !== (yj > point.lat))
+      && point.lng < ((xj - xi) * (point.lat - yi)) / ((yj - yi) || Number.EPSILON) + xi;
+    if (intersects) inside = !inside;
+  }
+  return inside;
+};
+
+const pointInPolygon = (point, polygon) => (
+  polygon?.length > 0
+  && pointInRing(point, polygon[0])
+  && !polygon.slice(1).some(ring => pointInRing(point, ring))
+);
+
+export const offlineContextContainsPosition = point => {
+  if (!Number.isFinite(point?.lat) || !Number.isFinite(point?.lng)) return false;
+  return (davaoDelNorteMunicipalities.features ?? []).some(feature => {
+    const geometry = feature?.geometry;
+    if (geometry?.type === 'Polygon') return pointInPolygon(point, geometry.coordinates);
+    if (geometry?.type === 'MultiPolygon') {
+      return geometry.coordinates.some(polygon => pointInPolygon(point, polygon));
+    }
+    return false;
+  });
+};
+
 export const createOfflineContextMapData = pack => {
   const municipality = normalizeMunicipality(pack?.destination?.municipality);
   const features = (davaoDelNorteMunicipalities.features ?? []).filter(feature => {

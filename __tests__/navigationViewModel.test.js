@@ -96,6 +96,7 @@ const createVm = ({
   fix = { lat: 7.2999, lng: 125.6801, accuracy: 8 },
   graphValue = graph,
   basemapUri = 'file:///maps/davao-del-norte.pmtiles',
+  bundledBasemapUri = 'file:///maps/davao-del-norte.pmtiles',
   routingGraphUri = 'file:///packs/panabo/routing.graph.json',
 } = {}) => {
   const routingDeps = {
@@ -112,7 +113,14 @@ const createVm = ({
       getOfflineBundleStatus: jest.fn().mockResolvedValue(
         basemapUri ? { basemapUri, routingGraphUri } : null,
       ),
+      getOfflineBasemapStatus: jest.fn().mockResolvedValue(
+        bundledBasemapUri ? { uri: bundledBasemapUri } : null,
+      ),
       getSavedPack: jest.fn().mockResolvedValue({
+        trails: [verifiedTrail],
+        spots: offlineSpots,
+      }),
+      getBundledPack: jest.fn().mockResolvedValue({
         trails: [verifiedTrail],
         spots: offlineSpots,
       }),
@@ -565,12 +573,21 @@ describe('NavigationViewModel', () => {
     expect(vm.state.error).toContain('GPS accuracy');
   });
 
-  test('requires saved map files before enabling offline navigation', async () => {
+  test('uses the bundled provincial basemap when no destination pack is saved', async () => {
     const { vm } = createVm({ basemapUri: null });
 
     await vm.load();
 
-    expect(vm.state.error).toContain('Save or update this destination pack');
+    expect(vm.state.error).toBeNull();
+    expect(vm.state.offlineBasemapUri).toBe('file:///maps/davao-del-norte.pmtiles');
+  });
+
+  test('reports a basemap preparation failure only when neither saved nor bundled map is available', async () => {
+    const { vm } = createVm({ basemapUri: null, bundledBasemapUri: null });
+
+    await vm.load();
+
+    expect(vm.state.error).toContain('could not prepare');
     expect(vm.state.offlineBasemapUri).toBeNull();
   });
 

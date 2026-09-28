@@ -102,6 +102,8 @@ export class NavigationViewModel extends ViewModel {
       mode: route.mode ?? 'walk',
       preference: normalizeRoutePreference(route.preference),
       coverage: route.coverage ?? null,
+      discoveryTarget: route.discoveryTarget === true,
+      coordinateStatus: route.coordinateStatus ?? null,
       previewStart: route.previewStart ?? null,
       offlineBasemapUri: null,
       fix: null,
@@ -141,9 +143,11 @@ export class NavigationViewModel extends ViewModel {
 
   load = async () => {
     try {
-      const [bundle, savedPack] = await Promise.all([
+      const [bundle, bundledBasemap, savedPack, bundledPack] = await Promise.all([
         this.destinationDeps.packRepository.getOfflineBundleStatus?.(this.state.destinationId) ?? null,
+        this.destinationDeps.packRepository.getOfflineBasemapStatus?.() ?? null,
         this.destinationDeps.packRepository.getSavedPack?.(this.state.destinationId) ?? null,
+        this.destinationDeps.packRepository.getBundledPack?.(this.state.destinationId) ?? null,
       ]);
       const graph = await this.routingDeps.routingGraphRepository.getForDestination(
         this.state.destinationId,
@@ -151,12 +155,13 @@ export class NavigationViewModel extends ViewModel {
         this.state.target,
         bundle?.sharedRouting ?? null,
       );
+      const navigationPack = savedPack ?? bundledPack;
       const trailPreview = this.state.trailId
-        ? savedPack?.trails?.find(trail => (
+        ? navigationPack?.trails?.find(trail => (
           trail.id === this.state.trailId && trail.routeVerified === true
         )) ?? null
         : null;
-      const offlinePois = (savedPack?.spots ?? []).filter(spot => (
+      const offlinePois = (navigationPack?.spots ?? []).filter(spot => (
         haversineKm(spot, this.state.target) > 0.08
       ));
       const scenicPois = offlinePois.filter(spot => (
@@ -169,11 +174,11 @@ export class NavigationViewModel extends ViewModel {
         trailPreview,
         offlinePois,
         scenicPois,
-        offlineBasemapUri: bundle?.basemapUri ?? null,
+        offlineBasemapUri: bundle?.basemapUri ?? bundledBasemap?.uri ?? null,
         error: !graph
           ? 'Offline road routing is not available for this destination yet.'
-          : !bundle?.basemapUri
-          ? 'Save or update this destination pack before using offline navigation.'
+          : !(bundle?.basemapUri ?? bundledBasemap?.uri)
+          ? 'LakBai could not prepare the bundled Davao del Norte offline basemap.'
           : null,
       });
     } catch {

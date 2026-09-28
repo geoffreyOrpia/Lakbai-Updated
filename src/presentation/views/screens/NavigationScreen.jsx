@@ -110,6 +110,10 @@ export const NavigationScreen = ({ viewModel }) => {
 
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
       {state.gpsError ? <InfoBanner tone="warn" text={state.gpsError} /> : null}
+      {state.discoveryTarget && state.coordinateStatus !== 'verified' ? <InfoBanner
+        tone="info"
+        text="This navigation target is an offline map reference or user-selected pin, not a locally verified entrance. Confirm signs, gates, and permitted access when you arrive."
+      /> : null}
       {state.route?.preference === 'scenic' && state.route.scenicAnchorCount === 0 ? <InfoBanner
         tone="warn"
         text="No curated scenic POI is close enough to this routing graph to change the route, so Scenic currently behaves like Direct."

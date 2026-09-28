@@ -60,4 +60,7 @@ export class PackRepositoryImpl {
   getOfflineBundleStatus = async id => {
     return this.offlineStorage?.getStatus(id) ?? null;
   };
+  getOfflineBasemapStatus = async () => {
+    return this.offlineStorage?.getBasemapStatus?.() ?? null;
+  };
 }

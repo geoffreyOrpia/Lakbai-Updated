@@ -1,4 +1,5 @@
 import { createDestinationCacheDao } from "../../data/local/sqlite/destinationCacheDao.jsx";
+import { createDiscoveryStateDao } from "../../data/local/sqlite/discoveryStateDao.jsx";
 import { createFavoriteDao } from "../../data/local/sqlite/favoriteDao.jsx";
 import { createItineraryDao } from "../../data/local/sqlite/itineraryDao.jsx";
 import { createPackContentDao } from "../../data/local/sqlite/packContentDao.jsx";
@@ -6,6 +7,7 @@ import { createPackMetaDao } from "../../data/local/sqlite/packMetaDao.jsx";
 import { createPreferencesDao } from "../../data/local/sqlite/preferencesDao.jsx";
 import { createSafetyDao } from "../../data/local/sqlite/safetyDao.jsx";
 import { LocalDestinationRepository } from "../../data/repositories/destinationRepository.jsx";
+import { LocalDiscoveryRepository } from "../../data/repositories/discoveryRepository.jsx";
 import { LocalFavoriteRepository } from "../../data/repositories/favoriteRepository.jsx";
 import { LocalItineraryRepository } from "../../data/repositories/itineraryRepository.jsx";
 import { PackRepositoryImpl } from "../../data/repositories/packRepository.jsx";
@@ -24,6 +26,7 @@ import { createSpeechService } from "../../data/services/speechService.jsx";
 const buildContainer = () => {
   // Local storage
   const destinationCacheDao = createDestinationCacheDao();
+  const discoveryStateDao = createDiscoveryStateDao();
   const favoriteDao = createFavoriteDao();
   const packContentDao = createPackContentDao();
   const packMetaDao = createPackMetaDao();
@@ -34,6 +37,7 @@ const buildContainer = () => {
 
   // Repositories
   const destinationRepository = new LocalDestinationRepository(destinationCacheDao);
+  const discoveryRepository = new LocalDiscoveryRepository(discoveryStateDao);
   const favoriteRepository = new LocalFavoriteRepository(favoriteDao);
   const packRepository = new PackRepositoryImpl(packContentDao, packMetaDao, offlinePackStorage);
   const preferencesRepository = new LocalPreferencesRepository(preferencesDao);
@@ -51,7 +55,8 @@ const buildContainer = () => {
   const destinationDeps = {
     destinationRepository,
     packRepository,
-    favoriteRepository
+    favoriteRepository,
+    discoveryRepository
   };
   const preferencesDeps = {
     preferencesRepository

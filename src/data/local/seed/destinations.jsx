@@ -3,6 +3,7 @@
 export const destinations = [{
   id: 'samal',
   name: 'Samal Island',
+  aliases: ['Island Garden City of Samal', 'IGaCoS', 'IGACOS'],
   area: 'Island Garden City of Samal',
   municipality: 'Samal',
   province: 'Davao del Norte',
@@ -31,6 +32,7 @@ export const destinations = [{
 }, {
   id: 'hagimit-falls',
   name: 'Hagimit Falls',
+  aliases: ['Hagimit Falls Nature Park'],
   area: 'Peñaplata, Samal',
   municipality: 'Samal',
   province: 'Davao del Norte',
@@ -59,6 +61,7 @@ export const destinations = [{
 }, {
   id: 'monfort-bat-sanctuary',
   name: 'Monfort Bat Sanctuary',
+  aliases: ['Monfort Bat Cave', 'Monfort Cave'],
   area: 'Babak, Samal',
   municipality: 'Samal',
   province: 'Davao del Norte',
@@ -87,6 +90,7 @@ export const destinations = [{
 }, {
   id: 'tagum',
   name: 'Tagum City',
+  aliases: ['City of Tagum', 'Tagum'],
   area: 'Tagum City',
   municipality: 'Tagum',
   province: 'Davao del Norte',
@@ -115,6 +119,7 @@ export const destinations = [{
 }, {
   id: 'panabo',
   name: 'Panabo City',
+  aliases: ['City of Panabo', 'Panabo'],
   area: 'Panabo City',
   municipality: 'Panabo',
   province: 'Davao del Norte',
