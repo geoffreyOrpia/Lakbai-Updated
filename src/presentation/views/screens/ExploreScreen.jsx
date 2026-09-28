@@ -10,6 +10,7 @@ import { InfoBanner } from "../components/InfoBanner.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { SearchField } from "../components/SearchField.jsx";
 import { SecondaryButton } from "../components/Buttons.jsx";
+import { SmartExplorePanel } from "../components/SmartExplorePanel.jsx";
 import { colors, layout, radius, spacing } from "../../../theme.jsx";
 const CATEGORY_OPTIONS = [{
   key: 'all',
@@ -106,6 +107,8 @@ export const ExploreScreen = ({
 
       <SearchField value={state.query} onChangeText={value => viewModel.setQuery(value)} onSubmit={() => undefined} />
       <CategoryChips options={CATEGORY_OPTIONS} selected={state.category} onSelect={key => viewModel.setCategory(key)} />
+
+      <SmartExplorePanel viewModel={viewModel} />
 
       <View style={styles.onlineCard}>
         <View style={styles.onlineHeading}>

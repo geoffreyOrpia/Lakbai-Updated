@@ -141,10 +141,18 @@ export const AppNavigator = () => {
       })} onOpenNearby={() => push({
         name: 'nearby'
       })} /> : null}
-        {tab === 'explore' ? <ExploreTab initialQuery={exploreQuery} onOpenDestination={destinationId => push({
-        name: 'destination',
-        destinationId
-      })} /> : null}
+        {tab === 'explore' ? <ExploreTab
+          initialQuery={exploreQuery}
+          onOpenDestination={destinationId => push({
+            name: 'destination',
+            destinationId
+          })}
+          onPlanTrip={draft => {
+            setTripDraft(draft);
+            setExploreQuery('');
+            setTab('trips');
+          }}
+        /> : null}
         {tab === 'trips' ? <TripsTab
           initialRouteDraft={tripDraft}
           onDraftConsumed={() => setTripDraft(null)}
@@ -250,12 +258,16 @@ const NearbyFlow = ({
 };
 const ExploreTab = ({
   initialQuery,
-  onOpenDestination
+  onOpenDestination,
+  onPlanTrip,
 }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new ExploreViewModel(
     container.destinationDeps,
     container.onlineResearchDeps,
+    container.routingDeps,
+    container.locationService,
+    { onOpenDestination, onPlanTrip },
   ));
   return <ExploreScreen viewModel={viewModel} initialQuery={initialQuery} onOpenDestination={onOpenDestination} />;
 };

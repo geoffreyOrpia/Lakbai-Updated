@@ -31,6 +31,7 @@ const createViewModel = () => {
   };
   const nav = {
     onOpenDestination: jest.fn(),
+    onOpenNavigation: jest.fn(),
   };
   const viewModel = new TripsViewModel(
     { itineraryRepository },
@@ -61,6 +62,50 @@ describe('TripsViewModel itinerary editing', () => {
       }),
     ]);
   });
+  test('converts Smart Explore output into exact POI stops and preserves driving mode', () => {
+    const form = routeDraftToTripForm({
+      kind: 'smart-explore',
+      title: 'Smart Tagum trip',
+      travelMode: 'drive',
+      notes: 'Generated offline.',
+      stops: [{
+        destinationId: 'tagum',
+        destinationName: 'Christ the King Cathedral',
+        municipality: 'Tagum',
+        placeId: 'spot-tag-cathedral',
+        target: {
+          label: 'Christ the King Cathedral',
+          lat: 7.4477,
+          lng: 125.8071,
+        },
+        note: 'Matches culture',
+      }, {
+        destinationId: 'tagum',
+        destinationName: 'Museyo Sukwahi',
+        municipality: 'Tagum',
+        placeId: 'spot-tag-museum',
+        target: {
+          label: 'Museyo Sukwahi',
+          lat: 7.4489,
+          lng: 125.8045,
+        },
+        note: 'Matches culture',
+      }],
+    });
+
+    expect(form.navigationMode).toBe('drive');
+    expect(form.stops).toHaveLength(2);
+    expect(form.stops[0]).toEqual(expect.objectContaining({
+      destinationId: 'tagum',
+      placeId: 'spot-tag-cathedral',
+      target: {
+        label: 'Christ the King Cathedral',
+        lat: 7.4477,
+        lng: 125.8071,
+      },
+    }));
+  });
+
   test('loads an existing itinerary into the shared editor', () => {
     const { viewModel } = createViewModel();
 
@@ -72,6 +117,7 @@ describe('TripsViewModel itinerary editing', () => {
       title: existingTrip.title,
       travelDate: existingTrip.travelDate,
       notes: existingTrip.notes,
+      navigationMode: 'walk',
       stops: existingTrip.stops,
     });
     expect(viewModel.state.form.stops).not.toBe(existingTrip.stops);
@@ -136,6 +182,80 @@ describe('TripsViewModel itinerary editing', () => {
       percent: 50,
       missingStops: [trip.stops[1]],
     });
+  });
+
+  test('navigates a smart trip to its exact POI targets and restores persisted driving mode', () => {
+    const { viewModel, nav } = createViewModel();
+    viewModel.setState({
+      destinations: [{
+        destination: {
+          id: 'tagum',
+          name: 'Tagum City',
+          municipality: 'Tagum',
+          offlineNavigation: {
+            target: { label: 'Default Tagum target', lat: 7.4477, lng: 125.8071 },
+          },
+        },
+      }],
+    });
+    const smartTrip = {
+      id: 'trip-smart',
+      title: 'Smart Tagum trip',
+      stops: [{
+        destinationId: 'tagum',
+        destinationName: 'Museyo Sukwahi',
+        municipality: 'Tagum',
+        placeId: 'spot-tag-museum',
+        navigationMode: 'drive',
+        target: {
+          label: 'Museyo Sukwahi',
+          lat: 7.4489,
+          lng: 125.8045,
+        },
+      }],
+    };
+
+    expect(viewModel.navigateTrip(smartTrip)).toBe(true);
+    expect(nav.onOpenNavigation).toHaveBeenCalledWith(expect.objectContaining({
+      mode: 'drive',
+      multiStops: [expect.objectContaining({
+        placeId: 'spot-tag-museum',
+        name: 'Museyo Sukwahi',
+        target: {
+          label: 'Museyo Sukwahi',
+          lat: 7.4489,
+          lng: 125.8045,
+        },
+      })],
+    }));
+  });
+
+  test('persists navigation mode inside stop JSON for restart-safe smart trips', async () => {
+    const { viewModel, itineraryRepository } = createViewModel();
+    viewModel.setState({
+      mode: 'create',
+      form: {
+        title: 'Driving day',
+        travelDate: '2026-10-05',
+        notes: '',
+        navigationMode: 'drive',
+        stops: [{
+          destinationId: 'tagum',
+          destinationName: 'Museyo Sukwahi',
+          municipality: 'Tagum',
+          plannedTime: '',
+          note: '',
+          placeId: 'spot-tag-museum',
+          target: { label: 'Museyo Sukwahi', lat: 7.4489, lng: 125.8045 },
+        }],
+      },
+    });
+
+    expect(await viewModel.save()).toBe(true);
+    expect(itineraryRepository.saveItinerary).toHaveBeenCalledWith(expect.objectContaining({
+      navigationMode: 'drive',
+      stops: [expect.objectContaining({ navigationMode: 'drive' })],
+    }));
   });
 
   test('opens a missing destination through navigation', () => {
