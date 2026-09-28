@@ -84,7 +84,7 @@ Each audit runs in a fresh Node process using identical working-tree routing sou
 
 Peak memory includes parsing, Babel, routing and the audit harness. The older geographic audit used a different harness that retained the raw source buffer, so its RSS number is not the comparison baseline. Measurements are observations from this Windows/Node run, not mobile limits or guaranteed speedups. See [the memory comparison](data/davao-del-norte-memory-audit.json) for fingerprints and per-route timings.
 
-The historical comparison loads the whole province. The current pack integration below loads mainland or Samal separately and shares installed data between packs. The full build candidate remains ignored under `.tmp-routing/osm/`; the selected regional assets are registered in the runtime. Device validation remains pending; use [the device checklist](ROUTING_DEVICE_CHECKLIST.md).
+The historical comparison loads the whole province. The current pack integration below loads mainland or Samal separately and shares installed data between packs. The full build candidate remains ignored under `.tmp-routing/osm/`; the selected regional assets are registered in the runtime. Device validation remains pending; use [the release checklist](RELEASE_CHECKLIST.md).
 
 ## Turn restrictions and node passage
 
