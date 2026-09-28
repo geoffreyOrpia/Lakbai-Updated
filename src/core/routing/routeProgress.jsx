@@ -6,7 +6,15 @@ const routePoints = route => (
   (route?.geometry?.coordinates ?? []).map(([lng, lat]) => ({ lat, lng }))
 );
 
-export const projectPositionOntoRoute = (route, position) => {
+export const projectPositionOntoRoute = (
+  route,
+  position,
+  {
+    previousDistanceAlongKm = null,
+    maxBacktrackKm = 0.04,
+    progressPreferenceSlackM = 20,
+  } = {},
+) => {
   const points = routePoints(route);
   if (!position || points.length < 2) {
     return {
@@ -29,6 +37,7 @@ export const projectPositionOntoRoute = (route, position) => {
     distanceToRouteM: Number.POSITIVE_INFINITY,
     distanceAlongKm: 0,
   };
+  let bestProgressive = null;
 
   for (let index = 0; index < points.length - 1; index += 1) {
     const start = points[index];
@@ -46,13 +55,26 @@ export const projectPositionOntoRoute = (route, position) => {
     const distanceM = Math.hypot(projectedX, projectedY);
     const segmentKm = haversineKm(start, end);
 
-    if (distanceM < best.distanceToRouteM) {
-      best = {
-        distanceToRouteM: distanceM,
-        distanceAlongKm: cumulativeKm + segmentKm * t,
-      };
+    const candidate = {
+      distanceToRouteM: distanceM,
+      distanceAlongKm: cumulativeKm + segmentKm * t,
+    };
+    if (distanceM < best.distanceToRouteM) best = candidate;
+    if (
+      Number.isFinite(previousDistanceAlongKm)
+      && candidate.distanceAlongKm >= previousDistanceAlongKm - maxBacktrackKm
+      && (!bestProgressive || distanceM < bestProgressive.distanceToRouteM)
+    ) {
+      bestProgressive = candidate;
     }
     cumulativeKm += segmentKm;
+  }
+
+  if (
+    bestProgressive
+    && bestProgressive.distanceToRouteM <= best.distanceToRouteM + progressPreferenceSlackM
+  ) {
+    best = bestProgressive;
   }
 
   const totalDistanceKm = route.distanceKm || cumulativeKm;

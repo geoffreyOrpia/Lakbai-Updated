@@ -87,6 +87,7 @@ export class NavigationViewModel extends ViewModel {
       preview: false,
       permission: 'unknown',
       progressPct: 0,
+      distanceAlongKm: 0,
       remainingKm: null,
       remainingMin: null,
       usingLiveEta: false,
@@ -258,6 +259,7 @@ export class NavigationViewModel extends ViewModel {
       route: result,
       preview,
       progressPct: 0,
+      distanceAlongKm: 0,
       remainingKm: result.distanceKm,
       remainingMin: result.durationMin,
       offRouteM: null,
@@ -420,7 +422,13 @@ export class NavigationViewModel extends ViewModel {
       return;
     }
 
-    const projection = projectPositionOntoRoute(route, fix);
+    const projection = projectPositionOntoRoute(
+      route,
+      fix,
+      this.state.tracking
+        ? { previousDistanceAlongKm: this.state.distanceAlongKm }
+        : undefined,
+    );
     const next = nextRouteManeuver(route, projection.distanceAlongKm);
     const thresholdM = Math.max(BASE_OFF_ROUTE_M, (accuracyM ?? 0) * 1.8);
     const offRoute = projection.distanceToRouteM > thresholdM;
@@ -439,6 +447,7 @@ export class NavigationViewModel extends ViewModel {
       fix,
       accuracyM,
       progressPct: Math.round(projection.progress * 100),
+      distanceAlongKm: projection.distanceAlongKm,
       remainingKm: projection.remainingKm,
       remainingMin: remainingDurationMin(route, projection.remainingKm, liveSpeedMps),
       usingLiveEta: liveSpeedMps != null,
@@ -497,6 +506,7 @@ export class NavigationViewModel extends ViewModel {
         route: result,
         rerouteCount: previous.rerouteCount + 1,
         progressPct: 0,
+        distanceAlongKm: 0,
         remainingKm: result.distanceKm,
         remainingMin: result.durationMin,
         nextManeuver: result.maneuvers?.[1] ?? result.maneuvers?.[0] ?? null,
@@ -522,6 +532,7 @@ export class NavigationViewModel extends ViewModel {
       preview: false,
       tracking: false,
       progressPct: 0,
+      distanceAlongKm: 0,
       remainingKm: null,
       remainingMin: null,
       usingLiveEta: false,

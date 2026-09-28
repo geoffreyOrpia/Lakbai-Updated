@@ -272,6 +272,32 @@ describe('offline routing core', () => {
     expect(next.distanceKm).toBeGreaterThan(0);
   });
 
+  test('uses prior route progress to avoid jumping backward onto a nearby parallel segment', () => {
+    const route = {
+      distanceKm: 2.25,
+      durationMin: 30,
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+          [125, 7],
+          [125.01, 7],
+          [125.01, 7.0001],
+          [125, 7.0001],
+        ],
+      },
+    };
+    const position = { lat: 7.00002, lng: 125.005 };
+
+    const nearestOnly = projectPositionOntoRoute(route, position);
+    const progressAware = projectPositionOntoRoute(route, position, {
+      previousDistanceAlongKm: 1.5,
+    });
+
+    expect(nearestOnly.distanceAlongKm).toBeLessThan(1);
+    expect(progressAware.distanceAlongKm).toBeGreaterThan(1.5);
+    expect(progressAware.distanceToRouteM).toBeLessThan(15);
+  });
+
   test('finds offline places ahead inside the route corridor', () => {
     const route = calculateOfflineRoute({
       graph,
