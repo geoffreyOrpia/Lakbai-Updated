@@ -202,8 +202,14 @@ export const remainingFerryJourneyDurationMin = (route, distanceAlongKm = 0) => 
 
 export const isOnFerryLeg = (route, distanceAlongKm) => (
   route?.type === 'ferry-journey'
-  && Number.isFinite(route.ferryLeg?.startKm)
-  && Number.isFinite(route.ferryLeg?.endKm)
-  && distanceAlongKm >= route.ferryLeg.startKm - 0.03
-  && distanceAlongKm <= route.ferryLeg.endKm + 0.03
+    ? Number.isFinite(route.ferryLeg?.startKm)
+      && Number.isFinite(route.ferryLeg?.endKm)
+      && distanceAlongKm >= route.ferryLeg.startKm - 0.03
+      && distanceAlongKm <= route.ferryLeg.endKm + 0.03
+    : route?.type === 'multi-stop-journey'
+      ? (route.ferryLegs ?? []).some(leg => (
+        distanceAlongKm >= leg.startKm - 0.03
+        && distanceAlongKm <= leg.endKm + 0.03
+      ))
+      : false
 );

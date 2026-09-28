@@ -241,6 +241,75 @@ const createRestrictedVm = () => {
   );
 };
 
+const createMultiStopVm = ({ resumeCompletedStopCount = 0 } = {}) => {
+  const startFix = resumeCompletedStopCount > 0
+    ? { lat: 7.285, lng: 125.6805, accuracy: 5, timestamp: 1_000 }
+    : { lat: 7.2999, lng: 125.6801, accuracy: 5, timestamp: 1_000 };
+  const navigationSessionRepository = {
+    saveActiveSession: jest.fn().mockResolvedValue(),
+    getActiveSession: jest.fn().mockResolvedValue(null),
+    clearActiveSession: jest.fn().mockResolvedValue(),
+  };
+  const routingDeps = {
+    routingGraphRepository: {
+      getForDestination: jest.fn().mockResolvedValue(graph),
+      getForRegion: jest.fn().mockResolvedValue(graph),
+    },
+    navigationSessionRepository,
+    speechService: {
+      speak: jest.fn().mockResolvedValue(true),
+      stop: jest.fn().mockResolvedValue(),
+    },
+  };
+  const destinationDeps = {
+    packRepository: {
+      getOfflineBundleStatus: jest.fn().mockResolvedValue({
+        basemapUri: 'file:///maps/davao-del-norte.pmtiles',
+        routingGraphUri: 'file:///routing/mainland.routing',
+      }),
+      getOfflineBasemapStatus: jest.fn().mockResolvedValue({
+        uri: 'file:///maps/davao-del-norte.pmtiles',
+      }),
+      getSavedPack: jest.fn().mockResolvedValue({ trails: [], spots: [] }),
+      getBundledPack: jest.fn().mockResolvedValue({ trails: [], spots: [] }),
+    },
+  };
+  const locationService = {
+    requestPermissions: jest.fn().mockResolvedValue(true),
+    getCurrentFix: jest.fn().mockResolvedValue(startFix),
+    watchFix: jest.fn().mockResolvedValue(jest.fn()),
+  };
+  const multiStops = [{
+    id: 'trip-test:0:stop-one',
+    destinationId: 'panabo',
+    name: 'Stop one',
+    target: { label: 'Stop one', lat: 7.285, lng: 125.6805 },
+  }, {
+    id: 'trip-test:1:stop-two',
+    destinationId: 'panabo',
+    name: 'Stop two',
+    target: { label: 'Stop two', lat: 7.272383, lng: 125.680829 },
+  }];
+  const vm = new NavigationViewModel(
+    routingDeps,
+    destinationDeps,
+    locationService,
+    {
+      destinationId: 'panabo',
+      destinationName: 'Panabo itinerary',
+      target: multiStops.at(-1).target,
+      multiStops,
+      tripId: 'trip-test',
+      tripTitle: 'Panabo itinerary',
+      mode: 'walk',
+      coverage: 'Davao del Norte multi-stop offline journey',
+      resumeCompletedStopCount,
+    },
+    { onBack: jest.fn(), onOpenTrail: jest.fn() },
+  );
+  return { vm, navigationSessionRepository };
+};
+
 const createFerryVm = () => {
   const fix = { lat: 7.2999, lng: 125.6801, accuracy: 5, timestamp: 1_000 };
   let watchCallback = null;
@@ -297,6 +366,66 @@ const createFerryVm = () => {
 };
 
 describe('NavigationViewModel', () => {
+  test('persists multi-stop progress and clears the resume checkpoint on final arrival', async () => {
+    const { vm, navigationSessionRepository } = createMultiStopVm();
+    await vm.load();
+    await vm.startFromGps();
+
+    expect(vm.state.route).toEqual(expect.objectContaining({
+      ok: true,
+      type: 'multi-stop-journey',
+    }));
+
+    vm.setState({ tracking: true });
+    [
+      { lat: 7.296, lng: 125.6802, accuracy: 5, timestamp: 3_000 },
+      { lat: 7.291, lng: 125.68035, accuracy: 5, timestamp: 5_000 },
+      { lat: 7.2849, lng: 125.6805, accuracy: 5, timestamp: 7_000 },
+    ].forEach(fix => vm.applyFix(fix));
+    await Promise.resolve();
+
+    expect(vm.state.completedStopCount).toBe(1);
+    expect(navigationSessionRepository.saveActiveSession).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        completedStopCount: 1,
+        route: expect.objectContaining({
+          tripId: 'trip-test',
+          multiStops: expect.arrayContaining([
+            expect.objectContaining({ name: 'Stop one' }),
+            expect.objectContaining({ name: 'Stop two' }),
+          ]),
+        }),
+      }),
+    );
+
+    // Final-arrival persistence is independent of the live anti-teleport clamp,
+    // which has dedicated GPS progression coverage elsewhere in this suite.
+    vm.setState({ tracking: false });
+    vm.applyFix({ lat: 7.272383, lng: 125.680829, accuracy: 5, timestamp: 9_000 });
+    await Promise.resolve();
+
+    expect(vm.state.completedStopCount).toBe(2);
+    expect(vm.state.arrived).toBe(true);
+    expect(navigationSessionRepository.clearActiveSession).toHaveBeenCalled();
+  });
+
+  test('resumes a multi-stop journey from the first unfinished stop', async () => {
+    const { vm } = createMultiStopVm({ resumeCompletedStopCount: 1 });
+    await vm.load();
+    await vm.startFromGps();
+
+    expect(vm.state.completedStopCount).toBe(1);
+    expect(vm.state.route).toEqual(expect.objectContaining({
+      ok: true,
+      type: 'multi-stop-journey',
+    }));
+    expect(vm.state.route.stops).toHaveLength(1);
+    expect(vm.state.route.stopOffsets[0]).toEqual(expect.objectContaining({
+      stopIndex: 1,
+      stop: expect.objectContaining({ name: 'Stop two' }),
+    }));
+  });
+
   test('builds a mainland-to-Samal ferry journey and pauses road rerouting on the ferry leg', async () => {
     const { vm, emitFix } = createFerryVm();
     await vm.load();

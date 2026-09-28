@@ -17,6 +17,7 @@ const maneuverIcon = kind => {
   if (kind === 'roundabout-enter' || kind === 'roundabout-exit') return 'sync-outline';
   if (kind === 'ferry-board' || kind === 'ferry-arrive') return 'boat-outline';
   if (kind === 'trail-enter' || kind === 'trail-waypoint') return 'trail-sign-outline';
+  if (kind === 'stop-arrive') return 'location-outline';
   if (kind === 'arrive') return 'flag-outline';
   return 'arrow-up-outline';
 };
@@ -77,6 +78,8 @@ export const NavigationScreen = ({ viewModel }) => {
     : state.route?.distanceKm;
   const ferryJourney = state.route?.type === 'ferry-journey' ? state.route : null;
   const roadTrailJourney = state.route?.type === 'road-trail-journey' ? state.route : null;
+  const multiStopJourney = state.route?.type === 'multi-stop-journey' ? state.route : null;
+  const hasFerryLeg = Boolean(ferryJourney || multiStopJourney?.ferryLegs?.length);
   const shownDurationMin = ferryJourney
     ? (state.tracking || state.arrived
       ? state.remainingMin ?? ferryJourney.durationMin
@@ -103,7 +106,7 @@ export const NavigationScreen = ({ viewModel }) => {
         </View>
         <View style={styles.heroCopy}>
           <Text style={styles.eyebrow}>LAKBAI OFFLINE NAVIGATION</Text>
-          <Text style={styles.title}>{state.target?.label ?? state.destinationName}</Text>
+          <Text style={styles.title}>{multiStopJourney ? state.destinationName : state.target?.label ?? state.destinationName}</Text>
           <Text style={styles.subtitle}>
             {state.mode === 'drive' ? 'Driving' : 'Walking'} · {state.coverage ?? 'Local offline coverage'}
             {state.mode === 'walk' ? ' · ' + preferenceLabel(state.preference) : ''}
@@ -118,9 +121,13 @@ export const NavigationScreen = ({ viewModel }) => {
 
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
       {state.gpsError ? <InfoBanner tone="warn" text={state.gpsError} /> : null}
-      {ferryJourney ? <InfoBanner
+      {state.resumedSession && state.multiStops.length ? <InfoBanner
         tone="info"
-        text="This journey uses the source-reviewed DAVSAM Panacan ↔ Babak ferry link. The 30-minute crossing is a MARINA March 2026 reference, not a live ETA; current departure and queue time are not known. Confirm service and terminal access before departure."
+        text={`Resumed this saved itinerary at stop ${Math.min(state.completedStopCount + 1, state.multiStops.length)} of ${state.multiStops.length}. LakBai will recalculate the remaining journey from your next GPS fix.`}
+      /> : null}
+      {hasFerryLeg ? <InfoBanner
+        tone="info"
+        text="This journey includes the source-reviewed DAVSAM Panacan ↔ Babak ferry link. The 30-minute crossing is a MARINA March 2026 reference, not a live ETA; current departure and queue time are not known. Confirm service and terminal access before departure."
       /> : null}
       {state.journeyPhase === 'ferry' && state.tracking ? <InfoBanner
         tone="info"
@@ -164,7 +171,9 @@ export const NavigationScreen = ({ viewModel }) => {
             voiceGuidance={state.voiceGuidance}
             trailPreview={state.trailPreview}
             routePois={state.routePois}
-            timeIsReference={Boolean(ferryJourney)}
+            alternativeBaseRoute={state.alternativeBaseRoute}
+            alternativeRoutes={state.alternativeRoutes}
+            timeIsReference={hasFerryLeg}
           />
 
           {ferryJourney ? <View style={[styles.journeyCard, shadows.soft]}>
@@ -235,6 +244,51 @@ export const NavigationScreen = ({ viewModel }) => {
               </Text>
             </View> : null}
 
+          {multiStopJourney ? <View style={[styles.journeyCard, shadows.soft]}>
+              <View style={styles.journeyHeader}>
+                <View style={styles.journeyIcon}>
+                  <Ionicons name="git-commit-outline" size={19} color={colors.primary} />
+                </View>
+                <View style={styles.journeyCopy}>
+                  <Text style={styles.journeyEyebrow}>MULTI-STOP OFFLINE JOURNEY</Text>
+                  <Text style={styles.journeyTitle}>
+                    {state.completedStopCount} of {state.multiStops.length} stops completed
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.multiStopList}>
+                {multiStopJourney.journeyLegs.map(leg => {
+                  const marker = multiStopJourney.stopOffsets.find(item => item.stopIndex === leg.stopIndex);
+                  const completed = leg.stopIndex < state.completedStopCount;
+                  const ferryLeg = leg.kind === 'ferry-journey';
+                  return <View key={`journey-leg-${leg.stopIndex}`} style={styles.multiStopRow}>
+                      <View style={[
+                        styles.multiStopIcon,
+                        completed && styles.multiStopIconComplete,
+                      ]}>
+                        <Ionicons
+                          name={completed ? 'checkmark' : ferryLeg ? 'boat-outline' : 'location-outline'}
+                          size={16}
+                          color={completed ? colors.onPrimary : colors.primary}
+                        />
+                      </View>
+                      <View style={styles.multiStopCopy}>
+                        <Text style={styles.multiStopTitle}>
+                          Stop {leg.stopIndex + 1}: {marker?.stop?.name ?? 'Itinerary stop'}
+                        </Text>
+                        <Text style={styles.multiStopMeta}>
+                          {formatKm(leg.route.distanceKm)} · {formatDurationMinutes(leg.route.durationMin)}
+                          {ferryLeg ? ' travel ref. · ferry wait not included' : ''}
+                        </Text>
+                      </View>
+                    </View>;
+                })}
+              </View>
+              <Text style={styles.journeyNote}>
+                {formatKm(multiStopJourney.distanceKm)} total · {formatDurationMinutes(multiStopJourney.durationMin)}{hasFerryLeg ? ' travel reference · ferry queue/departure time varies' : ' estimated travel time'}
+              </Text>
+            </View> : null}
+
           {state.routePois.length ? <View style={[styles.routePoiCard, shadows.soft]}>
               <View style={styles.routePoiHeader}>
                 <View>
@@ -266,7 +320,7 @@ export const NavigationScreen = ({ viewModel }) => {
             <Summary
               icon="time-outline"
               value={formatDurationMinutes(shownDurationMin ?? 0)}
-              label={ferryJourney
+              label={hasFerryLeg
                 ? 'Travel ref. · wait varies'
                 : state.tracking && state.usingLiveEta ? 'Live ETA' : state.tracking || state.arrived ? 'ETA' : 'Est. time'}
             />
@@ -277,7 +331,7 @@ export const NavigationScreen = ({ viewModel }) => {
             />
           </View>
 
-          {!state.tracking && !state.arrived && state.route?.type !== 'ferry-journey' ? <View style={[styles.journeyCard, shadows.soft]}>
+          {!state.tracking && !state.arrived && !['ferry-journey', 'multi-stop-journey'].includes(state.route?.type) ? <View style={[styles.journeyCard, shadows.soft]}>
               <View style={styles.journeyHeader}>
                 <View style={styles.journeyIcon}>
                   <Ionicons name="git-branch-outline" size={19} color={colors.primary} />
@@ -885,6 +939,41 @@ const styles = StyleSheet.create({
     fontSize: 9.8,
     lineHeight: 14,
     textAlign: 'center',
+  },
+  multiStopList: {
+    gap: spacing.xs,
+  },
+  multiStopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: 2,
+  },
+  multiStopIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primarySofter,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  multiStopIconComplete: {
+    backgroundColor: colors.primary,
+  },
+  multiStopCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  multiStopTitle: {
+    color: colors.text,
+    fontSize: 11.2,
+    fontWeight: '900',
+  },
+  multiStopMeta: {
+    marginTop: 1,
+    color: colors.muted,
+    fontSize: 9.5,
+    lineHeight: 13,
   },
   routePoiCard: {
     borderWidth: 1,

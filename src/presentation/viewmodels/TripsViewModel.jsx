@@ -138,6 +138,47 @@ export class TripsViewModel extends ViewModel {
   openDestination = destinationId => {
     this.nav.onOpenDestination?.(destinationId);
   };
+  navigateTrip = trip => {
+    if (!trip?.stops?.length || !this.nav.onOpenNavigation) return false;
+    const multiStops = [];
+    for (const [index, stop] of trip.stops.entries()) {
+      const item = this.state.destinations.find(candidate => (
+        candidate.destination.id === stop.destinationId
+      ));
+      const destination = item?.destination;
+      const navigation = destination?.offlineNavigation;
+      if (!destination || !navigation?.target) {
+        this.setState({
+          error: `Stop ${index + 1} (${stop.destinationName}) does not have an offline navigation target yet.`,
+        });
+        return false;
+      }
+      multiStops.push({
+        id: `${trip.id}:${index}:${destination.id}`,
+        destinationId: destination.id,
+        name: destination.name,
+        municipality: destination.municipality,
+        target: {
+          ...navigation.target,
+          label: navigation.target.label ?? destination.name,
+        },
+      });
+    }
+    const finalStop = multiStops.at(-1);
+    this.setState({ error: null });
+    this.nav.onOpenNavigation({
+      destinationId: finalStop.destinationId,
+      destinationName: trip.title,
+      target: finalStop.target,
+      mode: 'walk',
+      preference: 'direct',
+      coverage: 'Davao del Norte multi-stop offline journey',
+      multiStops,
+      tripId: trip.id,
+      tripTitle: trip.title,
+    });
+    return true;
+  };
   backToList = () => {
     this.setState({
       mode: 'list',

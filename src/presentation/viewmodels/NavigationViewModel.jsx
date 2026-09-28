@@ -23,6 +23,11 @@ import {
   remainingRoadTrailDurationMin,
 } from "../../domain/usecases/roadTrailJourney.jsx";
 import { calculateOfflineRouteAlternatives } from "../../domain/usecases/routeAlternatives.jsx";
+import {
+  calculateOfflineMultiStopJourney,
+  completedMultiStopCount,
+  remainingMultiStopDurationMin,
+} from "../../domain/usecases/multiStopJourney.jsx";
 import { routingRegionFor } from "../../data/assets/routingRegionAssets.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 
@@ -106,6 +111,17 @@ export class NavigationViewModel extends ViewModel {
       destinationId: route.destinationId,
       destinationName: route.destinationName,
       target: route.target,
+      multiStops: Array.isArray(route.multiStops) ? route.multiStops : [],
+      tripId: route.tripId ?? null,
+      tripTitle: route.tripTitle ?? null,
+      completedStopCount: Math.max(
+        0,
+        Math.min(
+          Array.isArray(route.multiStops) ? route.multiStops.length : 0,
+          Number.isFinite(route.resumeCompletedStopCount) ? route.resumeCompletedStopCount : 0,
+        ),
+      ),
+      resumedSession: route.resumedSession === true,
       trailId: route.trailId ?? null,
       trailPreview: null,
       offlinePois: [],
@@ -151,11 +167,46 @@ export class NavigationViewModel extends ViewModel {
 
   onInit = () => {
     void this.load();
+    void this.persistMultiStopSession(this.state.completedStopCount);
   };
 
   onDispose = () => {
     this.stopLocationWatch();
     this.stopSpeech();
+  };
+
+  persistMultiStopSession = async completedStopCount => {
+    const repository = this.routingDeps.navigationSessionRepository;
+    if (!repository || !this.state.tripId || !this.state.multiStops.length) return;
+    try {
+      await repository.saveActiveSession({
+        version: 1,
+        savedAt: Date.now(),
+        completedStopCount,
+        route: {
+          destinationId: this.state.destinationId,
+          destinationName: this.state.destinationName,
+          target: this.state.target,
+          multiStops: this.state.multiStops,
+          tripId: this.state.tripId,
+          tripTitle: this.state.tripTitle,
+          mode: this.state.mode,
+          preference: this.state.preference,
+          coverage: this.state.coverage,
+        },
+      });
+    } catch {
+      // Navigation continues even if the resume checkpoint cannot be persisted.
+    }
+  };
+
+  clearPersistedMultiStopSession = async () => {
+    if (!this.state.tripId) return;
+    try {
+      await this.routingDeps.navigationSessionRepository?.clearActiveSession();
+    } catch {
+      // Route cleanup should not block the live navigation flow.
+    }
   };
 
   load = async () => {
@@ -278,6 +329,19 @@ export class NavigationViewModel extends ViewModel {
   calculateRouteResult = async (from, initialTurnState = []) => {
     const originRegion = routingRegionFor(null, from);
     const targetRegion = routingRegionFor(this.state.destinationId, this.state.target);
+    if (this.state.multiStops.length > this.state.completedStopCount) {
+      return calculateOfflineMultiStopJourney({
+        routingGraphRepository: this.routingDeps.routingGraphRepository,
+        from,
+        stops: this.state.multiStops.slice(this.state.completedStopCount),
+        baseStopIndex: this.state.completedStopCount,
+        mode: this.state.mode,
+        preference: this.state.preference,
+        routeAttractors: this.state.scenicPois,
+        maxSnapDistanceKm: 1,
+        initialTurnState,
+      });
+    }
     if (
       this.state.trailPreview?.routeVerified
       && this.state.mode === 'walk'
@@ -344,6 +408,8 @@ export class NavigationViewModel extends ViewModel {
         journeyPhase: null,
         error: result.reason === 'ferry-unavailable' || result.reason === 'ferry-required'
           ? 'LakBai could not build a source-reviewed ferry journey between the mainland and Samal from this position.'
+          : result.reason === 'multi-stop-leg-failed' || result.reason === 'multi-stop-routing-unavailable'
+          ? `LakBai could not build the offline leg to itinerary stop ${(result.stopIndex ?? 0) + 1}.`
           : result.reason === 'trail-approach-route-failed'
           ? 'LakBai could not connect your position to the verified trail start using the offline walking graph.'
           : result.reason === 'trail-unverified'
@@ -378,6 +444,8 @@ export class NavigationViewModel extends ViewModel {
         ? remainingFerryJourneyDurationMin(result, 0)
         : result.type === 'road-trail-journey'
         ? remainingRoadTrailDurationMin(result, 0)
+        : result.type === 'multi-stop-journey'
+        ? remainingMultiStopDurationMin(result, 0)
         : result.durationMin,
       offRouteM: null,
       nextManeuver: result.maneuvers?.[1] ?? result.maneuvers?.[0] ?? null,
@@ -386,6 +454,7 @@ export class NavigationViewModel extends ViewModel {
       journeyPhase: (
         result.type === 'ferry-journey'
         || result.type === 'road-trail-journey'
+        || result.type === 'multi-stop-journey'
       ) ? 'road' : null,
       wrongWay: false,
       arrived: false,
@@ -399,10 +468,12 @@ export class NavigationViewModel extends ViewModel {
     const route = this.state.route;
     const from = this.state.fix;
     if (!route?.ok || !from || this.state.tracking || this.state.alternativesLoading) return;
-    if (route.type === 'ferry-journey') {
+    if (route.type === 'ferry-journey' || route.type === 'multi-stop-journey') {
       this.setState({
         alternativeRoutes: [],
-        error: 'Alternative road previews are not offered across the fixed ferry transport leg.',
+        error: route.type === 'multi-stop-journey'
+          ? 'Alternative previews are generated for single-destination journeys, not an ordered itinerary.'
+          : 'Alternative road previews are not offered across the fixed ferry transport leg.',
       });
       return;
     }
@@ -555,6 +626,7 @@ export class NavigationViewModel extends ViewModel {
       alternativeRoutes: [],
       selectedAlternativeId: null,
     });
+    void this.persistMultiStopSession(this.state.completedStopCount);
   };
 
   setMode = mode => {
@@ -566,6 +638,7 @@ export class NavigationViewModel extends ViewModel {
       alternativeRoutes: [],
       selectedAlternativeId: null,
     });
+    void this.persistMultiStopSession(this.state.completedStopCount);
   };
 
   stopSpeech = () => {
@@ -804,6 +877,14 @@ export class NavigationViewModel extends ViewModel {
     const liveSpeedMps = this.state.tracking && !onFerryLeg && !onTrailLeg
       ? this.recordSpeedEstimate(fix.speed)
       : null;
+    const completedStopCount = route.type === 'multi-stop-journey'
+      ? completedMultiStopCount(
+        route,
+        stableProjection.distanceAlongKm,
+        this.state.completedStopCount,
+      )
+      : this.state.completedStopCount;
+    const completedStopChanged = completedStopCount !== this.state.completedStopCount;
 
     if (offRoute && this.state.tracking && !arrived) {
       this.offRouteSamples += 1;
@@ -826,21 +907,35 @@ export class NavigationViewModel extends ViewModel {
         ? remainingFerryJourneyDurationMin(route, stableProjection.distanceAlongKm)
         : route.type === 'road-trail-journey'
         ? remainingRoadTrailDurationMin(route, stableProjection.distanceAlongKm, liveSpeedMps)
+        : route.type === 'multi-stop-journey'
+        ? remainingMultiStopDurationMin(route, stableProjection.distanceAlongKm)
         : remainingDurationMin(route, stableProjection.remainingKm, liveSpeedMps),
-      usingLiveEta: route.type !== 'ferry-journey' && !onTrailLeg && liveSpeedMps != null,
+      usingLiveEta: (
+        route.type !== 'ferry-journey'
+        && route.type !== 'multi-stop-journey'
+        && !onTrailLeg
+        && liveSpeedMps != null
+      ),
       offRouteM: stableProjection.distanceToRouteM,
       nextManeuver: next.maneuver,
       distanceToNextManeuverKm: next.distanceKm,
       routePois: placesAlongRoute(route, this.state.offlinePois, stableProjection.distanceAlongKm),
+      completedStopCount,
       journeyPhase: route.type === 'ferry-journey'
         ? (onFerryLeg ? 'ferry' : 'road')
         : route.type === 'road-trail-journey'
         ? (onTrailLeg ? 'trail' : 'road')
+        : route.type === 'multi-stop-journey'
+        ? (onFerryLeg ? 'ferry' : 'road')
         : null,
       wrongWay,
       arrived,
       gpsError: null,
     });
+
+    if (completedStopChanged) {
+      void this.persistMultiStopSession(completedStopCount);
+    }
 
     if (this.state.tracking && !offRoute && !wrongWay) {
       this.announceGuidance(next.maneuver, next.distanceKm);
@@ -849,6 +944,7 @@ export class NavigationViewModel extends ViewModel {
     if (arrived) {
       this.stopLocationWatch();
       this.setState({ tracking: false, rerouting: false });
+      void this.clearPersistedMultiStopSession();
       return;
     }
 
@@ -898,6 +994,28 @@ export class NavigationViewModel extends ViewModel {
           });
         }
       }
+    } else if (this.state.route.type === 'multi-stop-journey') {
+      const region = routingRegionFor(null, fix);
+      const roadLeg = this.state.route.roadLegs?.find(leg => (
+        leg.region === region
+        && this.lastConfirmedRouteDistanceKm >= leg.startKm - 0.05
+        && this.lastConfirmedRouteDistanceKm <= leg.endKm + 0.05
+      ));
+      if (roadLeg && region) {
+        const graph = await this.routingDeps.routingGraphRepository.getForRegion(region);
+        if (graph) {
+          initialTurnState = turnStateBeforeRoutePosition({
+            graph,
+            route: roadLeg.route,
+            distanceAlongKm: Math.max(
+              0,
+              (this.lastConfirmedRouteDistanceKm - roadLeg.startKm)
+                / Math.max(0.001, roadLeg.progressScale ?? 1),
+            ),
+            mode: this.state.mode,
+          });
+        }
+      }
     } else if (this.state.route.type === 'road-trail-journey') {
       const roadLeg = this.state.route.legs?.find(leg => leg.kind === 'road');
       if (roadLeg) {
@@ -939,6 +1057,7 @@ export class NavigationViewModel extends ViewModel {
         journeyPhase: (
           result.type === 'ferry-journey'
           || result.type === 'road-trail-journey'
+          || result.type === 'multi-stop-journey'
         ) ? 'road' : null,
         rerouteCount: previous.rerouteCount + 1,
         progressPct: 0,
@@ -948,6 +1067,8 @@ export class NavigationViewModel extends ViewModel {
           ? remainingFerryJourneyDurationMin(result, 0)
           : result.type === 'road-trail-journey'
           ? remainingRoadTrailDurationMin(result, 0)
+          : result.type === 'multi-stop-journey'
+          ? remainingMultiStopDurationMin(result, 0)
           : result.durationMin,
         nextManeuver: result.maneuvers?.[1] ?? result.maneuvers?.[0] ?? null,
         distanceToNextManeuverKm: result.maneuvers?.[1]?.distanceAlongKm ?? null,
@@ -985,6 +1106,7 @@ export class NavigationViewModel extends ViewModel {
       distanceToNextManeuverKm: null,
       routePois: [],
       rerouteCount: 0,
+      completedStopCount: 0,
       journeyPhase: null,
       wrongWay: false,
       arrived: false,

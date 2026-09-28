@@ -41,6 +41,29 @@ export const AppNavigator = () => {
   const push = route => setStack(current => [...current, route]);
   const pop = () => setStack(current => current.slice(0, -1));
   useEffect(() => {
+    if (session.state.phase !== 'main') return undefined;
+    let active = true;
+    void container.routingDeps.navigationSessionRepository?.getActiveSession()
+      .then(saved => {
+        if (!active || !saved?.route?.multiStops?.length) return;
+        const completedStopCount = Math.max(0, saved.completedStopCount ?? 0);
+        if (completedStopCount >= saved.route.multiStops.length) {
+          void container.routingDeps.navigationSessionRepository.clearActiveSession();
+          return;
+        }
+        setStack(current => current.length ? current : [{
+          name: 'navigation',
+          ...saved.route,
+          resumeCompletedStopCount: completedStopCount,
+          resumedSession: true,
+        }]);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [container.routingDeps.navigationSessionRepository, session.state.phase]);
+  useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       if (stack.length > 0) {
         pop();
@@ -128,6 +151,10 @@ export const AppNavigator = () => {
           onOpenDestination={destinationId => push({
             name: 'destination',
             destinationId
+          })}
+          onOpenNavigation={navigation => push({
+            name: 'navigation',
+            ...navigation
           })}
         /> : null}
         {tab === 'library' ? <LibraryTab onOpenDestination={destinationId => push({
@@ -241,12 +268,14 @@ const LibraryTab = ({
 };
 const TripsTab = ({
   onOpenDestination,
+  onOpenNavigation,
   initialRouteDraft,
   onDraftConsumed
 }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new TripsViewModel(container.tripsDeps, container.destinationDeps, {
     onOpenDestination,
+    onOpenNavigation,
     initialRouteDraft
   }));
   useEffect(() => {

@@ -3,7 +3,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFeedback } from "../../../feedback/FeedbackProvider.jsx";
-import { BackAction, PrimaryButton } from "../components/Buttons.jsx";
+import { BackAction, PrimaryButton, SecondaryButton } from "../components/Buttons.jsx";
 import { EmptyState } from "../components/EmptyState.jsx";
 import { InfoBanner } from "../components/InfoBanner.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
@@ -433,7 +433,21 @@ const TripDetails = ({
         </View>
       </View>
 
-      <PrimaryButton label="Edit itinerary" icon="create-outline" onPress={() => viewModel.openEdit(trip)} />
+      <PrimaryButton
+        label="Navigate itinerary"
+        icon="navigate-outline"
+        disabled={!trip.stops.length}
+        onPress={() => {
+          const ok = viewModel.navigateTrip(trip);
+          if (!ok) {
+            showSnackbar({
+              message: viewModel.state.error ?? 'This itinerary is not ready for offline navigation.',
+              tone: 'error',
+            });
+          }
+        }}
+      />
+      <SecondaryButton label="Edit itinerary" icon="create-outline" onPress={() => viewModel.openEdit(trip)} />
 
       <Pressable accessibilityRole="button" accessibilityLabel={`Delete itinerary ${trip.title}`} style={({
       pressed

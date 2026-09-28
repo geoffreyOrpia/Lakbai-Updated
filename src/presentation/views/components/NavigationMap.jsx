@@ -45,6 +45,8 @@ export const NavigationMap = ({
   voiceGuidance = true,
   trailPreview = null,
   routePois = [],
+  alternativeBaseRoute = null,
+  alternativeRoutes = [],
   timeIsReference = false,
 }) => {
   const [following, setFollowing] = useState(liveGps);
@@ -54,7 +56,14 @@ export const NavigationMap = ({
   const bounds = routeBounds(geometry);
   const routeData = useMemo(() => ({
     type: 'FeatureCollection',
-    features: (
+    features: route.type === 'multi-stop-journey'
+      ? (route.roadLegs ?? []).map((leg, index) => ({
+        type: 'Feature',
+        id: `road-leg-${index}`,
+        properties: { kind: 'road' },
+        geometry: leg.route.geometry,
+      }))
+      : (
       route.type === 'ferry-journey'
       || route.type === 'road-trail-journey'
     )
@@ -72,19 +81,41 @@ export const NavigationMap = ({
         properties: { kind: 'road' },
         geometry,
       }],
-  }), [geometry, route.type, route.legs]);
+  }), [geometry, route.type, route.legs, route.roadLegs]);
+  const alternativeData = useMemo(() => {
+    const candidates = [alternativeBaseRoute, ...(alternativeRoutes ?? [])]
+      .filter(candidate => candidate?.ok && candidate !== route)
+      .map((candidate, index) => {
+        const roadLeg = candidate.type === 'road-trail-journey'
+          ? candidate.legs?.find(leg => leg.kind === 'road')?.route
+          : candidate;
+        if (!roadLeg?.geometry?.coordinates?.length) return null;
+        return {
+          type: 'Feature',
+          id: `alternative-route-${candidate.alternativeId ?? index}`,
+          properties: {},
+          geometry: roadLeg.geometry,
+        };
+      })
+      .filter(Boolean);
+    if (!candidates.length) return null;
+    return { type: 'FeatureCollection', features: candidates };
+  }, [alternativeBaseRoute, alternativeRoutes, route]);
   const ferryData = useMemo(() => {
-    if (!route.ferryLeg?.geometry?.coordinates?.length) return null;
+    const ferryLegs = route.type === 'multi-stop-journey'
+      ? route.ferryLegs ?? []
+      : route.ferryLeg?.geometry?.coordinates?.length ? [route.ferryLeg] : [];
+    if (!ferryLegs.length) return null;
     return {
       type: 'FeatureCollection',
-      features: [{
+      features: ferryLegs.map((leg, index) => ({
         type: 'Feature',
-        id: 'ferry-leg',
+        id: `ferry-leg-${index}`,
         properties: {},
-        geometry: route.ferryLeg.geometry,
-      }],
+        geometry: leg.geometry,
+      })),
     };
-  }, [route.ferryLeg]);
+  }, [route.ferryLeg, route.ferryLegs, route.type]);
   const trailData = useMemo(() => {
     const trailGeometry = route.trailLeg?.geometry ?? trailPreview?.geometry;
     if (!trailGeometry?.coordinates?.length) return null;
@@ -103,18 +134,24 @@ export const NavigationMap = ({
     features: [
       pointFeature('route-start', geometry.coordinates[0], 'start'),
       pointFeature('route-destination', [target.lng, target.lat], 'destination'),
-      ...(route.ferryLeg ? [
-        pointFeature(
-          'ferry-origin-terminal',
-          [route.ferryLeg.originTerminal.lng, route.ferryLeg.originTerminal.lat],
-          'ferry-terminal',
-        ),
-        pointFeature(
-          'ferry-target-terminal',
-          [route.ferryLeg.targetTerminal.lng, route.ferryLeg.targetTerminal.lat],
-          'ferry-terminal',
-        ),
-      ] : []),
+      ...((route.type === 'multi-stop-journey' ? route.ferryLegs ?? [] : route.ferryLeg ? [route.ferryLeg] : [])
+        .flatMap((leg, index) => [
+          pointFeature(
+            `ferry-origin-terminal-${index}`,
+            [leg.originTerminal.lng, leg.originTerminal.lat],
+            'ferry-terminal',
+          ),
+          pointFeature(
+            `ferry-target-terminal-${index}`,
+            [leg.targetTerminal.lng, leg.targetTerminal.lat],
+            'ferry-terminal',
+          ),
+        ])),
+      ...(route.stopOffsets ?? []).slice(0, -1).map(marker => pointFeature(
+        `multi-stop-${marker.stopIndex}`,
+        [marker.stop.target.lng, marker.stop.target.lat],
+        'stop',
+      )),
       ...(trailPreview?.geometry?.coordinates?.length
         ? [pointFeature(
           'verified-trail-end',
@@ -128,7 +165,17 @@ export const NavigationMap = ({
         'poi',
       )),
     ],
-  }), [geometry.coordinates, target.lat, target.lng, trailPreview, routePois, route.ferryLeg]);
+  }), [
+    geometry.coordinates,
+    target.lat,
+    target.lng,
+    trailPreview,
+    routePois,
+    route.ferryLeg,
+    route.ferryLegs,
+    route.stopOffsets,
+    route.type,
+  ]);
 
   return <View style={[styles.card, shadows.card]}>
       <View style={[styles.mapFrame, liveGps && styles.mapFrameLive]}>
@@ -155,6 +202,20 @@ export const NavigationMap = ({
               if (!event.nativeEvent?.trackUserLocation) setFollowing(false);
             }}
           />
+
+          {alternativeData ? <GeoJSONSource id="lakbai-navigation-alternatives" data={alternativeData}>
+              <Layer
+                id="lakbai-navigation-alternatives-line"
+                type="line"
+                source="lakbai-navigation-alternatives"
+                paint={{
+                  'line-color': colors.muted,
+                  'line-width': 4,
+                  'line-opacity': 0.72,
+                  'line-dasharray': [1.4, 1.2],
+                }}
+              />
+            </GeoJSONSource> : null}
 
           <GeoJSONSource id="lakbai-navigation-route" data={routeData}>
             <Layer
@@ -240,6 +301,7 @@ export const NavigationMap = ({
                   'destination', colors.accent,
                   'trail-end', colors.accentDark,
                   'ferry-terminal', colors.accentDark,
+                  'stop', colors.primary,
                   'poi', colors.accentDark,
                   colors.primary,
                 ],
