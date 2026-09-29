@@ -45,7 +45,11 @@ describe('navigation map interactions', () => {
     expect(tree.root.findByType('Camera').props.trackUserLocation).toBe('course');
     expect(tree.root.findAllByType('Marker')).toHaveLength(0);
     act(() => tree.root.findByType('NativeMap').props.onDidFinishLoadingMap());
-    expect(tree.root.findAllByType('Layer').some(node => node.props.id === 'lakbai-tourism-poi-icons')).toBe(true);
+    const tourismPoiLayer = tree.root.findAllByType('Layer').find(
+      node => node.props.id === 'lakbai-tourism-poi-icons',
+    );
+    expect(tourismPoiLayer).toBeTruthy();
+    expect(tourismPoiLayer.props.layout).not.toHaveProperty('icon-padding');
     expect(tree.root.findAllByType('Layer').some(node => (
       node.props.id === 'lakbai-navigation-user-symbol'
       && node.props.layout?.['icon-image'] === 'nav-walk'

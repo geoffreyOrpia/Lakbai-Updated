@@ -343,7 +343,6 @@ const NavigationMapContent = ({
               'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.42, 15, 0.62, 17, 0.72],
               'icon-allow-overlap': false,
               'icon-ignore-placement': false,
-              'icon-padding': 2,
             }}
           /> : null}
 
