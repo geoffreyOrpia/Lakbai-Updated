@@ -348,7 +348,10 @@ export const NavigationMap = ({
             </View>
           </View> : null}
 
-        <View pointerEvents="none" style={[styles.statusBadge, liveGps && styles.statusBadgeLive]}>
+        <View
+          pointerEvents="none"
+          style={[styles.statusBadge, liveGps ? styles.statusBadgeLive : styles.statusBadgeStatic]}
+        >
           <View style={styles.statusDot} />
           <Text style={styles.statusText}>{detailedOffline ? 'OFFLINE ROUTE · LOCAL MAP' : 'OFFLINE ROUTE · LINE ONLY'}</Text>
         </View>
@@ -457,7 +460,6 @@ const styles = StyleSheet.create({
   },
   statusBadge: {
     position: 'absolute',
-    top: spacing.sm,
     left: spacing.sm,
     minHeight: 28,
     paddingHorizontal: 9,
@@ -469,8 +471,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
+  statusBadgeStatic: {
+    top: spacing.sm,
+  },
   statusBadgeLive: {
-    top: undefined,
     bottom: spacing.sm,
   },
   statusDot: {
