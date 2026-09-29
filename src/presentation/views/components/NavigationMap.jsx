@@ -1,12 +1,54 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Camera, GeoJSONSource, Layer, Map, UserLocation } from '@maplibre/maplibre-react-native';
+import { Camera, GeoJSONSource, Images, Layer, Map, Marker } from '@maplibre/maplibre-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { createOfflineBasemapStyle } from "../../../core/maps/offlineBasemapStyle.jsx";
 import { routeBounds } from "../../../core/routing/graph.jsx";
 import { formatDurationMinutes, formatKm } from "../../../core/utils/format.jsx";
 import { colors, radius, shadows, spacing } from "../../../theme.jsx";
+
+const POI_ICON_IMAGES = {
+  'poi-restaurant': require('../../../../assets/map-icons/poi-restaurant.png'),
+  'poi-cafe': require('../../../../assets/map-icons/poi-cafe.png'),
+  'poi-hotel': require('../../../../assets/map-icons/poi-hotel.png'),
+  'poi-police': require('../../../../assets/map-icons/poi-police.png'),
+  'poi-medical': require('../../../../assets/map-icons/poi-medical.png'),
+  'poi-fuel': require('../../../../assets/map-icons/poi-fuel.png'),
+  'poi-transit': require('../../../../assets/map-icons/poi-transit.png'),
+  'poi-parking': require('../../../../assets/map-icons/poi-parking.png'),
+  'poi-information': require('../../../../assets/map-icons/poi-information.png'),
+  'poi-attraction': require('../../../../assets/map-icons/poi-attraction.png'),
+};
+
+const POI_ICON_KINDS = [
+  'restaurant', 'cafe', 'fast_food', 'food_court', 'bakery', 'bbq',
+  'hotel', 'hostel', 'guest_house', 'bed_and_breakfast', 'chalet', 'camp_site',
+  'police', 'fire_station', 'ranger_station',
+  'hospital', 'clinic', 'doctors', 'pharmacy', 'emergency_phone',
+  'fuel', 'charging_station',
+  'bus_stop', 'station', 'taxi', 'car_rental',
+  'parking',
+  'information', 'toilets', 'drinking_water', 'atm', 'post_office',
+  'attraction', 'viewpoint', 'museum', 'artwork', 'memorial', 'beach', 'park',
+  'picnic_site', 'marina', 'zoo', 'library', 'national_park', 'nature_reserve',
+];
+
+const POI_ICON_IMAGE = [
+  'match',
+  ['get', 'kind'],
+  ['cafe'], 'poi-cafe',
+  ['hotel', 'hostel', 'guest_house', 'bed_and_breakfast', 'chalet', 'camp_site'], 'poi-hotel',
+  ['police', 'fire_station', 'ranger_station'], 'poi-police',
+  ['hospital', 'clinic', 'doctors', 'pharmacy', 'emergency_phone'], 'poi-medical',
+  ['fuel', 'charging_station'], 'poi-fuel',
+  ['bus_stop', 'station', 'taxi', 'car_rental'], 'poi-transit',
+  ['parking'], 'poi-parking',
+  ['information', 'toilets', 'drinking_water', 'atm', 'post_office'], 'poi-information',
+  ['attraction', 'viewpoint', 'museum', 'artwork', 'memorial', 'beach', 'park',
+    'picnic_site', 'marina', 'zoo', 'library', 'national_park', 'nature_reserve'], 'poi-attraction',
+  'poi-restaurant',
+];
 
 const maneuverIcon = kind => {
   if (kind === 'left' || kind === 'sharp-left' || kind === 'slight-left') return 'return-up-back-outline';
@@ -54,6 +96,8 @@ const NavigationMapContent = ({
   target,
   offlineBasemapUri,
   liveGps = false,
+  mode = 'walk',
+  currentPosition = null,
   nextManeuver = null,
   distanceToNextManeuverKm = null,
   remainingKm = null,
@@ -69,6 +113,11 @@ const NavigationMapContent = ({
   const [following, setFollowing] = useState(liveGps);
   useEffect(() => setFollowing(liveGps), [liveGps]);
   const [basemapFailed, setBasemapFailed] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+  useEffect(() => {
+    setBasemapFailed(false);
+    setMapReady(false);
+  }, [offlineBasemapUri]);
   const detailedOffline = Boolean(offlineBasemapUri) && !basemapFailed;
   const geometry = route.geometry;
   const bounds = routeBounds(geometry);
@@ -251,8 +300,15 @@ const NavigationMapContent = ({
           logo={false}
           compass
           compassPosition={{ top: 8, right: 8 }}
-          onDidFailLoadingMap={() => setBasemapFailed(true)}
+          touchPitch
+          onWillStartLoadingMap={() => setMapReady(false)}
+          onDidFinishLoadingMap={() => setMapReady(true)}
+          onDidFailLoadingMap={() => {
+            setMapReady(true);
+            setBasemapFailed(true);
+          }}
         >
+          {detailedOffline ? <Images images={POI_ICON_IMAGES} /> : null}
           <Camera
             initialViewState={{
               bounds,
@@ -260,11 +316,27 @@ const NavigationMapContent = ({
             }}
             trackUserLocation={liveGps && following ? 'course' : undefined}
             zoom={liveGps && following ? 16 : undefined}
-            pitch={liveGps && following ? 34 : 0}
+            pitch={liveGps && following ? 52 : 36}
             onTrackUserLocationChange={event => {
               if (!event.nativeEvent?.trackUserLocation) setFollowing(false);
             }}
           />
+
+          {detailedOffline ? <Layer
+            id="lakbai-tourism-poi-icons"
+            type="symbol"
+            source="offline-basemap"
+            source-layer="pois"
+            minzoom={12}
+            filter={['match', ['get', 'kind'], POI_ICON_KINDS, true, false]}
+            layout={{
+              'icon-image': POI_ICON_IMAGE,
+              'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.42, 15, 0.62, 17, 0.72],
+              'icon-allow-overlap': false,
+              'icon-ignore-placement': false,
+              'icon-padding': 2,
+            }}
+          /> : null}
 
           {alternativeData ? <GeoJSONSource id="lakbai-navigation-alternatives" data={alternativeData}>
               <Layer
@@ -356,6 +428,7 @@ const NavigationMapContent = ({
               id="lakbai-navigation-marker-dots"
               type="circle"
               source="lakbai-navigation-markers"
+              filter={['!=', ['get', 'role'], 'destination']}
               paint={{
                 'circle-radius': 7,
                 'circle-color': [
@@ -374,8 +447,48 @@ const NavigationMapContent = ({
             />
           </GeoJSONSource>
 
-          {liveGps ? <UserLocation animated accuracy heading minDisplacement={3} /> : null}
+          <Marker
+            id="lakbai-destination-pin"
+            lngLat={[target.lng, target.lat]}
+            anchor="bottom"
+          >
+            <View pointerEvents="none" style={styles.destinationPin}>
+              <Ionicons name="location-sharp" size={34} color={colors.accent} />
+            </View>
+          </Marker>
+
+          {liveGps && currentPosition ? <Marker
+            id="lakbai-user-mode-marker"
+            lngLat={[currentPosition.lng, currentPosition.lat]}
+            anchor="center"
+          >
+            <View pointerEvents="none" style={[styles.userMarker, shadows.floating]}>
+              <Ionicons
+                name={mode === 'drive' ? 'car' : 'walk'}
+                size={20}
+                color={colors.onPrimary}
+              />
+            </View>
+          </Marker> : null}
         </Map>
+
+        {!mapReady ? <View pointerEvents="none" style={styles.mapLoading}>
+            <View style={[styles.mapLoadingCard, shadows.card]}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <View style={styles.mapLoadingCopy}>
+                <Text style={styles.mapLoadingTitle}>Opening offline map</Text>
+                <Text style={styles.mapLoadingText}>Loading roads, places and navigation details…</Text>
+              </View>
+            </View>
+          </View> : null}
+
+        {detailedOffline && mapReady ? <View pointerEvents="none" style={styles.poiLegend}>
+            <LegendItem icon="restaurant" color="#D96A2B" label="Food" />
+            <LegendItem icon="bed" color="#6B67C8" label="Stay" />
+            <LegendItem icon="shield-checkmark" color={colors.danger} label="Safety" />
+            <LegendItem icon="information-circle" color={colors.brandSea} label="Useful" />
+            <LegendItem icon="camera" color={colors.accent} label="Sights" />
+          </View> : null}
 
         {liveGps ? <Pressable
           accessibilityRole="button"
@@ -408,6 +521,11 @@ const NavigationMapContent = ({
       </Text>
     </View>;
 };
+
+const LegendItem = ({ icon, color, label }) => <View style={styles.legendItem}>
+    <Ionicons name={icon} size={11} color={color} />
+    <Text style={styles.legendLabel}>{label}</Text>
+  </View>;
 
 const FALLBACK_STYLE = {
   version: 8,
@@ -443,6 +561,78 @@ const styles = StyleSheet.create({
     height: 500,
   },
   map: { flex: 1 },
+  destinationPin: {
+    width: 38,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userMarker: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.pill,
+    borderWidth: 3,
+    borderColor: colors.white,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mapLoading: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(246,242,234,0.72)',
+    paddingHorizontal: spacing.md,
+  },
+  mapLoadingCard: {
+    width: '100%',
+    maxWidth: 320,
+    minHeight: 76,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    backgroundColor: 'rgba(255,255,255,0.97)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  mapLoadingCopy: { flex: 1 },
+  mapLoadingTitle: {
+    color: colors.text,
+    fontSize: 12.5,
+    fontWeight: '900',
+  },
+  mapLoadingText: {
+    marginTop: 2,
+    color: colors.muted,
+    fontSize: 9.8,
+    lineHeight: 14,
+  },
+  poiLegend: {
+    position: 'absolute',
+    left: spacing.sm,
+    bottom: 10,
+    maxWidth: '72%',
+    borderRadius: radius.md,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 6,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 7,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  legendLabel: {
+    color: colors.textSecondary,
+    fontSize: 8.5,
+    fontWeight: '800',
+  },
   navigationHud: {
     marginHorizontal: spacing.sm,
     marginBottom: spacing.sm,

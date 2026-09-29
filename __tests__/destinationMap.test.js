@@ -114,7 +114,13 @@ describe('destination planning map data', () => {
       'offline-earth',
       'offline-water',
       'offline-buildings',
+      'offline-buildings-3d',
       'offline-roads',
+      'offline-pois-food',
+      'offline-pois-stay',
+      'offline-pois-safety',
+      'offline-pois-essentials',
+      'offline-pois-tourism',
     ]));
   });
 });

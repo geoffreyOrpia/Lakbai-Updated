@@ -224,6 +224,8 @@ export const NavigationScreen = ({ viewModel }) => {
             target={state.route.finalTarget ?? state.target}
             offlineBasemapUri={state.offlineBasemapUri}
             liveGps={state.tracking}
+            mode={state.mode}
+            currentPosition={state.fix}
             nextManeuver={state.nextManeuver}
             distanceToNextManeuverKm={state.distanceToNextManeuverKm}
             remainingKm={state.remainingKm}

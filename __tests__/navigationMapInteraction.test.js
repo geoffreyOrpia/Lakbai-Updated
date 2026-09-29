@@ -7,7 +7,7 @@ import { NavigationScreen } from '../src/presentation/views/screens/NavigationSc
 jest.mock('@expo/vector-icons', () => ({ Ionicons: 'Icon' }));
 jest.mock('react-native-safe-area-context', () => ({ SafeAreaView: 'SafeAreaView' }));
 jest.mock('@maplibre/maplibre-react-native', () => ({
-  Map: 'NativeMap', Camera: 'Camera', GeoJSONSource: 'Source', Layer: 'Layer', UserLocation: 'UserLocation',
+  Map: 'NativeMap', Camera: 'Camera', GeoJSONSource: 'Source', Images: 'Images', Layer: 'Layer', Marker: 'Marker',
 }));
 
 global.IS_REACT_ACT_ENVIRONMENT = true;
@@ -16,6 +16,8 @@ const props = {
   route: { geometry: { type: 'LineString', coordinates: [[125.6, 7.3], [125.7, 7.4]] } },
   target: { lng: 125.7, lat: 7.4 },
   offlineBasemapUri: 'file:///saved-map.pmtiles',
+  mode: 'walk',
+  currentPosition: { lng: 125.61, lat: 7.31 },
 };
 
 describe('navigation map interactions', () => {
@@ -41,6 +43,9 @@ describe('navigation map interactions', () => {
     expect(tree.root.findByType('Camera').props.trackUserLocation).toBeUndefined();
     act(() => tree.update(<NavigationMap {...props} liveGps onStop={onStop} onToggleVoice={onToggleVoice} />));
     expect(tree.root.findByType('Camera').props.trackUserLocation).toBe('course');
+    expect(tree.root.findAllByType('Marker')).toHaveLength(2);
+    expect(tree.root.findAllByType('Icon').some(node => node.props.name === 'walk')).toBe(true);
+    expect(tree.root.findAllByType('Layer').some(node => node.props.id === 'lakbai-tourism-poi-icons')).toBe(true);
     act(() => tree.root.findByType('NativeMap').props.onPress());
     act(() => tree.root.findAll(node => node.props.accessibilityLabel === 'Mute directions' && typeof node.props.onPress === 'function')[0].props.onPress());
     act(() => tree.root.findAll(node => node.props.accessibilityLabel === 'Stop directions' && typeof node.props.onPress === 'function')[0].props.onPress());

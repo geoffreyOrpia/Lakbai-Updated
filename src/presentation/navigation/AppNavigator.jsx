@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BackHandler, Image, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, BackHandler, Image, StyleSheet, Text, View } from 'react-native';
 import { colors, spacing } from "../../theme.jsx";
 import { getContainer } from "../di/container.jsx";
 import { useViewModel } from "../viewmodel/useViewModel.jsx";
@@ -89,14 +89,28 @@ export const AppNavigator = () => {
     return () => subscription.remove();
   }, [stack.length, tab]);
   if (session.state.phase === 'restoring') {
-    return <View style={styles.splash}>
+    return <View
+        accessibilityRole="progressbar"
+        accessibilityLabel="Preparing LakBai and your offline travel data"
+        accessibilityLiveRegion="polite"
+        style={styles.splash}
+      >
         <Image
           source={require('../../../assets/lakbai-loading.png')}
           style={styles.splashLogo}
           resizeMode="contain"
           accessibilityLabel="LakBai. Explore Davao del Norte."
         />
-        <Text style={styles.splashText}>Preparing your local guide…</Text>
+        <View style={styles.splashStatus}>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <View style={styles.splashCopy}>
+            <Text style={styles.splashTitle}>Preparing LakBai</Text>
+            <Text style={styles.splashText}>Opening your saved maps and local travel data…</Text>
+          </View>
+        </View>
+        <View style={styles.splashOfflinePill}>
+          <Text style={styles.splashOfflineText}>OFFLINE-READY TRAVEL GUIDE</Text>
+        </View>
       </View>;
   }
   if (session.state.phase === 'landing') {
@@ -416,17 +430,54 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.brandCream,
-    gap: spacing.sm
+    backgroundColor: '#FBF7EF',
+    paddingHorizontal: spacing.xl,
+    gap: spacing.md
   },
   splashLogo: {
-    width: 210,
-    height: 210,
+    width: 184,
+    height: 184,
     marginBottom: spacing.xs
   },
+  splashStatus: {
+    width: '100%',
+    maxWidth: 340,
+    minHeight: 82,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 18,
+    backgroundColor: colors.white,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm
+  },
+  splashCopy: {
+    flex: 1
+  },
+  splashTitle: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: '900'
+  },
   splashText: {
+    marginTop: 3,
     color: colors.muted,
-    fontSize: 12,
+    fontSize: 10.5,
+    lineHeight: 15,
     fontWeight: '700'
+  },
+  splashOfflinePill: {
+    borderRadius: 999,
+    backgroundColor: colors.primarySofter,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 7
+  },
+  splashOfflineText: {
+    color: colors.primary,
+    fontSize: 8.5,
+    letterSpacing: 0.7,
+    fontWeight: '900'
   }
 });
