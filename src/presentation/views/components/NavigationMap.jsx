@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Camera, GeoJSONSource, Images, Layer, Map, Marker } from '@maplibre/maplibre-react-native';
+import { Camera, GeoJSONSource, Images, Layer, Map } from '@maplibre/maplibre-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +19,9 @@ const POI_ICON_IMAGES = {
   'poi-parking': require('../../../../assets/map-icons/poi-parking.png'),
   'poi-information': require('../../../../assets/map-icons/poi-information.png'),
   'poi-attraction': require('../../../../assets/map-icons/poi-attraction.png'),
+  'nav-walk': require('../../../../assets/map-icons/nav-walk.png'),
+  'nav-car': require('../../../../assets/map-icons/nav-car.png'),
+  'nav-destination': require('../../../../assets/map-icons/nav-destination.png'),
 };
 
 const POI_ICON_KINDS = [
@@ -121,6 +124,12 @@ const NavigationMapContent = ({
   const detailedOffline = Boolean(offlineBasemapUri) && !basemapFailed;
   const geometry = route.geometry;
   const bounds = routeBounds(geometry);
+  const currentUserData = useMemo(() => ({
+    type: 'FeatureCollection',
+    features: currentPosition
+      ? [pointFeature('current-user', [currentPosition.lng, currentPosition.lat], 'user')]
+      : [],
+  }), [currentPosition]);
   const routeData = useMemo(() => ({
     type: 'FeatureCollection',
     features: route.type === 'multi-stop-journey'
@@ -308,7 +317,7 @@ const NavigationMapContent = ({
             setBasemapFailed(true);
           }}
         >
-          {detailedOffline ? <Images images={POI_ICON_IMAGES} /> : null}
+          {detailedOffline && mapReady ? <Images images={POI_ICON_IMAGES} /> : null}
           <Camera
             initialViewState={{
               bounds,
@@ -322,7 +331,7 @@ const NavigationMapContent = ({
             }}
           />
 
-          {detailedOffline ? <Layer
+          {detailedOffline && mapReady ? <Layer
             id="lakbai-tourism-poi-icons"
             type="symbol"
             source="offline-basemap"
@@ -445,31 +454,36 @@ const NavigationMapContent = ({
                 'circle-stroke-width': 2.5,
               }}
             />
+            {mapReady ? <Layer
+              id="lakbai-navigation-destination-symbol"
+              type="symbol"
+              source="lakbai-navigation-markers"
+              filter={['==', ['get', 'role'], 'destination']}
+              layout={{
+                'icon-image': 'nav-destination',
+                'icon-size': 0.72,
+                'icon-allow-overlap': true,
+                'icon-ignore-placement': true,
+              }}
+            /> : null}
           </GeoJSONSource>
 
-          <Marker
-            id="lakbai-destination-pin"
-            lngLat={[target.lng, target.lat]}
-            anchor="bottom"
+          {liveGps && currentPosition && mapReady ? <GeoJSONSource
+            id="lakbai-navigation-user"
+            data={currentUserData}
           >
-            <View pointerEvents="none" style={styles.destinationPin}>
-              <Ionicons name="location-sharp" size={34} color={colors.accent} />
-            </View>
-          </Marker>
-
-          {liveGps && currentPosition ? <Marker
-            id="lakbai-user-mode-marker"
-            lngLat={[currentPosition.lng, currentPosition.lat]}
-            anchor="center"
-          >
-            <View pointerEvents="none" style={[styles.userMarker, shadows.floating]}>
-              <Ionicons
-                name={mode === 'drive' ? 'car' : 'walk'}
-                size={20}
-                color={colors.onPrimary}
-              />
-            </View>
-          </Marker> : null}
+            <Layer
+              id="lakbai-navigation-user-symbol"
+              type="symbol"
+              source="lakbai-navigation-user"
+              layout={{
+                'icon-image': mode === 'drive' ? 'nav-car' : 'nav-walk',
+                'icon-size': 0.7,
+                'icon-allow-overlap': true,
+                'icon-ignore-placement': true,
+              }}
+            />
+          </GeoJSONSource> : null}
         </Map>
 
         {!mapReady ? <View pointerEvents="none" style={styles.mapLoading}>
@@ -561,22 +575,6 @@ const styles = StyleSheet.create({
     height: 500,
   },
   map: { flex: 1 },
-  destinationPin: {
-    width: 38,
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userMarker: {
-    width: 42,
-    height: 42,
-    borderRadius: radius.pill,
-    borderWidth: 3,
-    borderColor: colors.white,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   mapLoading: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
