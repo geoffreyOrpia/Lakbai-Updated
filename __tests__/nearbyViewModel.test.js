@@ -79,6 +79,43 @@ describe('NearbyViewModel offline discovery', () => {
     }));
   });
 
+  test('shows bundled tourism places even when no guides have been saved', async () => {
+    const { vm } = createVm({ permission: true });
+
+    await vm.load();
+
+    expect(vm.state.savedPackCount).toBe(0);
+    expect(vm.tourismPlaces).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'Samal Island' }),
+      expect.objectContaining({ name: 'Port of Babak' }),
+    ]));
+    expect(vm.tourismPlaceCount).toBe(2);
+  });
+
+  test('progressively reveals large tourism catalogs instead of rendering everything at once', () => {
+    const { vm } = createVm();
+    vm.setState({
+      catalog: {
+        places: Array.from({ length: 23 }, (_, index) => ({
+          id: `place:${index}`,
+          kind: 'place',
+          name: `Tourism place ${String(index).padStart(2, '0')}`,
+          lat: 7.2 + index / 1000,
+          lng: 125.7,
+        })),
+        streets: [],
+      },
+    });
+
+    expect(vm.tourismPlaces).toHaveLength(10);
+    expect(vm.hasMoreTourismPlaces).toBe(true);
+    vm.loadMoreTourismPlaces();
+    expect(vm.tourismPlaces).toHaveLength(20);
+    vm.loadMoreTourismPlaces();
+    expect(vm.tourismPlaces).toHaveLength(23);
+    expect(vm.hasMoreTourismPlaces).toBe(false);
+  });
+
   test('routes a Samal street result through the Samal offline region', async () => {
     const { vm, nav } = createVm();
     await vm.load();

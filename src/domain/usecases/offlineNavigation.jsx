@@ -24,6 +24,11 @@ const routingIndexFor = graph => {
   return index;
 };
 
+/** Build the expensive spatial/adjacency index before the user taps Find route. */
+export const prepareOfflineRoutingGraph = graph => (
+  graph ? routingIndexFor(graph) : null
+);
+
 const scenicOsmIdsFor = (index, attractors) => {
   const scenicOsmIds = new Set();
   for (const place of attractors ?? []) {

@@ -6,6 +6,52 @@ jest.mock('@expo/vector-icons', () => ({ Ionicons: 'Icon' }));
 jest.mock('../src/feedback/FeedbackProvider.jsx', () => ({ useFeedback: () => ({ showSnackbar: jest.fn() }) }));
 global.IS_REACT_ACT_ENVIRONMENT = true;
 
+test('keeps advanced preferences collapsed and progressively reveals recommendations', () => {
+  const places = Array.from({ length: 7 }, (_, index) => ({
+    id: `place-${index}`,
+    name: `Place ${index}`,
+    municipality: 'Tagum',
+    category: 'Park',
+    description: 'Local place',
+    sourceReview: { label: 'Checked sources' },
+    reasons: [],
+  }));
+  const viewModel = {
+    state: {
+      smartOpen: true,
+      smartSelectedIds: [],
+      smartPreferences: {
+        interests: [],
+        walking: 'any',
+        travelMode: 'drive',
+        ferry: 'allow',
+        savedOnly: false,
+      },
+    },
+    smartResults: places,
+    openSmartDestination: jest.fn(),
+    toggleSmartSelection: jest.fn().mockReturnValue({ ok: true }),
+    setSmartPreference: jest.fn(),
+    toggleSmartInterest: jest.fn(),
+    useCurrentLocation: jest.fn(),
+    buildSmartTrip: jest.fn(),
+  };
+  let tree;
+  try {
+    act(() => { tree = create(<SmartExplorePanel viewModel={viewModel} />); });
+    expect(tree.root.findAll(node => node.props.accessibilityLabel === 'Prefer easy')).toHaveLength(0);
+    expect(tree.root.findAll(node => node.props.label === 'Add to trip')).toHaveLength(5);
+
+    act(() => tree.root.findAll(node => node.props.label === 'More preferences')[0].props.onPress());
+    expect(tree.root.findAll(node => node.props.accessibilityLabel === 'Prefer easy').length).toBeGreaterThan(0);
+
+    act(() => tree.root.findAll(node => node.props.label === 'Show more recommendations')[0].props.onPress());
+    expect(tree.root.findAll(node => node.props.label === 'Add to trip')).toHaveLength(7);
+  } finally {
+    if (tree) act(() => tree.unmount());
+  }
+});
+
 test('the card opens its guide and only the separate trip button changes selection', () => {
   const place = { id: 'beach', name: 'Beach', municipality: 'Samal', category: 'Beach', description: 'By the water', sourceReview: { label: 'Checked sources' }, reasons: [] };
   const viewModel = {

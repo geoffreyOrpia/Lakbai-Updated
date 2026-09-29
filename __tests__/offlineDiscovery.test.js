@@ -1,4 +1,5 @@
 import {
+  listOfflineTourismPlaces,
   loadOfflineDiscoveryCatalog,
   recordDiscoveryRecent,
   removeDroppedPin,
@@ -104,6 +105,22 @@ describe('offline discovery', () => {
     expect(searchOfflineDiscovery(catalog, 'market', {
       fix: { lat: 7, lng: 125 },
     }).map(entry => entry.id)).toEqual(['near', 'far']);
+  });
+
+  test('lists all bundled tourism entries without requiring a saved guide', async () => {
+    const deps = createDeps();
+    const catalog = await loadOfflineDiscoveryCatalog(deps);
+
+    const places = listOfflineTourismPlaces(catalog, {
+      fix: { lat: 7.13, lng: 125.68 },
+      limit: 20,
+    });
+
+    expect(places).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'Samal Island', kind: 'destination' }),
+      expect.objectContaining({ name: 'Port of Babak', kind: 'place' }),
+    ]));
+    expect(places[0].distanceKm).toBeLessThanOrEqual(places.at(-1).distanceKm);
   });
 
   test('persists bounded recent targets and device-local dropped pins', async () => {

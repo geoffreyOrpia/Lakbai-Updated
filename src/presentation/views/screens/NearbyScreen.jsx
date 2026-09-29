@@ -12,7 +12,8 @@ import { SearchField } from "../components/SearchField.jsx";
 
 export const NearbyScreen = ({ viewModel }) => {
   const state = viewModel.state;
-  const searchResults = viewModel.searchResults;
+  const searchResults = viewModel.searchResults ?? [];
+  const tourismPlaces = viewModel.tourismPlaces ?? [];
   if (state.loading) {
     return <View style={styles.centerScreen}>
         <LoadingState title="Finding nearby places" text="Opening places, streets, and your saved map spots." />
@@ -25,7 +26,7 @@ export const NearbyScreen = ({ viewModel }) => {
       <View style={styles.header}>
         <Text style={styles.eyebrow}>DAVAO DEL NORTE · OFFLINE</Text>
         <Text style={styles.title}>Nearby places</Text>
-        <Text style={styles.subtitle}>Search places and streets. Touch and hold the map to save a spot.</Text>
+        <Text style={styles.subtitle}>Browse tourism places across Davao del Norte, search streets, or hold the map to save a spot.</Text>
       </View>
 
       <SearchField
@@ -53,7 +54,7 @@ export const NearbyScreen = ({ viewModel }) => {
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
       {state.fix?.accuracy != null && state.fix.accuracy > 100 ? <InfoBanner
         tone="warn"
-        text={`Current GPS accuracy is about ${Math.round(state.fix.accuracy)} m, so nearby ordering is approximate. Move to an open area and refresh for a better fix.`}
+        text={`Your location is approximate (about ${Math.round(state.fix.accuracy)} m). Nearby ordering will improve automatically as your phone refines its position.`}
       /> : null}
 
       {state.query.trim() ? <View style={styles.section}>
@@ -70,6 +71,11 @@ export const NearbyScreen = ({ viewModel }) => {
                   ? null
                   : () => viewModel.navigateToEntry(entry)}
               />)}
+              {viewModel.hasMoreSearchResults ? <SecondaryButton
+                label="Show more matches"
+                icon="chevron-down-outline"
+                onPress={() => viewModel.loadMoreSearchResults()}
+              /> : null}
             </View> : <EmptyState
               icon="search-outline"
               title="No offline match"
@@ -110,6 +116,34 @@ export const NearbyScreen = ({ viewModel }) => {
                 />)}
               </View>
             </View> : null}
+
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{state.fix ? 'Tourism near you' : 'Tourism places'}</Text>
+              <Text style={styles.sectionMeta}>
+                {tourismPlaces.length} of {viewModel.tourismPlaceCount ?? tourismPlaces.length}
+              </Text>
+            </View>
+            {tourismPlaces.length ? <View style={styles.list}>
+                {tourismPlaces.map(entry => <DiscoveryEntry
+                  key={`tourism:${entry.id}`}
+                  entry={entry}
+                  onOpen={() => viewModel.openEntry(entry)}
+                  onRoute={entry.coordinateStatus === 'derived-area-center'
+                    ? null
+                    : () => viewModel.navigateToEntry(entry)}
+                />)}
+                {viewModel.hasMoreTourismPlaces ? <SecondaryButton
+                  label="Show more tourism places"
+                  icon="chevron-down-outline"
+                  onPress={() => viewModel.loadMoreTourismPlaces()}
+                /> : null}
+              </View> : <EmptyState
+                icon="map-outline"
+                title="No tourism places available"
+                text="The bundled tourism catalog could not provide mapped places."
+              />}
+          </View>
         </>}
 
       {state.fix ? <View style={[styles.gpsCard, shadows.soft]}>
@@ -117,49 +151,21 @@ export const NearbyScreen = ({ viewModel }) => {
             <Ionicons name="locate" size={18} color={colors.primary} />
           </View>
           <View style={styles.gpsCopy}>
-            <Text style={styles.gpsTitle}>{state.places.length} nearby saved {state.places.length === 1 ? 'place' : 'places'}</Text>
-            <Text style={styles.gpsText}>GPS accuracy: {state.fix.accuracy == null ? 'unavailable' : `about ${Math.round(state.fix.accuracy)} m`} · {state.savedPackCount} saved {state.savedPackCount === 1 ? 'guide' : 'guides'} searched</Text>
+            <Text style={styles.gpsTitle}>
+              {viewModel.tourismPlaceCount ?? tourismPlaces.length} curated tourism places
+            </Text>
+            <Text style={styles.gpsText}>
+              {state.fix.source === 'last-known' ? 'Recent device location' : 'Current device location'} · {state.fix.accuracy == null ? 'accuracy unavailable' : `about ${Math.round(state.fix.accuracy)} m accuracy`}
+            </Text>
           </View>
           <Pressable accessibilityRole="button" accessibilityLabel="Refresh nearby places" onPress={() => void viewModel.load()} hitSlop={8} style={({ pressed }) => [styles.refreshButton, pressed && styles.pressed]}>
             <Ionicons name="refresh" size={18} color={colors.primary} />
           </Pressable>
         </View> : null}
 
-      {state.fix && state.savedPackCount === 0 ? <InfoBanner
-        tone="info"
-        text="Save a place’s guide to see nearby suggestions. You can already search places and streets above."
-      /> : null}
+      {state.permission !== 'denied' ? <SecondaryButton label="Refresh location" icon="locate-outline" onPress={() => void viewModel.load()} /> : null}
 
-      {state.places.length ? <View style={styles.list}>
-          {state.places.map(place => <Pressable
-            key={place.id}
-            accessibilityRole="button"
-            accessibilityLabel={`Open ${place.destinationName}, ${place.spot.name}, ${formatKm(place.distanceKm)} away`}
-            onPress={() => viewModel.openDestination(place.destinationId)}
-            style={({ pressed }) => [styles.placeCard, shadows.card, pressed && styles.pressed]}
-          >
-              <View style={styles.placeIcon}>
-                <Ionicons name={iconForCategory(place.category, place.kind)} size={18} color={colors.primary} />
-              </View>
-              <View style={styles.placeCopy}>
-                <View style={styles.placeTitleRow}>
-                  <Text style={styles.placeName}>{place.spot.name}</Text>
-                  {place.kind === 'destination' ? <View style={styles.areaPill}>
-                      <Text style={styles.areaPillText}>AREA CENTER</Text>
-                    </View> : null}
-                </View>
-                <Text style={styles.placeMeta}>{place.destinationName}{place.municipality ? ` · ${place.municipality}` : ''}</Text>
-                <Text style={styles.placeDescription} numberOfLines={2}>{place.spot.description}</Text>
-              </View>
-              <View style={styles.distancePill}>
-                <Text style={styles.distanceText}>{formatKm(place.distanceKm)}</Text>
-              </View>
-            </Pressable>)}
-        </View> : null}
-
-      {state.savedPackCount > 0 ? <SecondaryButton label="Refresh GPS position" icon="locate-outline" onPress={() => void viewModel.load()} /> : null}
-
-      <InfoBanner tone="info" text="Nearby places does not query Google or live business listings. Street matches come from LakBai’s bundled Davao del Norte OSM routing dataset; mapped place coordinates and dropped pins are not automatically verified entrances." />
+      <InfoBanner tone="info" text="Tourism places come from LakBai’s bundled local catalog and work offline. Street matches use the bundled Davao del Norte OSM routing dataset; mapped coordinates are not automatically verified entrances." />
     </ScrollView>;
 };
 

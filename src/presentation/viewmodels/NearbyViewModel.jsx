@@ -2,6 +2,7 @@ import { userMessage } from "../../core/errors/appError.jsx";
 import { offlineContextContainsPosition } from "../../core/maps/offlineContextMapData.jsx";
 import { routingRegionFor, ROUTING_MANIFEST } from "../../data/assets/routingRegionAssets.jsx";
 import {
+  listOfflineTourismPlaces,
   loadDiscoveryState,
   loadOfflineDiscoveryCatalog,
   recordDiscoveryRecent,
@@ -9,8 +10,10 @@ import {
   saveDroppedPin,
   searchOfflineDiscovery,
 } from "../../domain/usecases/offlineDiscovery.jsx";
-import { loadNearbySavedPlaces } from "../../domain/usecases/nearbyPlaces.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
+
+const SEARCH_PAGE_SIZE = 10;
+const TOURISM_PAGE_SIZE = 10;
 
 export class NearbyViewModel extends ViewModel {
   constructor(destinationDeps, locationService, nav) {
@@ -18,12 +21,14 @@ export class NearbyViewModel extends ViewModel {
       loading: true,
       permission: 'unknown',
       fix: null,
-      places: [],
       catalog: { places: [], streets: [] },
       query: '',
+      searchLimit: SEARCH_PAGE_SIZE,
+      tourismLimit: TOURISM_PAGE_SIZE,
       recents: [],
       pins: [],
       basemapUri: null,
+      savedPackIds: [],
       savedPackCount: 0,
       error: null,
     });
@@ -36,35 +41,79 @@ export class NearbyViewModel extends ViewModel {
     void this.load();
   };
 
-  get searchResults() {
+  get searchPage() {
     return searchOfflineDiscovery(
       {
         ...this.state.catalog,
         places: [...this.state.pins, ...(this.state.catalog?.places ?? [])],
       },
       this.state.query,
-      { fix: this.state.fix, limit: 30 },
+      { fix: this.state.fix, limit: this.state.searchLimit + 1 },
     );
   }
 
+  get searchResults() {
+    return this.searchPage.slice(0, this.state.searchLimit);
+  }
+
+  get hasMoreSearchResults() {
+    return this.searchPage.length > this.state.searchLimit;
+  }
+
+  get tourismPage() {
+    return listOfflineTourismPlaces(this.state.catalog, {
+      fix: this.state.fix,
+      limit: this.state.tourismLimit + 1,
+    });
+  }
+
+  get tourismPlaces() {
+    const saved = new Set(this.state.savedPackIds);
+    return this.tourismPage.slice(0, this.state.tourismLimit).map(entry => ({
+      ...entry,
+      saved: entry.destinationId ? saved.has(entry.destinationId) : false,
+    }));
+  }
+
+  get hasMoreTourismPlaces() {
+    return this.tourismPage.length > this.state.tourismLimit;
+  }
+
+  get tourismPlaceCount() {
+    return this.state.catalog?.places?.length ?? 0;
+  }
+
   setQuery = query => {
-    this.setState({ query });
+    this.setState({ query, searchLimit: SEARCH_PAGE_SIZE });
+  };
+
+  loadMoreSearchResults = () => {
+    this.setState(previous => ({ searchLimit: previous.searchLimit + SEARCH_PAGE_SIZE }));
+  };
+
+  loadMoreTourismPlaces = () => {
+    this.setState(previous => ({ tourismLimit: previous.tourismLimit + TOURISM_PAGE_SIZE }));
   };
 
   refreshSavedPlaces = async () => {
     try {
       const saved = await this.destinationDeps.packRepository.listSavedMeta();
-      const places = saved.length && this.state.fix
-        ? await loadNearbySavedPlaces(this.destinationDeps, this.state.fix)
-        : [];
-      this.setState({ savedPackCount: saved.length, places });
+      this.setState({
+        savedPackIds: saved.map(entry => entry.packId),
+        savedPackCount: saved.length,
+      });
     } catch (error) {
       this.setState({ error: userMessage(error, 'Your saved places could not refresh. Try again.') });
     }
   };
 
   load = async () => {
-    this.setState({ loading: true, error: null });
+    this.setState({
+      loading: true,
+      error: null,
+      searchLimit: SEARCH_PAGE_SIZE,
+      tourismLimit: TOURISM_PAGE_SIZE,
+    });
     try {
       const [savedMeta, catalog, discoveryState, basemap] = await Promise.all([
         this.destinationDeps.packRepository.listSavedMeta(),
@@ -78,6 +127,7 @@ export class NearbyViewModel extends ViewModel {
         recents: discoveryState.recents ?? [],
         pins: discoveryState.pins ?? [],
         basemapUri: basemap?.uri ?? null,
+        savedPackIds: savedMeta.map(entry => entry.packId),
         savedPackCount: savedMeta.length,
       });
 
@@ -85,7 +135,6 @@ export class NearbyViewModel extends ViewModel {
       if (!granted) {
         this.setState({
           permission: 'denied',
-          places: [],
           fix: null,
         });
         return;
@@ -95,20 +144,15 @@ export class NearbyViewModel extends ViewModel {
       if (!fix) {
         this.setState({
           permission: 'granted',
-          places: [],
           fix: null,
-          error: 'LakBai could not get a current GPS position. Offline search and dropped pins still work; nearby distance ranking is unavailable.',
+          error: 'LakBai could not get a location estimate yet. All tourism places and offline search still work; distance ordering is unavailable.',
         });
         return;
       }
 
-      const places = savedMeta.length
-        ? await loadNearbySavedPlaces(this.destinationDeps, fix)
-        : [];
       this.setState({
         permission: 'granted',
         fix,
-        places,
       });
     } catch (error) {
       this.setState({

@@ -1,6 +1,7 @@
 import { ScreenScrollView as ScrollView } from "../components/ScreenScrollView.jsx";
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
 import { useFeedback } from "../../../feedback/FeedbackProvider.jsx";
 import { AppHeader } from "../components/AppHeader.jsx";
 import { DestinationCard } from "../components/DestinationCard.jsx";
@@ -8,6 +9,7 @@ import { InfoBanner } from "../components/InfoBanner.jsx";
 import { EmptyState } from "../components/EmptyState.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { SectionHeader } from "../components/SectionHeader.jsx";
+import { SecondaryButton } from "../components/Buttons.jsx";
 import { ScreenIntro } from "../components/ScreenIntro.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
 import { formatSizeKb } from "../../../core/utils/format.jsx";
@@ -23,6 +25,9 @@ export const LibraryScreen = ({
   const saved = viewModel.saved;
   const favorites = viewModel.favorites;
   const available = viewModel.available;
+  const [favoriteLimit, setFavoriteLimit] = useState(6);
+  const [savedLimit, setSavedLimit] = useState(6);
+  const [availableLimit, setAvailableLimit] = useState(6);
   if (state.loading && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AppHeader onOpenSettings={onOpenSettings} />
@@ -78,7 +83,7 @@ export const LibraryScreen = ({
       <View style={styles.section}>
         <SectionHeader eyebrow="For future trips" title="Favorites" />
         <View style={styles.list}>
-          {favorites.length ? favorites.map(item => <DestinationCard
+          {favorites.length ? favorites.slice(0, favoriteLimit).map(item => <DestinationCard
             key={item.destination.id}
             item={item}
             showCover={false}
@@ -86,13 +91,18 @@ export const LibraryScreen = ({
             onFavorite={() => void toggleFavorite(item.destination.id)}
             favoriteDisabled={state.busyId !== null}
           />) : <Text style={styles.emptyText}>No favorites yet. Use the heart on Explore or a destination guide.</Text>}
+          {favorites.length > favoriteLimit ? <SecondaryButton
+            label="Show more favorites"
+            icon="chevron-down-outline"
+            onPress={() => setFavoriteLimit(value => value + 6)}
+          /> : null}
         </View>
       </View>
 
       <View style={styles.section}>
         <SectionHeader eyebrow="On this device" title="Available offline" />
         <View style={styles.list}>
-          {saved.length ? saved.map(item => <DestinationCard
+          {saved.length ? saved.slice(0, savedLimit).map(item => <DestinationCard
             key={item.destination.id}
             item={item}
             showCover={false}
@@ -104,13 +114,18 @@ export const LibraryScreen = ({
             onFavorite={() => void toggleFavorite(item.destination.id)}
             favoriteDisabled={state.busyId !== null}
           />) : <Text style={styles.emptyText}>No guides saved yet. Open a place in Explore to save it for offline use.</Text>}
+          {saved.length > savedLimit ? <SecondaryButton
+            label="Show more offline guides"
+            icon="chevron-down-outline"
+            onPress={() => setSavedLimit(value => value + 6)}
+          /> : null}
         </View>
       </View>
 
       <View style={styles.section}>
         <SectionHeader eyebrow="Built into the app" title="Available to save" />
         <View style={styles.list}>
-          {available.length ? available.map(item => <DestinationCard
+          {available.length ? available.slice(0, availableLimit).map(item => <DestinationCard
             key={item.destination.id}
             item={item}
             showCover={false}
@@ -122,6 +137,11 @@ export const LibraryScreen = ({
             onFavorite={() => void toggleFavorite(item.destination.id)}
             favoriteDisabled={state.busyId !== null}
           />) : <Text style={styles.emptyText}>All available guides are saved offline.</Text>}
+          {available.length > availableLimit ? <SecondaryButton
+            label="Show more places to save"
+            icon="chevron-down-outline"
+            onPress={() => setAvailableLimit(value => value + 6)}
+          /> : null}
         </View>
       </View>
 

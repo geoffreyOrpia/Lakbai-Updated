@@ -1,6 +1,6 @@
-import { Asset } from 'expo-asset';
 import { Directory, File, Paths } from 'expo-file-system';
 import { buildOfflinePackFiles } from "../../core/offline/offlinePackFiles.jsx";
+import { copyBundledAsset } from "./bundledAssetFile.jsx";
 import { getDestinationPhotoModule } from "../assets/destinationPhotos.jsx";
 import { getOfflineBasemapModule, OFFLINE_BASEMAP_META } from "../assets/offlineBasemapAsset.jsx";
 import { routingRegionFor } from "../assets/routingRegionAssets.jsx";
@@ -13,6 +13,8 @@ const backupDirectory = packId => new Directory(rootDirectory(), `${packId}.back
 const mapDirectory = () => new Directory(Paths.document, 'lakbaylokal', 'maps');
 // A new bundled map must not silently reuse an older, less detailed saved copy.
 const basemapFile = () => new File(mapDirectory(), `davao-del-norte-${OFFLINE_BASEMAP_META.revision}.pmtiles`);
+const basemapStagingFile = () => new File(mapDirectory(), `davao-del-norte-${OFFLINE_BASEMAP_META.revision}.pmtiles.staging`);
+let basemapPreparation = null;
 
 const sharedBasemapStatus = () => {
   const file = basemapFile();
@@ -26,28 +28,47 @@ const sharedBasemapStatus = () => {
 const ensureSharedBasemap = async () => {
   const existing = sharedBasemapStatus();
   if (existing) return existing;
+  if (basemapPreparation) return basemapPreparation;
 
   const moduleSource = getOfflineBasemapModule();
   if (!moduleSource) return null;
 
-  const directory = mapDirectory();
-  const destinationFile = basemapFile();
+  const task = (async () => {
+    const directory = mapDirectory();
+    const destinationFile = basemapFile();
+    const stagingFile = basemapStagingFile();
+    try {
+      directory.create({
+        intermediates: true,
+        idempotent: true,
+      });
+      if (stagingFile.exists) stagingFile.delete();
+      await copyBundledAsset(
+        moduleSource,
+        stagingFile,
+        'Bundled Davao del Norte map is not available locally.',
+      );
+      if (!stagingFile.exists || stagingFile.size !== OFFLINE_BASEMAP_META.sizeBytes) {
+        throw new Error('Bundled Davao del Norte map failed its size check.');
+      }
+      const prepared = sharedBasemapStatus();
+      if (prepared) return prepared;
+      if (destinationFile.exists) destinationFile.delete();
+      stagingFile.move(destinationFile);
+      return sharedBasemapStatus();
+    } catch {
+      return null;
+    } finally {
+      const remaining = basemapStagingFile();
+      if (remaining.exists) remaining.delete();
+    }
+  })();
+
+  basemapPreparation = task;
   try {
-    directory.create({
-      intermediates: true,
-      idempotent: true,
-    });
-    const asset = Asset.fromModule(moduleSource);
-    await asset.downloadAsync();
-    if (!asset.localUri) return null;
-    const prepared = sharedBasemapStatus();
-    if (prepared) return prepared;
-    if (destinationFile.exists) destinationFile.delete();
-    new File(asset.localUri).copy(destinationFile);
-    return sharedBasemapStatus();
-  } catch {
-    if (destinationFile.exists && !sharedBasemapStatus()) destinationFile.delete();
-    return null;
+    return await task;
+  } finally {
+    if (basemapPreparation === task) basemapPreparation = null;
   }
 };
 
@@ -106,17 +127,23 @@ const writePackDirectory = async (pack, directory) => {
   for (const photo of pack.destination?.photos ?? []) {
     const moduleSource = getDestinationPhotoModule(photo.key);
     if (!moduleSource) continue;
-    const asset = Asset.fromModule(moduleSource);
-    await asset.downloadAsync();
-    if (!asset.localUri) {
-      throw new Error(`Bundled photo ${photo.key} could not be materialized locally.`);
-    }
-    const fileName = `${photo.key}.${asset.type || 'jpg'}`;
-    const sourceFile = new File(asset.localUri);
+    const fileName = `${photo.key}.jpg`;
     const destinationFile = new File(imageDirectory, fileName);
     if (destinationFile.exists) destinationFile.delete();
-    sourceFile.copy(destinationFile);
-    photoFiles.push(`images/${fileName}`);
+    const asset = await copyBundledAsset(
+      moduleSource,
+      destinationFile,
+      `Bundled photo ${photo.key} could not be materialized locally.`,
+    );
+    if (asset.type && asset.type !== 'jpg') {
+      const typedFileName = `${photo.key}.${String(asset.type).replace(/^\./, '')}`;
+      const typedFile = new File(imageDirectory, typedFileName);
+      if (typedFile.exists) typedFile.delete();
+      destinationFile.move(typedFile);
+      photoFiles.push(`images/${typedFileName}`);
+    } else {
+      photoFiles.push(`images/${fileName}`);
+    }
   }
 
   const region = routingRegionFor(pack.id);

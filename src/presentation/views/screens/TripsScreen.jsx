@@ -31,6 +31,7 @@ const TripList = ({
   onOpenSettings
 }) => {
   const state = viewModel.state;
+  const [tripLimit, setTripLimit] = useState(8);
   const totalStops = state.trips.reduce((count, trip) => count + trip.stops.length, 0);
   const offlineStops = state.trips.reduce((count, trip) => count + viewModel.tripReadiness(trip).ready, 0);
   if (state.loading && !state.trips.length) {
@@ -83,7 +84,12 @@ const TripList = ({
             </View>
           </View>
           <View style={styles.tripList}>
-            {state.trips.map(trip => <TripCard key={trip.id} trip={trip} readiness={viewModel.tripReadiness(trip)} onPress={() => viewModel.openDetails(trip)} />)}
+            {state.trips.slice(0, tripLimit).map(trip => <TripCard key={trip.id} trip={trip} readiness={viewModel.tripReadiness(trip)} onPress={() => viewModel.openDetails(trip)} />)}
+            {state.trips.length > tripLimit ? <SecondaryButton
+              label="Show more trips"
+              icon="chevron-down-outline"
+              onPress={() => setTripLimit(value => value + 8)}
+            /> : null}
           </View>
         </View>}
     </ScrollView>;
@@ -153,6 +159,7 @@ const TripEditor = ({
   const form = state.form;
   const isEditing = state.mode === 'edit';
   const available = state.destinations.filter(item => item.destination.status === 'available');
+  const [destinationLimit, setDestinationLimit] = useState(10);
   const {
     showSnackbar
   } = useFeedback();
@@ -195,7 +202,7 @@ const TripEditor = ({
       <View style={[styles.formCard, shadows.card]}>
         <SectionBadge step={2} title="Choose destinations" text="Choose places for your trip." />
         <View style={styles.destinationList}>
-          {available.map(item => {
+          {available.slice(0, destinationLimit).map(item => {
           const added = viewModel.isStopAdded(item.destination.id);
           return <View key={item.destination.id} style={styles.destinationRow}>
                 <View style={styles.destinationIcon}>
@@ -218,6 +225,11 @@ const TripEditor = ({
               </View>;
         })}
           {!available.length ? <Text style={styles.emptyText}>No destinations available yet. Connect once to load the catalog.</Text> : null}
+          {available.length > destinationLimit ? <SecondaryButton
+            label="Show more destinations"
+            icon="chevron-down-outline"
+            onPress={() => setDestinationLimit(value => value + 10)}
+          /> : null}
         </View>
       </View>
 

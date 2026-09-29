@@ -39,6 +39,7 @@ export const ExploreScreen = ({
 }) => {
   const state = viewModel.state;
   const results = viewModel.results;
+  const visibleResults = viewModel.visibleResults ?? results;
   useEffect(() => {
     if (initialQuery) {
       viewModel.setQuery(initialQuery);
@@ -98,13 +99,13 @@ export const ExploreScreen = ({
         <Text style={styles.resultCount}>
           {results.length} {results.length === 1 ? 'result' : 'results'}
         </Text>
-        <Text style={styles.helper}>Places</Text>
+        <Text style={styles.helper}>Showing {visibleResults.length}</Text>
       </View>
 
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
 
       <View style={styles.list}>
-        {results.map(item => <DestinationCard
+        {visibleResults.map(item => <DestinationCard
           key={item.destination.id}
           item={item}
           onPress={onOpenDestination ? () => onOpenDestination(item.destination.id) : undefined}
@@ -125,6 +126,11 @@ export const ExploreScreen = ({
           onFavorite={() => void toggleFavorite(item.destination.id)}
           favoriteDisabled={state.busyId !== null}
         />)}
+        {viewModel.hasMoreResults ? <SecondaryButton
+          label="Show more places"
+          icon="chevron-down-outline"
+          onPress={() => viewModel.loadMoreResults()}
+        /> : null}
       </View>
 
       {!results.length && !state.loading ? <EmptyState

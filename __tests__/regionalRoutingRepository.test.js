@@ -14,14 +14,14 @@ describe('regional graph repository',()=>{
   expect(store.ensure).toHaveBeenNthCalledWith(1,'mainland');
   expect(store.ensure).toHaveBeenNthCalledWith(2,'samal');
  });
- test('loads the selected region once and releases its cache when switching regions',async()=>{
+ test('keeps both regional graphs cached when switching across the ferry boundary',async()=>{
   const read=jest.fn(uri=>JSON.stringify(data(uri.split('/')[0])));
   const store={ensure:jest.fn(async region=>({uri:region+'/graph.routing'}))};
   const repo=new BundledRoutingGraphRepository(read,store);
   const a=await repo.getForDestination('tagum');expect(await repo.getForDestination('panabo')).toBe(a);
   expect(read).toHaveBeenCalledTimes(1);
   expect((await repo.getForDestination('samal')).meta.regionId).toBe('samal');
-  await repo.getForDestination('tagum');expect(read).toHaveBeenCalledTimes(3);
+  expect(await repo.getForDestination('tagum')).toBe(a);expect(read).toHaveBeenCalledTimes(2);
  });
  test('will not use an unchecked shared file after installation failure',async()=>{
   const read=jest.fn(()=>JSON.stringify(data('mainland')));

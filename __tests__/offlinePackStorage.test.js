@@ -39,7 +39,7 @@ jest.mock('../src/data/assets/destinationPhotos.jsx',()=>({getDestinationPhotoMo
 import {createOfflinePackStorage} from '../src/data/services/offlinePackStorage.jsx';
 const pack=id=>({id,version:1,destination:{name:id,municipality:'Tagum'},spots:[],trails:[]});
 const root='/documents/lakbaylokal/packs/';
-beforeEach(()=>{mockFiles.clear();mockDirs.clear();mockFiles.set('/asset/routing',mockGraph);mockFiles.set('/asset/basemap','detailed-map');mockBasemapAvailable=false;mockFailPromotion=false;mockVersion='v1';mockDownloadFails=false;});
+beforeEach(()=>{mockFiles.clear();mockDirs.clear();mockFiles.set('file:///asset/routing',mockGraph);mockFiles.set('file:///asset/basemap','detailed-map');mockBasemapAvailable=false;mockFailPromotion=false;mockVersion='v1';mockDownloadFails=false;});
 
 test('two destination packs share one checked routing file and deleting one preserves it',async()=>{
  const store=createOfflinePackStorage();

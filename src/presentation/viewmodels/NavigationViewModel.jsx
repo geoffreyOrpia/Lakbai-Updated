@@ -10,6 +10,7 @@ import {
 import { normalizeRoutePreference } from "../../core/routing/routingProfiles.jsx";
 import {
   calculateOfflineRoute,
+  prepareOfflineRoutingGraph,
   turnStateBeforeRoutePosition,
 } from "../../domain/usecases/offlineNavigation.jsx";
 import {
@@ -32,7 +33,7 @@ import { routingRegionFor } from "../../data/assets/routingRegionAssets.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 
 const MAX_NAVIGATION_ACCURACY_M = 60;
-const MAX_ROUTE_START_ACCURACY_M = 80;
+const MAX_ROUTE_START_ACCURACY_M = 250;
 const BASE_OFF_ROUTE_M = 45;
 const OFF_ROUTE_CONFIRM_FIXES = 3;
 const WRONG_WAY_CONFIRM_FIXES = 3;
@@ -224,6 +225,9 @@ export class NavigationViewModel extends ViewModel {
         this.state.target,
         bundle?.sharedRouting ?? null,
       );
+      // Prime the expensive routing index while this screen is loading so
+      // Find my route only has to acquire a location and run the route search.
+      prepareOfflineRoutingGraph(graph);
       const navigationPack = savedPack ?? bundledPack;
       const trailPreview = this.state.trailId
         ? navigationPack?.trails?.find(trail => (
@@ -298,7 +302,7 @@ export class NavigationViewModel extends ViewModel {
       const fix = await this.locationService.getCurrentFix();
       if (!fix) {
         this.setState({
-          error: 'Your location could not be found. Move to an open area and try again.',
+          error: 'Your location could not be found yet. Check that device location is on, then try again.',
         });
         return;
       }
@@ -306,7 +310,7 @@ export class NavigationViewModel extends ViewModel {
         this.setState({
           fix,
           accuracyM: fix.accuracy,
-          error: `GPS accuracy is about ${Math.round(fix.accuracy)} m. Move to an open area and try again before calculating a navigation route.`,
+          error: `Your location estimate is about ${Math.round(fix.accuracy)} m wide, which is too broad to choose a safe route start. Try again after the phone refines your position.`,
         });
         return;
       }

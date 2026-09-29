@@ -25,6 +25,7 @@ export class ExploreViewModel extends ViewModel {
       items: [],
       query: '',
       category: 'all',
+      resultLimit: 8,
       loading: true,
       onlineSearching: false,
       busyId: null,
@@ -68,6 +69,18 @@ export class ExploreViewModel extends ViewModel {
     });
   }
 
+  get visibleResults() {
+    return this.results.slice(0, this.state.resultLimit);
+  }
+
+  get hasMoreResults() {
+    return this.results.length > this.state.resultLimit;
+  }
+
+  loadMoreResults = () => {
+    this.setState(previous => ({ resultLimit: previous.resultLimit + 8 }));
+  };
+
   get smartResults() {
     return recommendTourismPlaces(
       this.state.smartCatalog,
@@ -85,11 +98,11 @@ export class ExploreViewModel extends ViewModel {
   }
 
   setQuery = query => {
-    this.setState({ query });
+    this.setState({ query, resultLimit: 8 });
   };
 
   setCategory = category => {
-    this.setState({ category });
+    this.setState({ category, resultLimit: 8 });
   };
 
   toggleSmartOpen = () => {

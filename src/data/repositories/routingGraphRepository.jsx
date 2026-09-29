@@ -9,17 +9,30 @@ export class BundledRoutingGraphRepository {
   constructor(readText = defaultReadText, sharedStorage = sharedRoutingStorage) {
     this.readText = readText;
     this.sharedStorage = sharedStorage;
-    this.cached = null;
+    this.cache = new Map();
+    this.maxCachedGraphs = 2;
   }
 
+  rememberGraph = (uri, graph) => {
+    this.cache.delete(uri);
+    this.cache.set(uri, graph);
+    while (this.cache.size > this.maxCachedGraphs) {
+      this.cache.delete(this.cache.keys().next().value);
+    }
+  };
+
   readGraph = (uri, region = null) => {
-    if (this.cached?.uri === uri && (!region || this.cached.graph.meta?.regionId === region)) return this.cached.graph;
+    const cached = this.cache.get(uri);
+    if (cached) {
+      if (region && cached.meta?.regionId !== region) throw new Error('Routing region mismatch');
+      this.rememberGraph(uri, cached);
+      return cached;
+    }
     const graph = JSON.parse(this.readText(uri));
     if (!graph?.nodes?.length || !graph?.edges?.length) throw new Error('Empty routing graph');
     if (graph.format) validateCompactRoutingGraph(graph);
     if (region && graph.meta?.regionId !== region) throw new Error('Routing region mismatch');
-    // One graph retained by this repository; the engine index cache is weak.
-    this.cached = { uri, graph };
+    this.rememberGraph(uri, graph);
     return graph;
   };
 

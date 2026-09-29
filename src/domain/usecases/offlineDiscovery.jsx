@@ -124,6 +124,27 @@ export const searchOfflineDiscovery = (
     .slice(0, limit);
 };
 
+/**
+ * List every curated tourism place bundled with LakBai, not only places whose
+ * guides are already saved. Distance ranking remains fully offline.
+ */
+export const listOfflineTourismPlaces = (
+  catalog,
+  { fix = null, limit = 30 } = {},
+) => (
+  (catalog?.places ?? [])
+    .filter(hasCoordinates)
+    .map(entry => ({
+      ...entry,
+      distanceKm: fix && hasCoordinates(fix) ? haversineKm(fix, entry) : null,
+    }))
+    .sort((a, b) => (
+      (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY)
+      || a.name.localeCompare(b.name)
+    ))
+    .slice(0, limit)
+);
+
 export const loadDiscoveryState = deps => deps.discoveryRepository.getState();
 
 export const recordDiscoveryRecent = async (deps, entry) => {

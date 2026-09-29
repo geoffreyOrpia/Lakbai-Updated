@@ -894,7 +894,7 @@ describe('NavigationViewModel', () => {
     expect(vm.state.error).toContain('outside the current Central/coastal Panabo pilot');
   });
 
-  test('rejects an initial GPS fix that is too inaccurate for routing', async () => {
+  test('accepts an approximate indoor-quality fix for route planning and pauses live progress', async () => {
     const { vm } = createVm({
       fix: { lat: 7.2999, lng: 125.6801, accuracy: 150 },
     });
@@ -902,8 +902,20 @@ describe('NavigationViewModel', () => {
 
     await vm.startFromGps();
 
+    expect(vm.state.route?.ok).toBe(true);
+    expect(vm.state.gpsError).toContain('paused');
+  });
+
+  test('rejects an initial location estimate that is too broad for routing', async () => {
+    const { vm } = createVm({
+      fix: { lat: 7.2999, lng: 125.6801, accuracy: 400 },
+    });
+    await vm.load();
+
+    await vm.startFromGps();
+
     expect(vm.state.route).toBeNull();
-    expect(vm.state.error).toContain('GPS accuracy');
+    expect(vm.state.error).toContain('too broad');
   });
 
   test('uses the bundled provincial basemap when no destination pack is saved', async () => {

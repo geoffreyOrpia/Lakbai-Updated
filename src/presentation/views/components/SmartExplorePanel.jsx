@@ -1,5 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
 import { SMART_INTEREST_OPTIONS } from "../../../domain/usecases/smartExploreKnowledge.jsx";
 import { colors, radius, shadows, spacing } from "../../../theme.jsx";
 import { PrimaryButton, SecondaryButton } from "./Buttons.jsx";
@@ -63,7 +64,7 @@ const RecommendationCard = ({ place, selected, onToggle, onOpen }) => (
       </View>
 
       <View style={styles.reasonList}>
-        {place.reasons.slice(0, 3).map(reason => (
+        {place.reasons.slice(0, 2).map(reason => (
           <View key={reason} style={styles.reasonRow}>
             <Ionicons name="checkmark" size={13} color={colors.primary} />
             <Text style={styles.reasonText}>{reason}</Text>
@@ -85,6 +86,9 @@ export const SmartExplorePanel = ({ viewModel }) => {
   const results = viewModel.smartResults;
   const { showSnackbar } = useFeedback();
   const selectedCount = state.smartSelectedIds.length;
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [resultLimit, setResultLimit] = useState(5);
+  const visibleResults = results.slice(0, resultLimit);
 
   const toggleSelection = placeId => {
     const result = viewModel.toggleSmartSelection(placeId);
@@ -115,17 +119,12 @@ export const SmartExplorePanel = ({ viewModel }) => {
     </View>
 
     <SecondaryButton
-      label={state.smartOpen ? 'Hide trip ideas' : 'Personalize recommendations'}
+      label={state.smartOpen ? 'Hide trip ideas' : 'Personalize trip ideas'}
       icon={state.smartOpen ? 'chevron-up-outline' : 'options-outline'}
       onPress={() => viewModel.toggleSmartOpen()}
     />
 
     {state.smartOpen ? <View style={styles.panel}>
-      <InfoBanner
-        tone="info"
-        text="Check opening hours and fees before visiting. Some details are not available yet."
-      />
-
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>What are you interested in?</Text>
         <View style={styles.wrap}>
@@ -158,51 +157,56 @@ export const SmartExplorePanel = ({ viewModel }) => {
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Walking preference</Text>
-        <View style={styles.wrap}>
-          <FilterChip
-            label="Any"
-            active={state.smartPreferences.walking === 'any'}
-            onPress={() => viewModel.setSmartPreference('walking', 'any')}
-          />
-          <FilterChip
-            label="Prefer easy"
-            active={state.smartPreferences.walking === 'easy'}
-            onPress={() => viewModel.setSmartPreference('walking', 'easy')}
-          />
-        </View>
-        <Text style={styles.helper}>
-          “Easy” only uses LakBai’s existing planning-route difficulty data; it does not claim every path inside a destination is easy.
-        </Text>
-      </View>
+      <SecondaryButton
+        label={advancedOpen ? 'Fewer preferences' : 'More preferences'}
+        icon={advancedOpen ? 'chevron-up-outline' : 'options-outline'}
+        onPress={() => setAdvancedOpen(value => !value)}
+      />
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Journey constraints</Text>
-        <View style={styles.wrap}>
-          <FilterChip
-            label="Ferry okay"
-            icon="boat-outline"
-            active={state.smartPreferences.ferry === 'allow'}
-            onPress={() => viewModel.setSmartPreference('ferry', 'allow')}
-          />
-          <FilterChip
-            label="Avoid ferry"
-            icon="remove-circle-outline"
-            active={state.smartPreferences.ferry === 'avoid'}
-            onPress={() => viewModel.setSmartPreference('ferry', 'avoid')}
-          />
-          <FilterChip
-            label="Saved offline only"
-            icon="cloud-done-outline"
-            active={state.smartPreferences.savedOnly}
-            onPress={() => viewModel.setSmartPreference('savedOnly', !state.smartPreferences.savedOnly)}
-          />
+      {advancedOpen ? <>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Walking preference</Text>
+          <View style={styles.wrap}>
+            <FilterChip
+              label="Any"
+              active={state.smartPreferences.walking === 'any'}
+              onPress={() => viewModel.setSmartPreference('walking', 'any')}
+            />
+            <FilterChip
+              label="Prefer easy"
+              active={state.smartPreferences.walking === 'easy'}
+              onPress={() => viewModel.setSmartPreference('walking', 'easy')}
+            />
+          </View>
         </View>
-        {!state.smartFix && state.smartPreferences.ferry === 'avoid' ? <Text style={styles.helper}>
-          Enable current location so LakBai can determine whether a mainland–Samal crossing is actually required.
-        </Text> : null}
-      </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Trip constraints</Text>
+          <View style={styles.wrap}>
+            <FilterChip
+              label="Ferry okay"
+              icon="boat-outline"
+              active={state.smartPreferences.ferry === 'allow'}
+              onPress={() => viewModel.setSmartPreference('ferry', 'allow')}
+            />
+            <FilterChip
+              label="Avoid ferry"
+              icon="remove-circle-outline"
+              active={state.smartPreferences.ferry === 'avoid'}
+              onPress={() => viewModel.setSmartPreference('ferry', 'avoid')}
+            />
+            <FilterChip
+              label="Saved offline only"
+              icon="cloud-done-outline"
+              active={state.smartPreferences.savedOnly}
+              onPress={() => viewModel.setSmartPreference('savedOnly', !state.smartPreferences.savedOnly)}
+            />
+          </View>
+          {!state.smartFix && state.smartPreferences.ferry === 'avoid' ? <Text style={styles.helper}>
+            Use your location to check whether a Samal ferry crossing is required.
+          </Text> : null}
+        </View>
+      </> : null}
 
       <View style={styles.locationCard}>
         <View style={styles.locationCopy}>
@@ -211,8 +215,8 @@ export const SmartExplorePanel = ({ viewModel }) => {
           </Text>
           <Text style={styles.locationText}>
             {state.smartFix
-              ? 'LakBai uses your GPS fix locally and refines the strongest matches with the offline routing engine.'
-              : 'GPS is optional. Without it, recommendations still use interests, source review, route coverage, and offline readiness.'}
+              ? 'Location is used locally to improve nearby order and travel-time estimates.'
+              : 'Optional: use your location to sort nearby places and estimate travel time.'}
           </Text>
         </View>
         <SecondaryButton
@@ -240,7 +244,7 @@ export const SmartExplorePanel = ({ viewModel }) => {
       </View>
 
       <View style={styles.results}>
-        {results.slice(0, 10).map(place => (
+        {visibleResults.map(place => (
           <RecommendationCard
             key={place.id}
             place={place}
@@ -249,6 +253,11 @@ export const SmartExplorePanel = ({ viewModel }) => {
             onOpen={() => viewModel.openSmartDestination(place)}
           />
         ))}
+        {results.length > resultLimit ? <SecondaryButton
+          label="Show more recommendations"
+          icon="chevron-down-outline"
+          onPress={() => setResultLimit(value => value + 5)}
+        /> : null}
       </View>
 
       {!results.length ? <InfoBanner
@@ -263,7 +272,7 @@ export const SmartExplorePanel = ({ viewModel }) => {
         onPress={buildTrip}
       />
       <Text style={styles.footerNote}>
-        Generated trips remain editable before saving. Actual navigation recalculates from the live GPS position and preserves the selected POI targets.
+        Trips stay editable before saving. Check time-sensitive details before visiting.
       </Text>
     </View> : null}
   </View>;
