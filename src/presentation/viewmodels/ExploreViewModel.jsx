@@ -290,7 +290,7 @@ export class ExploreViewModel extends ViewModel {
     } catch (error) {
       return {
         ok: false,
-        message: userMessage(error, 'The destination pack could not be saved.'),
+        message: userMessage(error, 'The guide could not be saved.'),
       };
     } finally {
       this.setState({ busyId: null });
@@ -306,11 +306,11 @@ export class ExploreViewModel extends ViewModel {
         savedVersion: pack.version,
         updateAvailable: false,
       });
-      return { ok: true, message: `${pack.destination.name} offline files updated.` };
+      return { ok: true, message: `${pack.destination.name} offline guide updated.` };
     } catch (error) {
       return {
         ok: false,
-        message: userMessage(error, 'The saved destination pack could not be updated.'),
+        message: userMessage(error, 'The saved guide could not be updated.'),
       };
     } finally {
       this.setState({ busyId: null });
@@ -344,11 +344,11 @@ export class ExploreViewModel extends ViewModel {
         savedVersion: null,
         updateAvailable: false,
       });
-      return { ok: true, message: 'Pack removed from your local library.' };
+      return { ok: true, message: 'Offline guide removed. Your favorites and trips are kept.' };
     } catch (error) {
       return {
         ok: false,
-        message: userMessage(error, 'The destination pack could not be removed.'),
+        message: userMessage(error, 'The offline guide could not be removed.'),
       };
     } finally {
       this.setState({ busyId: null });

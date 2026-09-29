@@ -34,6 +34,38 @@ const createVm = () => {
 };
 
 describe('DestinationViewModel offline navigation targets', () => {
+  test('saves an unsaved place before opening directions to the requested spot', async () => {
+    const { vm, nav } = createVm();
+    let finishSave;
+    vm.saveToLibrary = jest.fn(() => new Promise(resolve => { finishSave = resolve; }));
+    const place = { name: 'Market', lat: 7.3, lng: 125.67 };
+    const pending = vm.prepareAndOpen({ place });
+    expect(nav.onOpenNavigation).not.toHaveBeenCalled();
+    finishSave({ ok: true });
+    await expect(pending).resolves.toEqual({ ok: true });
+    expect(nav.onOpenNavigation).toHaveBeenCalledWith(expect.objectContaining({ target: { label: 'Market', lat: 7.3, lng: 125.67 } }));
+  });
+
+  test('keeps the user on the guide when saving fails', async () => {
+    const { vm, nav } = createVm();
+    vm.saveToLibrary = jest.fn().mockResolvedValue({ ok: false, message: 'Not enough storage.' });
+    await expect(vm.prepareAndOpen()).resolves.toEqual({ ok: false, message: 'Not enough storage.' });
+    expect(nav.onOpenNavigation).not.toHaveBeenCalled();
+    expect(nav.onOpenTrail).not.toHaveBeenCalled();
+  });
+
+  test('opens a saved trail without saving it again and ignores taps while busy', async () => {
+    const { vm, nav } = createVm();
+    vm.saveToLibrary = jest.fn();
+    vm.setState({ saved: true });
+    await vm.prepareAndOpen({ trailId: 'boardwalk' });
+    expect(nav.onOpenTrail).toHaveBeenCalledWith('boardwalk');
+    expect(vm.saveToLibrary).not.toHaveBeenCalled();
+    vm.setState({ busy: true });
+    await vm.prepareAndOpen();
+    expect(nav.onOpenNavigation).not.toHaveBeenCalled();
+  });
+
   test('opens the default destination target with verified trail handoff', () => {
     const { vm, nav } = createVm();
 

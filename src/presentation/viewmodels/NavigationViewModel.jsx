@@ -88,6 +88,7 @@ const spokenGuidance = (maneuver, distanceKm, stage) => {
 
 export class NavigationViewModel extends ViewModel {
   unwatch = null;
+  locationWatchRequest = 0;
   offRouteSamples = 0;
   wrongWaySamples = 0;
   wrongWayDistanceM = 0;
@@ -246,12 +247,12 @@ export class NavigationViewModel extends ViewModel {
         error: !graph
           ? 'Offline road routing is not available for this destination yet.'
           : !(bundle?.basemapUri ?? bundledBasemap?.uri)
-          ? 'LakBai could not prepare the bundled Davao del Norte offline basemap.'
+          ? 'The saved map could not open. Please try again.'
           : null,
       });
     } catch {
       this.setState({
-        error: 'LakBai could not load the offline routing data for this destination.',
+        error: 'Directions could not load for this place. Please try again.',
       });
     } finally {
       this.setState({ loading: false });
@@ -297,7 +298,7 @@ export class NavigationViewModel extends ViewModel {
       const fix = await this.locationService.getCurrentFix();
       if (!fix) {
         this.setState({
-          error: 'LakBai could not get a current GPS fix. Move to an open area and try again.',
+          error: 'Your location could not be found. Move to an open area and try again.',
         });
         return;
       }
@@ -407,17 +408,17 @@ export class NavigationViewModel extends ViewModel {
         distanceToNextManeuverKm: null,
         journeyPhase: null,
         error: result.reason === 'ferry-unavailable' || result.reason === 'ferry-required'
-          ? 'LakBai could not build a source-reviewed ferry journey between the mainland and Samal from this position.'
+          ? 'No suitable ferry route to or from Samal was found from your location.'
           : result.reason === 'multi-stop-leg-failed' || result.reason === 'multi-stop-routing-unavailable'
-          ? `LakBai could not build the offline leg to itinerary stop ${(result.stopIndex ?? 0) + 1}.`
+          ? `No route was found to stop ${(result.stopIndex ?? 0) + 1}.`
           : result.reason === 'trail-approach-route-failed'
-          ? 'LakBai could not connect your position to the verified trail start using the offline walking graph.'
+          ? 'No walking route to the trail entrance was found from your location.'
           : result.reason === 'trail-unverified'
-          ? 'This trail cannot be included in continuous navigation because its route geometry is not verified.'
+          ? 'Directions are not available for this trail because its path has not been checked.'
           : result.reason === 'ferry-origin-route-failed'
-          ? 'LakBai could not connect your current position to the mapped ferry terminal using the offline road graph.'
+          ? 'No route to the ferry terminal was found from your location.'
           : result.reason === 'ferry-destination-route-failed'
-          ? 'LakBai could not connect the ferry arrival terminal to this destination using the offline road graph.'
+          ? 'No route was found from the ferry terminal to your destination.'
           : result.reason === 'outside-coverage'
           ? `Your position is outside the current ${this.state.coverage ?? 'offline-routing coverage'}.`
           : 'No connected offline route could be found from this position.',
@@ -562,9 +563,11 @@ export class NavigationViewModel extends ViewModel {
 
   startNavigation = async () => {
     if (!this.state.route || this.state.preview || this.state.tracking) return;
+    const request = ++this.locationWatchRequest;
     const granted = this.state.permission === 'granted'
       ? true
       : await this.locationService.requestPermissions();
+    if (request !== this.locationWatchRequest) return;
     if (!granted) {
       this.setState({
         permission: 'denied',
@@ -587,12 +590,17 @@ export class NavigationViewModel extends ViewModel {
 
     try {
       const currentFix = await this.locationService.getCurrentFix();
+      if (request !== this.locationWatchRequest) return;
       if (currentFix) this.applyFix(currentFix);
-      this.unwatch = await this.locationService.watchFix(
-        fix => this.applyFix(fix),
-        this.handleLocationError,
+      if (request !== this.locationWatchRequest) return;
+      const unwatch = await this.locationService.watchFix(
+        fix => { if (request === this.locationWatchRequest) this.applyFix(fix); },
+        error => { if (request === this.locationWatchRequest) this.handleLocationError(error); },
       );
+      if (request !== this.locationWatchRequest) unwatch?.();
+      else this.unwatch = unwatch;
     } catch {
+      if (request !== this.locationWatchRequest) return;
       this.stopLocationWatch();
       this.setState({
         tracking: false,
@@ -615,6 +623,7 @@ export class NavigationViewModel extends ViewModel {
   };
 
   stopLocationWatch = () => {
+    this.locationWatchRequest += 1;
     this.unwatch?.();
     this.unwatch = null;
   };
@@ -1042,7 +1051,7 @@ export class NavigationViewModel extends ViewModel {
       const result = await this.calculateRouteResult(fix, initialTurnState);
       if (!result.ok) {
         this.setState({
-          gpsError: 'You appear to be off the active route, but LakBai could not find another connected offline route from this position.',
+          gpsError: 'You may be off your route. No new route was found. Check the map when safe.',
         });
         return;
       }

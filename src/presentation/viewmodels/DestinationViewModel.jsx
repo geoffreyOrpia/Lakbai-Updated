@@ -52,7 +52,7 @@ export class DestinationViewModel extends ViewModel {
         updateAvailable: libraryState.updateAvailable,
         offlineBundle,
         favorite,
-        error: pack || source === 'bundled' ? null : 'This destination pack is not bundled with this version of LakBai yet.'
+        error: pack || source === 'bundled' ? null : 'This destination guide is not available in this version of LakBai yet.'
       });
     } catch (error) {
       this.setState({
@@ -105,13 +105,13 @@ export class DestinationViewModel extends ViewModel {
       return {
         ok: true,
         message: updating
-          ? `${pack.destination.name} offline files updated.`
+          ? `${pack.destination.name} offline guide updated.`
           : `${pack.destination.name} is ready for offline use.`
       };
     } catch (error) {
       return {
         ok: false,
-        message: userMessage(error, 'The pack could not be saved.')
+        message: userMessage(error, 'The guide could not be saved.')
       };
     } finally {
       this.setState({
@@ -133,12 +133,12 @@ export class DestinationViewModel extends ViewModel {
       });
       return {
         ok: true,
-        message: 'Removed from your local library.'
+        message: 'Offline guide removed. Your favorites and trips are kept.'
       };
     } catch (error) {
       return {
         ok: false,
-        message: userMessage(error, 'The pack could not be removed.')
+        message: userMessage(error, 'The offline guide could not be removed.')
       };
     } finally {
       this.setState({
@@ -148,6 +148,16 @@ export class DestinationViewModel extends ViewModel {
   };
   openTrail = trailId => {
     this.nav.onOpenTrail(trailId);
+  };
+  prepareAndOpen = async ({ place, trailId } = {}) => {
+    if (this.state.busy) return { ok: false, message: 'Please wait while this place is saved.' };
+    if (!this.state.saved) {
+      const result = await this.saveToLibrary();
+      if (!result.ok) return result;
+    }
+    if (trailId) this.openTrail(trailId);
+    else this.openOfflineNavigation(place);
+    return { ok: true };
   };
   openOfflineNavigation = place => {
     const destination = this.state.pack?.destination;

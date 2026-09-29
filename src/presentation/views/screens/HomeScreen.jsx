@@ -1,6 +1,7 @@
+import { ScreenScrollView as ScrollView } from "../components/ScreenScrollView.jsx";
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppHeader } from "../components/AppHeader.jsx";
 import { DestinationCard } from "../components/DestinationCard.jsx";
 import { EmptyState } from "../components/EmptyState.jsx";
@@ -21,7 +22,7 @@ export const HomeScreen = ({
   if (state.loading && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AppHeader onOpenSettings={onOpenSettings} />
-        <LoadingState title="Preparing your local guides" text="Reading the Davao del Norte catalog and your saved Library state." />
+        <LoadingState title="Preparing your local guides" text="Opening your places and saved guides." />
       </ScrollView>;
   }
   if (state.error && !state.items.length) {
@@ -36,12 +37,12 @@ export const HomeScreen = ({
       <ScreenIntro
         eyebrow="DAVAO DEL NORTE"
         title="Explore confidently, even beyond the signal."
-        subtitle="Saved maps, destination guides, itineraries, and province-wide offline discovery keep working when your signal does not."
+        subtitle="Find places, plan a trip, and take your saved maps with you."
       />
 
-      <SearchField value={searchQuery} onChangeText={setSearchQuery} placeholder="Search destination packs" onSubmit={value => viewModel.openExplore(value)} />
+      <SearchField value={searchQuery} onChangeText={setSearchQuery} placeholder="Search places" onSubmit={value => viewModel.openExplore(value)} />
 
-      <Pressable accessibilityRole="button" accessibilityLabel="Open local library" style={({
+      <Pressable accessibilityRole="button" accessibilityLabel="Open saved places" style={({
       pressed
     }) => [styles.readiness, shadows.card, pressed && styles.pressed]} onPress={() => viewModel.openLibrary()}>
         <View style={styles.readinessIcon}>
@@ -49,10 +50,10 @@ export const HomeScreen = ({
         </View>
         <View style={styles.readinessCopy}>
           <Text style={styles.readinessTitle}>
-            {state.savedCount} {state.savedCount === 1 ? 'pack' : 'packs'} ready offline
+            {state.savedCount} {state.savedCount === 1 ? 'guide' : 'guides'} ready offline
           </Text>
           <Text style={styles.readinessText}>
-            {firstSaved ? `${firstSaved.destination.name} is saved on this device.` : 'Save a built-in destination pack to your personal library—no internet required.'}
+            {firstSaved ? `${firstSaved.destination.name} is saved on this device.` : 'Save a guide and map to use without internet.'}
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color={colors.primary} />
@@ -65,8 +66,8 @@ export const HomeScreen = ({
           <Ionicons name="location" size={21} color={colors.accent} />
         </View>
         <View style={styles.readinessCopy}>
-          <Text style={styles.nearbyTitle}>Offline Discovery</Text>
-          <Text style={styles.readinessText}>Search local places and provincial streets, drop pins, or use GPS to rank saved-pack places—without internet.</Text>
+          <Text style={styles.nearbyTitle}>Nearby places</Text>
+          <Text style={styles.readinessText}>Find places and streets, or save a spot on the map. Works offline.</Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color={colors.accent} />
       </Pressable>
@@ -74,7 +75,7 @@ export const HomeScreen = ({
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
 
       <View style={styles.section}>
-        <SectionHeader eyebrow="Recommended" title="Start with these packs" actionLabel="Explore all" onAction={() => viewModel.openExplore()} />
+        <SectionHeader eyebrow="Recommended" title="Places to explore" actionLabel="Explore all" onAction={() => viewModel.openExplore()} />
         <View style={styles.list}>
           {featured.map(item => <DestinationCard key={item.destination.id} item={item} onPress={() => viewModel.openDestination(item.destination.id)} />)}
         </View>
@@ -83,11 +84,11 @@ export const HomeScreen = ({
       <View style={styles.section}>
         <SectionHeader eyebrow="Simple flow" title="How LakBai works" />
         <View style={[styles.flowCard, shadows.card]}>
-          <FlowStep icon="bookmark-outline" number="01" title="Save" text="Add a pack to your library." />
+          <FlowStep icon="bookmark-outline" number="01" title="Save" text="Save a guide and map." />
           <View style={styles.flowDivider} />
           <FlowStep icon="cloud-offline-outline" number="02" title="Explore" text="Read guides without a connection." />
           <View style={styles.flowDivider} />
-          <FlowStep icon="navigate-outline" number="03" title="Follow" text="Use suggested routes; verified trails unlock GPS guidance." />
+          <FlowStep icon="navigate-outline" number="03" title="Follow" text="Get directions when you are ready." />
         </View>
       </View>
     </ScrollView>;

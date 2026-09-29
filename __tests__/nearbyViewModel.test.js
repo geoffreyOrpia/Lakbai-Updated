@@ -55,6 +55,16 @@ const createVm = ({ permission = false } = {}) => {
 };
 
 describe('NearbyViewModel offline discovery', () => {
+  test('refreshes saved guides after a detour without resetting the search or asking for location again', async () => {
+    const { vm } = createVm();
+    await vm.load();
+    vm.setQuery('Babak');
+    vm.destinationDeps.packRepository.listSavedMeta.mockResolvedValue([{ packId: 'samal' }]);
+    vm.locationService.requestPermissions.mockClear();
+    await vm.refreshSavedPlaces();
+    expect(vm.state).toMatchObject({ query: 'Babak', savedPackCount: 1, loading: false });
+    expect(vm.locationService.requestPermissions).not.toHaveBeenCalled();
+  });
   test('loads offline search even when foreground location is denied', async () => {
     const { vm } = createVm({ permission: false });
 

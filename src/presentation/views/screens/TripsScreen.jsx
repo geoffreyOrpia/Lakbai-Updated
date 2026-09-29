@@ -1,7 +1,8 @@
+import { ScreenScrollView as ScrollView } from "../components/ScreenScrollView.jsx";
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFeedback } from "../../../feedback/FeedbackProvider.jsx";
 import { BackAction, PrimaryButton, SecondaryButton } from "../components/Buttons.jsx";
 import { EmptyState } from "../components/EmptyState.jsx";
@@ -49,7 +50,7 @@ const TripList = ({
 
       <ScreenIntro
         eyebrow="MY TRIPS"
-        title="Your itineraries"
+        title="Your trips"
         subtitle="Plan, save, and review personal trips stored only on this device."
       />
 
@@ -59,14 +60,14 @@ const TripList = ({
         <TripStat value={String(offlineStops)} label="Offline ready" />
       </View>
 
-      <Pressable accessibilityRole="button" accessibilityLabel="Create a new itinerary" style={({
+      <Pressable accessibilityRole="button" accessibilityLabel="Create a trip" style={({
       pressed
     }) => [styles.createTripButton, shadows.card, pressed && styles.pressed]} onPress={() => viewModel.openCreate()}>
         <View style={styles.createTripIcon}>
           <Ionicons name="add" size={20} color={colors.onPrimary} />
         </View>
         <View style={styles.createTripCopy}>
-          <Text style={styles.createTripTitle}>Create a new itinerary</Text>
+          <Text style={styles.createTripTitle}>Create a trip</Text>
           <Text style={styles.createTripText}>Choose destinations and arrange your route.</Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color={colors.onPrimary} />
@@ -74,7 +75,7 @@ const TripList = ({
 
       {state.error ? <InfoBanner tone="danger" text={state.error} /> : null}
 
-      {!state.loading && state.trips.length === 0 ? <EmptyState icon="map-outline" title="No itineraries yet" text="Create your first trip to organize destinations, times, and notes before you go." /> : <View style={styles.tripSection}>
+      {!state.loading && state.trips.length === 0 ? <EmptyState icon="map-outline" title="No trips yet" text="Create your first trip to organize destinations, times, and notes before you go." /> : <View style={styles.tripSection}>
           <View style={styles.sectionHeadingRow}>
             <View>
               <Text style={styles.sectionKicker}>SAVED ITINERARIES</Text>
@@ -139,7 +140,7 @@ const TripCard = ({
           </View>
           <ProgressBar percent={readiness.percent} />
           {readiness.missingStops.length ? <Text style={styles.readinessMissing} numberOfLines={2}>
-              Needs Library: {readiness.missingStops.map(stop => stop.destinationName).join(', ')}
+              Save for offline use: {readiness.missingStops.map(stop => stop.destinationName).join(', ')}
             </Text> : <Text style={styles.readinessReady}>All stops are ready offline.</Text>}
         </View>
       </View>
@@ -173,7 +174,7 @@ const TripEditor = ({
           <Text style={styles.eyebrow}>{isEditing ? 'EDIT ITINERARY' : 'NEW ITINERARY'}</Text>
           <Text style={styles.title}>{isEditing ? 'Refine your travel plan' : 'Build your travel plan'}</Text>
           <Text style={styles.subtitle}>
-            {isEditing ? 'Update the details, destinations, timing, and route order while keeping the same saved itinerary.' : 'Start with the essentials, add curated destinations, then arrange your route in the order that works for you.'}
+            {isEditing ? 'Update the details, destinations, timing, and route order while keeping the same saved itinerary.' : 'Name your trip, choose places, and arrange your stops.'}
           </Text>
         </View>
       </View>
@@ -192,7 +193,7 @@ const TripEditor = ({
       </View>
 
       <View style={[styles.formCard, shadows.card]}>
-        <SectionBadge step={2} title="Choose destinations" text="Add any available LakBai destination pack to your route." />
+        <SectionBadge step={2} title="Choose destinations" text="Choose places for your trip." />
         <View style={styles.destinationList}>
           {available.map(item => {
           const added = viewModel.isStopAdded(item.destination.id);
@@ -386,7 +387,7 @@ const TripDetails = ({
             <Ionicons name="cloud-offline-outline" size={18} color={colors.accent} />
             <View style={styles.missingCopy}>
               <Text style={styles.missingTitle}>Finish offline preparation</Text>
-              <Text style={styles.missingText}>Save these destination packs to your Library before traveling without a connection.</Text>
+              <Text style={styles.missingText}>Save these destination guides to Saved places before traveling without a connection.</Text>
             </View>
           </View>
           <View style={styles.missingList}>
@@ -407,7 +408,7 @@ const TripDetails = ({
                 </View>
               </Pressable>)}
           </View>
-        </View> : <InfoBanner tone="info" text="Every stop in this itinerary is saved to your local Library and ready for offline use." />}
+        </View> : <InfoBanner tone="info" text="Every stop in this itinerary is saved to Saved places and ready for offline use." />}
 
       {trip.notes ? <View style={[styles.noteCard, shadows.soft]}>
           <Text style={styles.noteLabel}>TRIP NOTES</Text>

@@ -1,5 +1,6 @@
+import { ScreenScrollView as ScrollView } from "../components/ScreenScrollView.jsx";
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { upcomingRouteManeuvers } from "../../../core/routing/routeProgress.jsx";
 import { formatKm, formatDurationMinutes } from "../../../core/utils/format.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
@@ -8,6 +9,7 @@ import { InfoBanner } from "../components/InfoBanner.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { NavigationMap } from "../components/NavigationMap.jsx";
 import { ProgressBar } from "../components/ProgressBar.jsx";
+import { Disclosure } from "../components/Disclosure.jsx";
 import { SectionHeader } from "../components/SectionHeader.jsx";
 
 const maneuverIcon = kind => {
@@ -33,25 +35,25 @@ const routePreferences = Object.freeze([
     id: 'direct',
     label: 'Direct',
     icon: 'flash-outline',
-    description: 'Shortest practical walking route in the local graph.',
+    description: 'Take a direct walking route.',
   },
   {
     id: 'scenic',
     label: 'Scenic',
     icon: 'camera-outline',
-    description: 'Prefer practical alternatives near curated offline parks, viewpoints, landmarks, beaches, attractions, or museums.',
+    description: 'Pass nearby sights when a suitable route is available.',
   },
   {
     id: 'easy',
     label: 'Easy',
     icon: 'leaf-outline',
-    description: 'Prefer surfaced streets and avoid rough or path-like segments when data allows. Not an accessibility guarantee.',
+    description: 'Prefer paved streets. Steps and uneven ground may still be present.',
   },
   {
     id: 'adventure',
     label: 'Adventure',
     icon: 'trail-sign-outline',
-    description: 'Prefer mapped walking paths and tracks when practical. Verified Trail Mode remains a separate source-reviewed experience.',
+    description: 'Prefer walking paths where available. Check signs and access along the way.',
   },
 ]);
 
@@ -69,7 +71,7 @@ export const NavigationScreen = ({ viewModel }) => {
 
   if (state.loading) {
     return <View style={styles.center}>
-        <LoadingState title="Loading offline routing" text="Opening the saved basemap and local routing graph." />
+        <LoadingState title="Getting your route ready" text="Opening your saved map." />
       </View>;
   }
 
@@ -105,60 +107,119 @@ export const NavigationScreen = ({ viewModel }) => {
           <Ionicons name="navigate" size={24} color={colors.onPrimary} />
         </View>
         <View style={styles.heroCopy}>
-          <Text style={styles.eyebrow}>LAKBAI OFFLINE NAVIGATION</Text>
+          <Text style={styles.eyebrow}>DIRECTIONS</Text>
           <Text style={styles.title}>{multiStopJourney ? state.destinationName : state.target?.label ?? state.destinationName}</Text>
           <Text style={styles.subtitle}>
-            {state.mode === 'drive' ? 'Driving' : 'Walking'} · {state.coverage ?? 'Local offline coverage'}
+            {state.mode === 'drive' ? 'Driving' : 'Walking'} · Works offline
             {state.mode === 'walk' ? ' · ' + preferenceLabel(state.preference) : ''}
           </Text>
         </View>
       </View>
 
-      <InfoBanner
-        tone="info"
-        text="LakBai calculates this route on-device from the saved local road graph and renders it over the saved PMTiles map. No Google Maps or routing server is required."
-      />
-
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
       {state.gpsError ? <InfoBanner tone="warn" text={state.gpsError} /> : null}
       {state.resumedSession && state.multiStops.length ? <InfoBanner
         tone="info"
-        text={`Resumed this saved itinerary at stop ${Math.min(state.completedStopCount + 1, state.multiStops.length)} of ${state.multiStops.length}. LakBai will recalculate the remaining journey from your next GPS fix.`}
+        text={`Resumed this saved itinerary at stop ${Math.min(state.completedStopCount + 1, state.multiStops.length)} of ${state.multiStops.length}. Finding your location to continue your trip.`}
       /> : null}
       {hasFerryLeg ? <InfoBanner
         tone="info"
-        text="This journey includes the source-reviewed DAVSAM Panacan ↔ Babak ferry link. The 30-minute crossing is a MARINA March 2026 reference, not a live ETA; current departure and queue time are not known. Confirm service and terminal access before departure."
+        text="Includes the Panacan–Babak ferry. Allow about 30 minutes for the crossing, plus waiting time. Check departures before leaving."
       /> : null}
       {state.journeyPhase === 'ferry' && state.tracking ? <InfoBanner
         tone="info"
-        text="Ferry crossing detected. Road off-route rerouting and road-speed ETA are paused until LakBai resumes the destination-side road leg."
+        text="You are on the ferry. Road directions will resume after the crossing."
       /> : null}
       {state.journeyPhase === 'trail' && state.tracking ? <InfoBanner
         tone="info"
-        text="Verified trail segment active. LakBai keeps the same journey progress and ETA, but road rerouting and road-speed ETA are disabled until this mapped trail segment ends."
+        text="Follow the marked trail. LakBai cannot find a different path while you are on this trail."
       /> : null}
       {state.discoveryTarget && state.coordinateStatus !== 'verified' ? <InfoBanner
         tone="info"
-        text="This navigation target is an offline map reference or user-selected pin, not a locally verified entrance. Confirm signs, gates, and permitted access when you arrive."
+        text="The entrance location is not confirmed. Check signs and access when you arrive."
       /> : null}
       {state.route?.preference === 'scenic' && state.route.scenicAnchorCount === 0 ? <InfoBanner
         tone="warn"
-        text="No curated scenic POI is close enough to this routing graph to change the route, so Scenic currently behaves like Direct."
+        text="No nearby scenic detour was found. Showing the direct route."
       /> : null}
-      {state.rerouting ? <InfoBanner tone="info" text="LakBai confirmed a route deviation and is recalculating another offline route from your current position." /> : null}
+      {state.rerouting ? <InfoBanner tone="info" text="Finding a new route from your location." /> : null}
       {state.wrongWay && state.tracking && !state.rerouting ? <InfoBanner
         tone="warn"
-        text="Your recent movement is consistently opposite the active route. LakBai waits for sustained movement before recalculating so one noisy heading reading cannot trigger a reroute."
+        text="You may be heading the wrong way. Check your direction when safe."
       /> : null}
       {viewModel.offRoute && state.tracking && !state.rerouting ? <InfoBanner
         tone="warn"
         text={state.journeyPhase === 'trail'
-          ? `You are about ${Math.round(state.offRouteM ?? 0)} m from the verified trail line. LakBai will not road-reroute while you are on the trail; return toward the mapped segment and follow posted signs.`
-          : `You are about ${Math.round(state.offRouteM ?? 0)} m from the active route. LakBai waits for several reliable GPS fixes before rerouting to avoid reacting to location drift.`}
+          ? `You are about ${Math.round(state.offRouteM ?? 0)} m from the trail. Return to the marked trail and follow posted signs.`
+          : `You are about ${Math.round(state.offRouteM ?? 0)} m from your route. Checking your location before updating directions.`}
       /> : null}
 
       {state.route ? <>
+          <View style={styles.summaryRow}>
+            <Summary
+              icon={state.mode === 'drive' ? 'car-outline' : 'walk-outline'}
+              value={formatKm(shownDistanceKm ?? 0)}
+              label={state.tracking || state.arrived ? 'Remaining' : 'Route'}
+            />
+            <Summary
+              icon="time-outline"
+              value={formatDurationMinutes(shownDurationMin ?? 0)}
+              label={hasFerryLeg
+                ? 'Travel time + ferry wait'
+                : state.tracking && state.usingLiveEta ? 'Arrival estimate' : state.tracking || state.arrived ? 'Arrival estimate' : 'Travel time'}
+            />
+
+          </View>
+
+          {state.preview ? <>
+            <PrimaryButton label="Use my location" icon="locate-outline" onPress={() => void viewModel.startFromGps()} disabled={state.calculating} />
+            <InfoBanner
+            tone="warn"
+            text="This is a sample route, not directions from your location. Choose “Use my location” before traveling."
+          />
+          </> : null}
+
+          {!state.preview && !state.arrived ? <View style={[styles.guidanceCard, shadows.card]}>
+              {!state.tracking ? <View style={styles.guidanceHeader}>
+                <View style={styles.maneuverIcon}>
+                  <Ionicons
+                    name={maneuverIcon(state.nextManeuver?.kind)}
+                    size={25}
+                    color={colors.onPrimary}
+                  />
+                </View>
+                <View style={styles.guidanceCopy}>
+                  <Text style={styles.guidanceEyebrow}>{state.tracking ? 'NEXT DIRECTION' : 'ROUTE READY'}</Text>
+                  <Text style={styles.guidanceTitle}>
+                    {state.nextManeuver?.instruction ?? 'Follow the mapped route'}
+                  </Text>
+                  {state.distanceToNextManeuverKm != null ? <Text style={styles.guidanceDistance}>
+                      {formatAhead(state.distanceToNextManeuverKm)} ahead
+                    </Text> : null}
+                </View>
+              </View> : null}
+
+              <ProgressBar percent={state.progressPct} height={8} />
+              {!state.tracking ? <PrimaryButton
+                label="Start directions"
+                icon="navigate-outline"
+                disabled={state.rerouting}
+                onPress={() => void viewModel.startNavigation()}
+              /> : <SecondaryButton
+                label="Stop directions"
+                icon="stop-circle-outline"
+                onPress={() => viewModel.stopNavigation()}
+              />}
+              <SecondaryButton
+                label={state.voiceGuidance ? 'Mute voice guidance' : 'Enable voice guidance'}
+                icon={state.voiceGuidance ? 'volume-high-outline' : 'volume-mute-outline'}
+                onPress={() => viewModel.toggleVoiceGuidance()}
+              />
+            </View> : null}
+
           <NavigationMap
+            onStop={() => viewModel.stopNavigation()}
+            onToggleVoice={() => viewModel.toggleVoiceGuidance()}
             route={state.route}
             target={state.route.finalTarget ?? state.target}
             offlineBasemapUri={state.offlineBasemapUri}
@@ -176,6 +237,7 @@ export const NavigationScreen = ({ viewModel }) => {
             timeIsReference={hasFerryLeg}
           />
 
+          <Disclosure title="Route details and other options">
           {ferryJourney ? <View style={[styles.journeyCard, shadows.soft]}>
               <View style={styles.journeyHeader}>
                 <View style={styles.journeyIcon}>
@@ -183,7 +245,7 @@ export const NavigationScreen = ({ viewModel }) => {
                 </View>
                 <View style={styles.journeyCopy}>
                   <Text style={styles.journeyEyebrow}>ROAD → FERRY → ROAD</Text>
-                  <Text style={styles.journeyTitle}>Mainland and Samal connected without a fake road</Text>
+                  <Text style={styles.journeyTitle}>Your ferry connection</Text>
                 </View>
               </View>
               <View style={styles.journeySteps}>
@@ -206,7 +268,7 @@ export const NavigationScreen = ({ viewModel }) => {
                 />
               </View>
               <Text style={styles.journeyNote}>
-                {formatDurationMinutes(ferryJourney.roadDurationMin)} road time · {formatDurationMinutes(ferryJourney.ferryDurationMin ?? 0)} MARINA 2026 crossing reference · queue/departure time not included
+                {formatDurationMinutes(ferryJourney.roadDurationMin)} road time · {formatDurationMinutes(ferryJourney.ferryDurationMin ?? 0)} estimated crossing · queue/departure time not included
               </Text>
             </View> : null}
 
@@ -217,7 +279,7 @@ export const NavigationScreen = ({ viewModel }) => {
                 </View>
                 <View style={styles.journeyCopy}>
                   <Text style={styles.journeyEyebrow}>ROAD → VERIFIED TRAIL</Text>
-                  <Text style={styles.journeyTitle}>One continuous route from roads onto the verified trail</Text>
+                  <Text style={styles.journeyTitle}>Continue onto the walking trail</Text>
                 </View>
               </View>
               <View style={styles.journeySteps}>
@@ -240,7 +302,7 @@ export const NavigationScreen = ({ viewModel }) => {
                 />
               </View>
               <Text style={styles.journeyNote}>
-                {roadTrailJourney.trail.name} · shared progress and ETA continue through the verified mapped segment
+                {roadTrailJourney.trail.name} · directions continue along the mapped trail
               </Text>
             </View> : null}
 
@@ -278,21 +340,21 @@ export const NavigationScreen = ({ viewModel }) => {
                         </Text>
                         <Text style={styles.multiStopMeta}>
                           {formatKm(leg.route.distanceKm)} · {formatDurationMinutes(leg.route.durationMin)}
-                          {ferryLeg ? ' travel ref. · ferry wait not included' : ''}
+                          {ferryLeg ? ' plus ferry waiting time' : ''}
                         </Text>
                       </View>
                     </View>;
                 })}
               </View>
               <Text style={styles.journeyNote}>
-                {formatKm(multiStopJourney.distanceKm)} total · {formatDurationMinutes(multiStopJourney.durationMin)}{hasFerryLeg ? ' travel reference · ferry queue/departure time varies' : ' estimated travel time'}
+                {formatKm(multiStopJourney.distanceKm)} total · {formatDurationMinutes(multiStopJourney.durationMin)}{hasFerryLeg ? ' estimated travel time · ferry waiting time varies' : ' estimated travel time'}
               </Text>
             </View> : null}
 
           {state.routePois.length ? <View style={[styles.routePoiCard, shadows.soft]}>
               <View style={styles.routePoiHeader}>
                 <View>
-                  <Text style={styles.routePoiEyebrow}>OFFLINE PLACES AHEAD</Text>
+                  <Text style={styles.routePoiEyebrow}>PLACES ALONG THE WAY</Text>
                   <Text style={styles.routePoiTitle}>Useful stops along this route</Text>
                 </View>
                 <Ionicons name="compass-outline" size={21} color={colors.primary} />
@@ -311,26 +373,6 @@ export const NavigationScreen = ({ viewModel }) => {
                 </View>)}
             </View> : null}
 
-          <View style={styles.summaryRow}>
-            <Summary
-              icon={state.mode === 'drive' ? 'car-outline' : 'walk-outline'}
-              value={formatKm(shownDistanceKm ?? 0)}
-              label={state.tracking || state.arrived ? 'Remaining' : 'Route'}
-            />
-            <Summary
-              icon="time-outline"
-              value={formatDurationMinutes(shownDurationMin ?? 0)}
-              label={hasFerryLeg
-                ? 'Travel ref. · wait varies'
-                : state.tracking && state.usingLiveEta ? 'Live ETA' : state.tracking || state.arrived ? 'ETA' : 'Est. time'}
-            />
-            <Summary
-              icon="locate-outline"
-              value={state.accuracyM != null ? `±${Math.round(state.accuracyM)} m` : '—'}
-              label="GPS"
-            />
-          </View>
-
           {!state.tracking && !state.arrived && !['ferry-journey', 'multi-stop-journey'].includes(state.route?.type) ? <View style={[styles.journeyCard, shadows.soft]}>
               <View style={styles.journeyHeader}>
                 <View style={styles.journeyIcon}>
@@ -338,11 +380,11 @@ export const NavigationScreen = ({ viewModel }) => {
                 </View>
                 <View style={styles.journeyCopy}>
                   <Text style={styles.journeyEyebrow}>ALTERNATIVE ROUTES</Text>
-                  <Text style={styles.journeyTitle}>Compare another legal path before you start</Text>
+                  <Text style={styles.journeyTitle}>Other routes</Text>
                 </View>
               </View>
               <Text style={styles.journeyNote}>
-                Alternatives reuse the same one-way, access, barrier and turn-restriction rules. LakBai only shows distinct routes within a practical distance range.
+                Compare available routes before you leave.
               </Text>
               <SecondaryButton
                 label={state.alternativesLoading
@@ -371,59 +413,9 @@ export const NavigationScreen = ({ viewModel }) => {
                     deltaMin={candidate.durationDeltaMin}
                   />)}
                   {!state.alternativeRoutes.length ? <Text style={styles.alternativeEmpty}>
-                      No sufficiently distinct legal alternative was found for this route.
+                      No other suitable route was found.
                     </Text> : null}
                 </View> : null}
-            </View> : null}
-
-          {state.preview ? <InfoBanner
-            tone="warn"
-            text="Preview mode starts from a fixed point inside this routing coverage for demonstration only. Clear the preview and use your GPS before real navigation."
-          /> : null}
-
-          {!state.preview && !state.arrived ? <View style={[styles.guidanceCard, shadows.card]}>
-              <View style={styles.guidanceHeader}>
-                <View style={styles.maneuverIcon}>
-                  <Ionicons
-                    name={maneuverIcon(state.nextManeuver?.kind)}
-                    size={25}
-                    color={colors.onPrimary}
-                  />
-                </View>
-                <View style={styles.guidanceCopy}>
-                  <Text style={styles.guidanceEyebrow}>{state.tracking ? 'NEXT MANEUVER' : 'ROUTE READY'}</Text>
-                  <Text style={styles.guidanceTitle}>
-                    {state.nextManeuver?.instruction ?? 'Follow the mapped route'}
-                  </Text>
-                  {state.distanceToNextManeuverKm != null ? <Text style={styles.guidanceDistance}>
-                      {formatAhead(state.distanceToNextManeuverKm)} ahead
-                    </Text> : null}
-                </View>
-              </View>
-
-              <ProgressBar percent={state.progressPct} height={8} />
-              <View style={styles.progressMeta}>
-                <Text style={styles.progressText}>{state.progressPct}% complete</Text>
-                <Text style={styles.progressText}>
-                  {state.rerouteCount ? `${state.rerouteCount} offline reroute${state.rerouteCount === 1 ? '' : 's'}` : 'No reroutes'}
-                </Text>
-              </View>
-
-              {!state.tracking ? <PrimaryButton
-                label="Start live navigation"
-                icon="navigate-outline"
-                disabled={state.rerouting}
-                onPress={() => void viewModel.startNavigation()}
-              /> : <SecondaryButton
-                label="Stop live navigation"
-                icon="stop-circle-outline"
-                onPress={() => viewModel.stopNavigation()}
-              />}
-              <SecondaryButton
-                label={state.voiceGuidance ? 'Mute voice guidance' : 'Enable voice guidance'}
-                icon={state.voiceGuidance ? 'volume-high-outline' : 'volume-mute-outline'}
-                onPress={() => viewModel.toggleVoiceGuidance()}
-              />
             </View> : null}
 
           {routeSteps.length && !state.arrived ? <View style={[styles.routeStepsCard, shadows.soft]}>
@@ -433,7 +425,7 @@ export const NavigationScreen = ({ viewModel }) => {
                     {state.tracking ? 'UPCOMING DIRECTIONS' : 'ROUTE OVERVIEW'}
                   </Text>
                   <Text style={styles.routeStepsTitle}>
-                    {state.tracking ? 'What comes next' : 'Turn-by-turn offline steps'}
+                    {state.tracking ? 'What comes next' : 'Directions'}
                   </Text>
                 </View>
                 <Ionicons name="list-outline" size={21} color={colors.primary} />
@@ -463,6 +455,8 @@ export const NavigationScreen = ({ viewModel }) => {
                 </Text> : null}
             </View> : null}
 
+          </Disclosure>
+
           {state.arrived ? <View style={[styles.arrivalCard, shadows.card]}>
               <View style={styles.arrivalIcon}>
                 <Ionicons name="checkmark-circle" size={30} color={colors.primary} />
@@ -471,47 +465,50 @@ export const NavigationScreen = ({ viewModel }) => {
               <Text style={styles.arrivalTitle}>{state.route?.finalTarget?.label ?? state.target.label ?? state.destinationName}</Text>
               <Text style={styles.arrivalText}>
                 {roadTrailJourney
-                  ? 'LakBai has reached the end of the source-verified mapped trail segment. Follow posted local signs for any continuation beyond the verified geometry.'
-                  : 'LakBai has reached the end of the offline route. Confirm the physical destination and posted local signs before continuing.'}
+                  ? 'You have reached the end of this mapped trail. Follow local signs if you continue.'
+                  : 'You have reached the end of your route. Check nearby signs for your destination.'}
               </Text>
               {roadTrailJourney ? <View style={styles.arrivalTrailMeta}>
                   <Ionicons name="shield-checkmark-outline" size={17} color={colors.primary} />
                   <Text style={styles.arrivalTrailMetaText}>
-                    {formatKm(roadTrailJourney.trailLeg.distanceKm)} verified segment · {formatDurationMinutes(roadTrailJourney.trailLeg.durationMin)} · continuous offline GPS
+                    {formatKm(roadTrailJourney.trailLeg.distanceKm)} mapped trail · {formatDurationMinutes(roadTrailJourney.trailLeg.durationMin)} · works offline
                   </Text>
                 </View> : null}
               {!roadTrailJourney && state.trailId ? <PrimaryButton
-                label="Open verified Trail Mode"
+                label="Open walking trail"
                 icon="trail-sign-outline"
                 onPress={() => viewModel.openTrail()}
               /> : null}
             </View> : null}
 
+          <Disclosure title="Map information">
           <View style={[styles.sourceCard, shadows.soft]}>
             <SectionHeader
-              eyebrow="Routing coverage"
-              title={state.graphMeta?.name ?? state.coverage ?? 'Local routing graph'}
+              eyebrow="Map information"
+              title="About this map"
             />
             <Text style={styles.sourceText}>
               Source: {state.graphMeta?.sourceDataset ?? state.graphMeta?.source ?? 'Saved routing data'}
               {state.graphMeta?.license ? ` · ${state.graphMeta.license}` : ''}.
             </Text>
             <Text style={styles.sourceText}>
-              Current graph: {state.graphMeta?.bounds?.join(', ')}. Real signs, closures, private access, and official traffic rules always take precedence.
+              Follow local signs, closures, and access rules. Map information may be out of date.
             </Text>
           </View>
 
+          </Disclosure>
+
           <SecondaryButton
-            label={state.preview ? 'Use my GPS instead' : 'Calculate route again'}
+            label="Change route"
             icon="refresh-outline"
             onPress={() => viewModel.clearRoute()}
           />
         </> : <View style={[styles.actionCard, shadows.card]}>
           <Text style={styles.actionTitle}>
-            Calculate an offline {state.mode === 'drive' ? 'driving' : 'walking'} route
+            Find a {state.mode === 'drive' ? 'driving' : 'walking'} route
           </Text>
           <Text style={styles.actionText}>
-            LakBai uses your foreground GPS position and the saved local road/path graph. No route request is sent to Google or another routing server.
+            Choose how you are traveling. Directions use your location and work without internet.
           </Text>
           <View style={styles.modeBlock}>
             <Text style={styles.preferenceEyebrow}>TRAVEL MODE</Text>
@@ -530,7 +527,7 @@ export const NavigationScreen = ({ viewModel }) => {
               />
             </View>
           </View>
-          {state.mode === 'walk' ? <View style={styles.preferenceBlock}>
+          {state.mode === 'walk' ? <Disclosure title={'Walking route · ' + preferenceLabel(state.preference)}><View style={styles.preferenceBlock}>
               <Text style={styles.preferenceEyebrow}>HOW DO YOU WANT TO EXPLORE?</Text>
               <View style={styles.preferenceRow}>
                 {routePreferences.map(option => {
@@ -564,23 +561,23 @@ export const NavigationScreen = ({ viewModel }) => {
               <Text style={styles.preferenceDescription}>
                 {preferenceDescription(state.preference)}
               </Text>
-            </View> : <Text style={styles.drivePilotNote}>
-              Driving mode uses the offline graph’s prototype motor-road access and road-class speed estimates. Always follow posted traffic rules, closures, and private-access signs.
+            </View></Disclosure> : <Text style={styles.drivePilotNote}>
+              Driving directions are still being tested. Travel times are estimates. Follow road signs, closures, and access rules.
             </Text>}
           <PrimaryButton
-            label={state.calculating ? 'Calculating…' : 'Route from my GPS'}
+            label={state.calculating ? 'Calculating…' : 'Find my route'}
             icon="navigate-outline"
             disabled={state.calculating || !state.graph || !state.offlineBasemapUri}
             onPress={() => void viewModel.startFromGps()}
           />
           {state.previewStart ? <>
               <SecondaryButton
-                label="Preview offline route"
+                label="See a sample route"
                 icon="map-outline"
                 disabled={state.calculating || !state.graph || !state.offlineBasemapUri}
                 onPress={() => viewModel.previewRoute()}
               />
-              <Text style={styles.previewHint}>Preview uses a fixed point inside this routing coverage and is clearly separated from live GPS navigation.</Text>
+              <Text style={styles.previewHint}>Sample routes do not start from your current location.</Text>
             </> : null}
         </View>}
     </ScrollView>;

@@ -53,7 +53,7 @@ export class TrailViewModel extends ViewModel {
       this.setState({
         loading: false,
         hasPack: false,
-        error: 'This trail needs its destination pack in your local Library. Open the destination and save the pack first.'
+        error: 'Save this destination guide for offline use before opening the trail.'
       });
       return;
     }
@@ -72,7 +72,7 @@ export class TrailViewModel extends ViewModel {
       routeDistanceKm,
       remainingKm: routeDistanceKm,
       offlineBasemapUri: offlineBundle?.basemapUri ?? null,
-      error: trail ? null : 'This verified trail is not part of the saved pack.'
+      error: trail ? null : 'This trail is not available in the saved guide.'
     });
 
     if (trail) {

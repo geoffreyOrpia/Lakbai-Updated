@@ -1,6 +1,8 @@
+import { ScreenScrollView as ScrollView } from "../components/ScreenScrollView.jsx";
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFeedback } from "../../../feedback/FeedbackProvider.jsx";
+import { Disclosure } from "../components/Disclosure.jsx";
 import { BackAction } from "../components/Buttons.jsx";
 import { CoverArt } from "../components/CoverArt.jsx";
 import { DestinationMap } from "../components/DestinationMap.jsx";
@@ -37,12 +39,16 @@ export const DestinationScreen = ({
       return;
     }
     showConfirm({
-      title: 'Remove saved pack?',
-      message: 'This pack’s materialized offline files will be removed from your local Library. Favorites and itineraries are kept, and the content bundled inside the app remains available.',
+      title: 'Remove offline copy?',
+      message: 'The saved guide and map will be removed. Your favorites and trips will stay.',
       confirmLabel: 'Remove',
       tone: 'danger',
       onConfirm: () => void performLibraryAction()
     });
+  };
+  const openSavedRoute = async options => {
+    const result = await viewModel.prepareAndOpen(options);
+    if (!result.ok) showSnackbar({ message: result.message, tone: 'error' });
   };
   const toggleFavorite = async () => {
     const result = await viewModel.toggleFavorite();
@@ -53,13 +59,13 @@ export const DestinationScreen = ({
   };
   if (state.loading) {
     return <View style={styles.centerScreen}>
-        <LoadingState title="Opening destination guide" text="Reading the bundled guide and your local Library state." />
+        <LoadingState title="Opening destination guide" text="Opening photos, places, and directions." />
       </View>;
   }
   if (!pack) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <BackAction label="Back" onPress={() => viewModel.back()} />
-        <EmptyState icon="alert-circle-outline" title="Destination unavailable" text={state.error ?? 'This destination pack is unavailable.'} actionLabel="Try again" onAction={() => void viewModel.load()} />
+        <EmptyState icon="alert-circle-outline" title="Destination unavailable" text={state.error ?? 'This destination guide is unavailable.'} actionLabel="Try again" onAction={() => void viewModel.load()} />
       </ScrollView>;
   }
   const destination = pack.destination;
@@ -72,11 +78,11 @@ export const DestinationScreen = ({
     });
   };
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <BackAction label="Explore" onPress={() => viewModel.back()} />
+      <BackAction label="Back" onPress={() => viewModel.back()} />
 
       <CoverArt theme={destination.coverTheme} photoKey={firstPhoto?.key} height={190} radius={radius.xl}>
         <View style={styles.heroOverlay}>
-          <Text style={styles.heroCategory}>{destination.category.toUpperCase()} PACK</Text>
+          <Text style={styles.heroCategory}>{destination.category.toUpperCase()}</Text>
           <Text style={styles.heroName}>{destination.name}</Text>
           <Text style={styles.heroArea}>{destination.area}</Text>
         </View>
@@ -101,79 +107,14 @@ export const DestinationScreen = ({
       >
         <Ionicons name={state.favorite ? "heart" : "heart-outline"} size={18} color={state.favorite ? colors.danger : colors.primary} />
         <Text style={[styles.favoriteButtonText, state.favorite && styles.favoriteButtonTextActive]}>
-          {state.favorite ? 'Saved to Favorites' : 'Add to Favorites'}
+          {state.favorite ? 'Added to Favorites' : 'Add to Favorites'}
         </Text>
       </Pressable>
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={state.updateAvailable ? `Update ${destination.name} saved pack` : state.saved ? `Remove ${destination.name} saved pack` : `Save ${destination.name} for offline use`}
-        accessibilityState={{ disabled: state.busy, busy: state.busy }}
-        disabled={state.busy}
-        onPress={() => void runLibraryAction()}
-        style={({
-      pressed
-    }) => [styles.cta, state.saved && !state.updateAvailable && styles.ctaRemove, state.busy && styles.ctaDisabled, pressed && !state.busy && styles.pressed]}>
-        <Ionicons
-          name={state.busy ? 'hourglass-outline' : state.updateAvailable ? 'refresh-outline' : state.saved ? 'trash-outline' : 'bookmark-outline'}
-          size={18}
-          color={state.saved && !state.updateAvailable ? colors.danger : colors.onPrimary}
-        />
-        <Text style={[styles.ctaText, state.saved && !state.updateAvailable && styles.ctaTextRemove]}>
-          {state.busy
-            ? state.updateAvailable
-              ? 'Updating saved pack…'
-              : state.saved
-              ? 'Removing saved pack…'
-              : 'Saving offline pack…'
-            : state.updateAvailable
-            ? 'Update saved pack'
-            : state.saved
-            ? 'Remove from library'
-            : destination.status === 'available'
-            ? 'Save pack to local library'
-            : 'Pack coming soon'}
-        </Text>
-      </Pressable>
-
-      {state.updateAvailable ? <InfoBanner tone="info" text={`A newer bundled version is available. Updating replaces this pack's saved files while keeping your Favorites, itineraries, and other personal data.`} /> : null}
-      {!state.saved && destination.status === 'available' ? <InfoBanner tone="info" text="Save this pack to create durable local guide, map, route-plan, image, and photo-metadata files. The image source is already bundled with the app, and itineraries stay in local SQLite." /> : null}
+      {state.updateAvailable ? <InfoBanner tone="info" text={`An updated guide is available. Your favorites and trips will stay.`} /> : null}
+      {!state.saved && destination.status === 'available' ? <InfoBanner tone="info" text="Save this place to use its guide and map without internet." /> : null}
 
       <InfoBanner tone="warn" text="Travel conditions, access rules, transport schedules, and local facilities can change. Confirm time-sensitive details with the destination or local authorities before traveling." />
-
-      {destination.verification ? <View style={[styles.verificationCard, shadows.soft]}>
-          <View style={styles.verificationHeading}>
-            <Ionicons
-              name={destination.verification.status === 'partial' ? "shield-checkmark-outline" : "flask-outline"}
-              size={18}
-              color={destination.verification.status === 'partial' ? colors.primary : colors.accentDark}
-            />
-            <View style={styles.verificationCopy}>
-              <Text style={styles.verificationEyebrow}>CONTENT STATUS</Text>
-              <Text style={styles.verificationTitle}>
-                {destination.verification.status === 'partial' ? 'Online sources reviewed' : 'Prototype content'}
-              </Text>
-            </View>
-          </View>
-          <Text style={styles.verificationText}>{destination.verification.summary}</Text>
-          {destination.verification.fieldVerified === false ? <View style={styles.verificationNotice}>
-              <Ionicons name="location-outline" size={14} color={colors.accentDark} />
-              <Text style={styles.verificationNoticeText}>Not field verified · online source review only</Text>
-            </View> : null}
-          {destination.verification.operationalNote ? <Text style={styles.verificationOperational}>
-              {destination.verification.operationalNote}
-            </Text> : null}
-          {destination.verification.sources?.length ? <View style={styles.verificationSources}>
-              {destination.verification.sources.map(source => <View key={source.url} style={styles.verificationSource}>
-                  <Ionicons name="document-text-outline" size={14} color={colors.primary} />
-                  <View style={styles.verificationSourceCopy}>
-                    <Text style={styles.verificationSourceLabel}>{source.label}</Text>
-                    <Text style={styles.verificationSourceScope}>{source.scope}</Text>
-                  </View>
-                </View>)}
-            </View> : null}
-          <Text style={styles.verificationReviewed}>Reviewed {destination.verification.reviewedAt}</Text>
-        </View> : null}
 
       {destination.navigation ? <View style={[styles.locationCard, shadows.card]}>
           <View style={styles.locationHeading}>
@@ -190,18 +131,18 @@ export const DestinationScreen = ({
           {destination.offlineNavigation ? <>
               <View style={styles.routingPilotBadge}>
                 <Ionicons name="cloud-offline-outline" size={13} color={colors.primary} />
-                <Text style={styles.routingPilotText}>OFFLINE ROUTING · {destination.offlineNavigation.coverage}</Text>
+                <Text style={styles.routingPilotText}>WORKS OFFLINE</Text>
               </View>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={state.saved ? `Navigate to ${destination.name} with LakBai` : `Save ${destination.name} to enable LakBai navigation`}
-                accessibilityState={{ disabled: !state.saved }}
-                disabled={!state.saved}
-                onPress={() => viewModel.openOfflineNavigation()}
-                style={({ pressed }) => [styles.directionsButton, !state.saved && styles.ctaDisabled, pressed && state.saved && styles.pressed]}
+                accessibilityState={{ disabled: state.busy }}
+                disabled={state.busy}
+                onPress={() => void openSavedRoute()}
+                style={({ pressed }) => [styles.directionsButton, state.busy && styles.ctaDisabled, pressed && !state.busy && styles.pressed]}
               >
-                <Ionicons name={state.saved ? 'navigate' : 'lock-closed'} size={17} color={colors.onPrimary} />
-                <Text style={styles.directionsButtonText}>{state.saved ? 'Navigate with LakBai' : 'Save pack to enable LakBai navigation'}</Text>
+                <Ionicons name={state.saved ? 'navigate' : 'download-outline'} size={17} color={colors.onPrimary} />
+                <Text style={styles.directionsButtonText}>{state.busy ? 'Saving…' : state.saved ? 'Get directions' : 'Save and get directions'}</Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
@@ -212,9 +153,9 @@ export const DestinationScreen = ({
                 style={({ pressed }) => [styles.externalDirectionsButton, state.directionsBusyId !== null && styles.ctaDisabled, pressed && state.directionsBusyId === null && styles.pressed]}
               >
                 <Ionicons name={state.directionsBusyId === destination.id ? 'hourglass-outline' : 'open-outline'} size={16} color={colors.primary} />
-                <Text style={styles.externalDirectionsText}>{state.directionsBusyId === destination.id ? 'Opening…' : 'Optional external directions'}</Text>
+                <Text style={styles.externalDirectionsText}>{state.directionsBusyId === destination.id ? 'Opening…' : 'Open another maps app'}</Text>
               </Pressable>
-              <Text style={styles.connectionHint}>LakBai routing and its saved map work offline. External directions require internet and are optional.</Text>
+              <Text style={styles.connectionHint}>Directions in LakBai work offline. Other maps apps may need internet.</Text>
             </> : <>
               <Pressable
                 accessibilityRole="button"
@@ -232,21 +173,14 @@ export const DestinationScreen = ({
         </View> : null}
 
       {pack.spots?.length ? <View style={styles.section}>
-          <SectionHeader eyebrow="MapLibre + OpenStreetMap" title="Destination map" />
+          <SectionHeader eyebrow="Map" title="Destination map" />
           <DestinationMap
             pack={pack}
             offlineMapUri={state.offlineBundle?.mapUri}
             offlineContextUri={state.offlineBundle?.contextMapUri}
             offlineBasemapUri={state.offlineBundle?.basemapUri}
           />
-          <InfoBanner
-            tone="info"
-            text={state.offlineBundle?.basemapUri
-              ? "Offline mode uses the bundled Davao del Norte vector basemap, saved municipality boundary, and this pack’s places. If the detailed local map cannot load, MapLibre falls back to the saved context. Online mode uses OpenStreetMap live tiles."
-              : state.offlineBundle?.contextMapUri
-              ? "Offline mode uses the saved municipality boundary and this pack’s places without network tiles. Online mode uses OpenStreetMap live tiles and automatically falls back to local map data when possible."
-              : "Online mode uses OpenStreetMap live tiles with bundled municipality context underneath. Save this destination pack before travel to enable the full offline map."}
-          />
+          {!state.saved ? <Text style={styles.connectionHint}>Save this place to use the map without internet.</Text> : null}
         </View> : null}
 
       <View style={styles.section}>
@@ -262,11 +196,81 @@ export const DestinationScreen = ({
         </View>
       </View>
 
+      <Disclosure title={state.saved ? 'Saved for offline use · Manage' : 'Save for offline use'}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={state.updateAvailable ? `Update ${destination.name} saved guide` : state.saved ? `Remove ${destination.name} saved guide` : `Save ${destination.name} for offline use`}
+        accessibilityState={{ disabled: state.busy, busy: state.busy }}
+        disabled={state.busy}
+        onPress={() => void runLibraryAction()}
+        style={({
+      pressed
+    }) => [styles.cta, state.saved && !state.updateAvailable && styles.ctaRemove, state.busy && styles.ctaDisabled, pressed && !state.busy && styles.pressed]}>
+        <Ionicons
+          name={state.busy ? 'hourglass-outline' : state.updateAvailable ? 'refresh-outline' : state.saved ? 'trash-outline' : 'bookmark-outline'}
+          size={18}
+          color={state.saved && !state.updateAvailable ? colors.danger : colors.onPrimary}
+        />
+        <Text style={[styles.ctaText, state.saved && !state.updateAvailable && styles.ctaTextRemove]}>
+          {state.busy
+            ? state.updateAvailable
+              ? 'Updating…'
+              : state.saved
+              ? 'Removing…'
+              : 'Saving…'
+            : state.updateAvailable
+            ? 'Update saved guide'
+            : state.saved
+            ? 'Remove offline copy'
+            : destination.status === 'available'
+            ? 'Save for offline use'
+            : 'Guide coming soon'}
+        </Text>
+      </Pressable>
+
+      </Disclosure>
+
+      {destination.verification ? <View style={[styles.verificationCard, shadows.soft]}>
+          <View style={styles.verificationHeading}>
+            <Ionicons
+              name={destination.verification.status === 'partial' ? "shield-checkmark-outline" : "flask-outline"}
+              size={18}
+              color={destination.verification.status === 'partial' ? colors.primary : colors.accentDark}
+            />
+            <View style={styles.verificationCopy}>
+              <Text style={styles.verificationEyebrow}>CONTENT STATUS</Text>
+              <Text style={styles.verificationTitle}>
+                {destination.verification.status === 'partial' ? 'Online sources reviewed' : 'Preview information'}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.verificationText}>{destination.verification.summary}</Text>
+          {destination.verification.fieldVerified === false ? <View style={styles.verificationNotice}>
+              <Ionicons name="location-outline" size={14} color={colors.accentDark} />
+              <Text style={styles.verificationNoticeText}>Not checked in person</Text>
+            </View> : null}
+          {destination.verification.operationalNote ? <Text style={styles.verificationOperational}>
+              {destination.verification.operationalNote}
+            </Text> : null}
+          <Disclosure title="Information sources">
+          {destination.verification.sources?.length ? <View style={styles.verificationSources}>
+              {destination.verification.sources.map(source => <View key={source.url} style={styles.verificationSource}>
+                  <Ionicons name="document-text-outline" size={14} color={colors.primary} />
+                  <View style={styles.verificationSourceCopy}>
+                    <Text style={styles.verificationSourceLabel}>{source.label}</Text>
+                    <Text style={styles.verificationSourceScope}>{source.scope}</Text>
+                  </View>
+                </View>)}
+            </View> : null}
+          </Disclosure>
+          <Text style={styles.verificationReviewed}>Reviewed {destination.verification.reviewedAt}</Text>
+        </View> : null}
+
       {pack.routeSuggestions?.length ? <View style={styles.section}>
-          <SectionHeader eyebrow="Suggested tourist routes" title="Curated stop sequences" />
+          <SectionHeader eyebrow="Suggested tourist routes" title="Suggested stops" />
           <InfoBanner
             tone="info"
-            text="Suggested routes remain planning sequences. When source-verified GPS geometry is available, LakBai exposes it separately below in the in-app offline trail navigator."
+            text="These stops are trip ideas, not turn-by-turn directions. Available walking trails are listed below."
           />
           <View style={styles.list}>
             {pack.routeSuggestions.map(route => <View key={route.id} style={[styles.routeCard, shadows.card]}>
@@ -311,22 +315,22 @@ export const DestinationScreen = ({
         </View> : null}
 
       {pack.trails.length || pack.withheldTrailsCount ? <View style={styles.section}>
-          <SectionHeader eyebrow="Verified offline trails" title="LakBai Trail Navigation" />
+          <SectionHeader eyebrow="Walking trails" title="Explore a trail" />
           {pack.withheldTrailsCount ? <InfoBanner
             tone="warn"
-            text={`${pack.withheldTrailsCount} prototype ${pack.withheldTrailsCount === 1 ? 'route is' : 'routes are'} intentionally hidden until every waypoint is verified by a reliable local or mapping source.`}
+            text={`${pack.withheldTrailsCount} ${pack.withheldTrailsCount === 1 ? 'trail is' : 'trails are'} still being checked and unavailable for directions.`}
           /> : null}
           {pack.trails.length ? <View style={styles.list}>
             {pack.trails.map(trail => <Pressable
               key={trail.id}
               accessibilityRole="button"
-              accessibilityLabel={state.saved ? `Open ${trail.name} trail navigator` : `Save ${destination.name} to your Library to unlock ${trail.name}`}
+              accessibilityLabel={state.saved ? `Open ${trail.name} trail navigator` : `Save ${destination.name} and open ${trail.name}`}
               accessibilityState={{
-                disabled: !state.saved
+                disabled: state.busy
               }}
-              disabled={!state.saved}
-              onPress={() => viewModel.openTrail(trail.id)}
-              style={({ pressed }) => [[styles.card, shadows.card], !state.saved && styles.trailLocked, pressed && state.saved && styles.pressed]}
+              disabled={state.busy}
+              onPress={() => void openSavedRoute({ trailId: trail.id })}
+              style={({ pressed }) => [[styles.card, shadows.card], state.busy && styles.trailLocked, pressed && !state.busy && styles.pressed]}
             >
                 <TrailMiniMap trail={trail} height={130} />
                 <View style={styles.trailBody}>
@@ -339,9 +343,9 @@ export const DestinationScreen = ({
                   <Text style={styles.trailDescription} numberOfLines={2}>
                     {trail.description}
                   </Text>
-                  <View style={[styles.trailOpen, !state.saved && styles.trailOpenLocked]}>
-                    <Text style={[styles.trailOpenText, !state.saved && styles.trailOpenTextLocked]}>{state.saved ? 'Open in-app navigator' : 'Save to Library to unlock'}</Text>
-                    <Ionicons name={state.saved ? 'navigate' : 'lock-closed'} size={14} color={state.saved ? colors.primary : colors.muted} />
+                  <View style={[styles.trailOpen, state.busy && styles.trailOpenLocked]}>
+                    <Text style={[styles.trailOpenText, state.busy && styles.trailOpenTextLocked]}>{state.busy ? 'Saving…' : state.saved ? 'Open trail' : 'Save and open trail'}</Text>
+                    <Ionicons name={state.saved ? 'navigate' : 'download-outline'} size={14} color={state.saved ? colors.primary : colors.muted} />
                   </View>
                 </View>
               </Pressable>)}
@@ -349,7 +353,7 @@ export const DestinationScreen = ({
         </View> : null}
 
       {pack.spots.length ? <View style={styles.section}>
-          <SectionHeader eyebrow="Points of interest" title={`${pack.spots.length} curated spots`} />
+          <SectionHeader eyebrow="Places to visit" title={`${pack.spots.length} places`} />
           <View style={[styles.card, shadows.card]}>
             {pack.spots.map((spot, index) => <View key={spot.id} style={[styles.spotRow, index < pack.spots.length - 1 && styles.spotRowBorder]}>
                 <View style={styles.spotIcon}>
@@ -364,22 +368,22 @@ export const DestinationScreen = ({
                     accessibilityLabel={state.saved
                       ? `Navigate offline to ${spot.name} with LakBai`
                       : `Save ${destination.name} to navigate offline to ${spot.name}`}
-                    accessibilityState={{ disabled: !state.saved }}
-                    disabled={!state.saved}
-                    onPress={() => viewModel.openOfflineNavigation(spot)}
+                    accessibilityState={{ disabled: state.busy }}
+                    disabled={state.busy}
+                    onPress={() => void openSavedRoute({ place: spot })}
                     style={({ pressed }) => [
                       styles.spotOfflineRoute,
-                      !state.saved && styles.ctaDisabled,
-                      pressed && state.saved && styles.pressed,
+                      state.busy && styles.ctaDisabled,
+                      pressed && !state.busy && styles.pressed,
                     ]}
                   >
                     <Ionicons
-                      name={state.saved ? 'navigate' : 'lock-closed'}
+                      name={state.saved ? 'navigate' : 'download-outline'}
                       size={13}
                       color={colors.onPrimary}
                     />
                     <Text style={styles.spotOfflineRouteText}>
-                      {state.saved ? 'Navigate offline' : 'Save pack for offline route'}
+                      {state.busy ? 'Saving…' : state.saved ? 'Get directions' : 'Save and get directions'}
                     </Text>
                   </Pressable> : null}
                   <Pressable

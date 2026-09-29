@@ -27,9 +27,8 @@ const RecommendationCard = ({ place, selected, onToggle, onOpen }) => (
   <View style={[styles.resultCard, selected && styles.resultCardSelected]}>
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ selected }}
-      accessibilityLabel={`${selected ? 'Remove' : 'Add'} ${place.name} ${selected ? 'from' : 'to'} smart trip`}
-      onPress={onToggle}
+      accessibilityLabel={`Open ${place.name} guide`}
+      onPress={onOpen}
       style={({ pressed }) => [styles.resultSelect, pressed && styles.pressed]}
     >
       <View style={styles.resultHeading}>
@@ -40,9 +39,9 @@ const RecommendationCard = ({ place, selected, onToggle, onOpen }) => (
           </Text>
         </View>
         <Ionicons
-          name={selected ? 'checkmark-circle' : 'add-circle-outline'}
-          size={24}
-          color={selected ? colors.primary : colors.muted}
+          name="chevron-forward"
+          size={20}
+          color={colors.muted}
         />
       </View>
 
@@ -77,7 +76,7 @@ const RecommendationCard = ({ place, selected, onToggle, onOpen }) => (
       </Text> : null}
     </Pressable>
 
-    <SecondaryButton label="Open local guide" icon="book-outline" onPress={onOpen} />
+    <SecondaryButton label={selected ? 'Remove from trip' : 'Add to trip'} icon={selected ? 'checkmark-circle' : 'add-circle-outline'} onPress={onToggle} />
   </View>
 );
 
@@ -107,16 +106,16 @@ export const SmartExplorePanel = ({ viewModel }) => {
         <Ionicons name="sparkles" size={20} color={colors.primary} />
       </View>
       <View style={styles.headerCopy}>
-        <Text style={styles.eyebrow}>ON-DEVICE INTELLIGENCE</Text>
-        <Text style={styles.title}>Smart Explore</Text>
+        <Text style={styles.eyebrow}>TRIP IDEAS</Text>
+        <Text style={styles.title}>Trip ideas</Text>
         <Text style={styles.subtitle}>
-          Rank curated local places from source-reviewed destination packs using your interests, offline readiness, route context, and optional GPS — no LLM or cloud AI required.
+          Choose what you enjoy and find places for your next trip.
         </Text>
       </View>
     </View>
 
     <SecondaryButton
-      label={state.smartOpen ? 'Hide Smart Explore' : 'Personalize recommendations'}
+      label={state.smartOpen ? 'Hide trip ideas' : 'Personalize recommendations'}
       icon={state.smartOpen ? 'chevron-up-outline' : 'options-outline'}
       onPress={() => viewModel.toggleSmartOpen()}
     />
@@ -124,7 +123,7 @@ export const SmartExplorePanel = ({ viewModel }) => {
     {state.smartOpen ? <View style={styles.panel}>
       <InfoBanner
         tone="info"
-        text="LakBai never guesses missing fees, opening hours, or visit duration. Those facts are excluded from recommendation logic until sourced structured values exist."
+        text="Check opening hours and fees before visiting. Some details are not available yet."
       />
 
       <View style={styles.section}>
@@ -224,7 +223,7 @@ export const SmartExplorePanel = ({ viewModel }) => {
         />
         {state.smartRouting ? <View style={styles.routingRow}>
           <ActivityIndicator size="small" color={colors.primary} />
-          <Text style={styles.routingText}>Calculating offline route estimates for top matches…</Text>
+          <Text style={styles.routingText}>Checking travel times…</Text>
         </View> : null}
       </View>
 
@@ -254,7 +253,7 @@ export const SmartExplorePanel = ({ viewModel }) => {
 
       {!results.length ? <InfoBanner
         tone="warn"
-        text="No source-reviewed place matches these filters. Broaden the interests or journey constraints."
+        text="No places match yet. Try fewer filters."
       /> : null}
 
       <PrimaryButton

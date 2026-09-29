@@ -173,8 +173,8 @@ export const TrailMap = ({
 
       <Text style={styles.caption}>
         {detailedOffline
-          ? 'MapLibre uses the saved Davao del Norte vector basemap and verified trail geometry. No Google Maps or network tiles are used.'
-          : 'The verified trail line and GPS tracking remain available even without the detailed local basemap.'}
+          ? 'This saved map and walking trail work without internet.'
+          : 'Map details could not load. Your trail and location are still available.'}
       </Text>
     </View>;
 };

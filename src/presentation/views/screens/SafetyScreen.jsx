@@ -1,5 +1,6 @@
+import { ScreenScrollView as ScrollView } from "../components/ScreenScrollView.jsx";
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFeedback } from "../../../feedback/FeedbackProvider.jsx";
 import { AppHeader } from "../components/AppHeader.jsx";
 import { EmptyState } from "../components/EmptyState.jsx";
@@ -65,7 +66,7 @@ export const SafetyScreen = ({
   if (state.loading && !state.checklist.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AppHeader onOpenSettings={onOpenSettings} />
-        <LoadingState title="Preparing Safety" text="Loading your checklist and verified contacts from saved destination packs." />
+        <LoadingState title="Preparing Safety" text="Loading your checklist and verified contacts from saved destination guides." />
       </ScrollView>;
   }
   if (state.error && !state.checklist.length) {
@@ -90,7 +91,7 @@ export const SafetyScreen = ({
         <View style={styles.emergencyCopy}>
           <Text style={styles.emergencyTitle}>Emergency information</Text>
           <Text style={styles.emergencyText}>
-            Verified emergency contacts from saved packs appear below. Nationwide 911 still requires available cellular service.
+            Verified emergency contacts from saved guides appear below. Nationwide 911 still requires available cellular service.
           </Text>
         </View>
       </View>
@@ -117,7 +118,7 @@ export const SafetyScreen = ({
       </View>
 
       <View style={styles.section}>
-        <SectionHeader eyebrow="Saved offline" title="Emergency contacts from your packs" />
+        <SectionHeader eyebrow="Saved offline" title="Emergency contacts from your guides" />
         {state.contacts.length ? <View style={styles.list}>
             {state.contacts.map(contact => <View key={`${contact.packName}-${contact.label}`} style={[styles.contactCard, shadows.soft]}>
                 <View style={styles.contactIcon}>
@@ -141,7 +142,7 @@ export const SafetyScreen = ({
                     <Text style={styles.callButtonText}>Call</Text>
                   </Pressable> : null}
               </View>)}
-          </View> : <EmptyState icon="call-outline" title="No pack contacts yet" text="Save a destination pack to your library to include its local emergency numbers here." />}
+          </View> : <EmptyState icon="call-outline" title="No guide contacts yet" text="Save a destination guide to saved places to include its local emergency numbers here." />}
       </View>
 
       <View style={styles.section}>

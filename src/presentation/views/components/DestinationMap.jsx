@@ -94,19 +94,19 @@ export const DestinationMap = ({
 
   const statusLabel = offline
     ? detailedOffline
-      ? 'OFFLINE · LOCAL VECTOR MAP'
-      : 'OFFLINE · SAVED MAP CONTEXT'
-    : 'ONLINE · OPENSTREETMAP';
+      ? 'SAVED MAP'
+      : 'SAVED PLACES'
+    : 'ONLINE MAP';
 
   return <View style={styles.card}>
       {canUseOffline ? <View style={styles.modeRow}>
-          <MapModeButton label="Offline pack" active={offline} onPress={chooseOffline} />
-          <MapModeButton label="Online OSM" active={!offline} onPress={chooseOnline} />
+          <MapModeButton label="Saved map" active={offline} onPress={chooseOffline} />
+          <MapModeButton label="Online map" active={!offline} onPress={chooseOnline} />
         </View> : null}
       <View style={styles.statusRow}>
         <View style={[styles.statusDot, offline ? styles.statusDotOffline : styles.statusDotOnline]} />
         <Text style={styles.statusText}>{statusLabel}</Text>
-        {basemapFailed ? <Text style={styles.statusHint}>Detailed map fallback active</Text> : null}
+        {basemapFailed ? <Text style={styles.statusHint}>Some map details are unavailable</Text> : null}
       </View>
       <View style={styles.mapFrame}>
         <Map
@@ -166,20 +166,20 @@ export const DestinationMap = ({
           </GeoJSONSource>
         </Map>
         {mapFailed ? <View style={styles.failureOverlay} pointerEvents="none">
-            <Text style={styles.failureTitle}>Base map unavailable</Text>
+            <Text style={styles.failureTitle}>Map details unavailable</Text>
             <Text style={styles.failureText}>
               {canUseOffline
-                ? 'LakBai switched to local map data. Your saved places remain available.'
-                : 'Local destination markers and municipality context remain available. Save this pack before travel for the full offline map.'}
+                ? 'Your saved places are still shown. Some map details could not load.'
+                : 'Your places are still shown. Save this guide before traveling to use the map offline.'}
             </Text>
           </View> : null}
       </View>
       <Text style={styles.caption}>
         {detailedOffline
-          ? 'Detailed offline map: local vector roads, water, land, buildings, municipality context, and saved places. No network tiles are requested.'
+          ? 'This saved map works without internet.'
           : offline
-          ? 'Offline fallback: municipality context and saved places are local. No network tiles are requested.'
-          : 'Live base map: © OpenStreetMap contributors · local municipality context and LakBai places remain layered above it.'}
+          ? 'Showing your saved places. Some map details are unavailable.'
+          : 'Online map · © OpenStreetMap contributors'}
       </Text>
     </View>;
 };

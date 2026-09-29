@@ -127,6 +127,11 @@ export class TripsViewModel extends ViewModel {
       });
     }
   };
+  importRouteDraft = draft => {
+    const form = routeDraftToTripForm(draft);
+    if (!form) return;
+    this.setState({ mode: 'create', selected: null, form, error: null });
+  };
   openCreate = () => {
     this.setState({
       mode: 'create',
@@ -150,6 +155,17 @@ export class TripsViewModel extends ViewModel {
       },
       error: null
     });
+  };
+  handleBack = () => {
+    if (this.state.mode === 'create' || this.state.mode === 'edit') {
+      this.cancelCreate();
+      return true;
+    }
+    if (this.state.mode === 'details') {
+      this.backToList();
+      return true;
+    }
+    return false;
   };
   cancelCreate = () => {
     this.setState({

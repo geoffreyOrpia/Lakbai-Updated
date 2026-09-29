@@ -1,5 +1,6 @@
+import { ScreenScrollView as ScrollView } from "../components/ScreenScrollView.jsx";
 import { useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFeedback } from "../../../feedback/FeedbackProvider.jsx";
 import { AppHeader } from "../components/AppHeader.jsx";
@@ -9,6 +10,7 @@ import { EmptyState } from "../components/EmptyState.jsx";
 import { InfoBanner } from "../components/InfoBanner.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { SearchField } from "../components/SearchField.jsx";
+import { Disclosure } from "../components/Disclosure.jsx";
 import { SecondaryButton } from "../components/Buttons.jsx";
 import { SmartExplorePanel } from "../components/SmartExplorePanel.jsx";
 import { ScreenIntro } from "../components/ScreenIntro.jsx";
@@ -44,13 +46,12 @@ export const ExploreScreen = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery]);
   const {
-    showSnackbar,
-    showConfirm
+    showSnackbar
   } = useFeedback();
   if (state.loading && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AppHeader onOpenSettings={onOpenSettings} />
-        <LoadingState title="Loading the local catalog" text="Reading destination guides stored with LakBai." />
+        <LoadingState title="Finding places" text="Finding places to visit." />
       </ScrollView>;
   }
   if (state.error && !state.items.length) {
@@ -59,29 +60,11 @@ export const ExploreScreen = ({
         <EmptyState icon="alert-circle-outline" title="Explore could not load" text={state.error} actionLabel="Try again" onAction={() => void viewModel.load()} />
       </ScrollView>;
   }
-  const performAction = async (destinationName, item) => {
+  const runAction = async (destinationName, item) => {
     const result = item.updateAvailable
       ? await viewModel.update(item.destination.id)
-      : item.saved
-      ? await viewModel.removeFromLibrary(item.destination.id)
       : await viewModel.save(item.destination.id);
-    showSnackbar({
-      message: result.ok ? result.message.replace('Pack removed', `${destinationName} removed`) : result.message,
-      tone: result.ok ? 'success' : 'error'
-    });
-  };
-  const runAction = (destinationName, item) => {
-    if (!item.saved || item.updateAvailable) {
-      void performAction(destinationName, item);
-      return;
-    }
-    showConfirm({
-      title: 'Remove saved pack?',
-      message: `${destinationName} will be removed from your local Library and its materialized pack files will be deleted. Favorites and itineraries are kept.`,
-      confirmLabel: 'Remove',
-      tone: 'danger',
-      onConfirm: () => void performAction(destinationName, item)
-    });
+    showSnackbar({ message: result.message, tone: result.ok ? 'success' : 'error' });
   };
   const toggleFavorite = async packId => {
     const result = await viewModel.toggleFavorite(packId);
@@ -105,44 +88,17 @@ export const ExploreScreen = ({
       <ScreenIntro
         eyebrow="LOCAL DISCOVERY"
         title="Explore"
-        subtitle="Browse local guides, save packs for offline maps, and keep favorites ready for trip planning."
+        subtitle="Find a place to visit. Save its guide and map for your trip."
       />
 
       <SearchField value={state.query} onChangeText={value => viewModel.setQuery(value)} onSubmit={() => undefined} />
       <CategoryChips options={CATEGORY_OPTIONS} selected={state.category} onSelect={key => viewModel.setCategory(key)} />
 
-      <SmartExplorePanel viewModel={viewModel} />
-
-      <View style={styles.onlineCard}>
-        <View style={styles.onlineHeading}>
-          <View style={styles.onlineIcon}>
-            <Ionicons name="globe-outline" size={20} color={colors.primary} />
-          </View>
-          <View style={styles.onlineCopy}>
-            <Text style={styles.onlineTitle}>Optional web research</Text>
-            <Text style={styles.onlineText}>
-              Opens a Google search in your browser. Web results stay separate from the local LakBai catalog and are not treated as verified app content.
-            </Text>
-          </View>
-        </View>
-        <SecondaryButton
-          label={state.onlineSearching ? 'Opening browser…' : 'Open web search'}
-          icon="open-outline"
-          disabled={state.onlineSearching}
-          onPress={() => void runWebSearch()}
-        />
-        <Text style={styles.onlineHint}>
-          {state.query.trim()
-            ? `Web query: “${state.query.trim()}” + Davao del Norte tourism`
-            : 'No search term entered · opens a general Davao del Norte tourism search.'}
-        </Text>
-      </View>
-
       <View style={styles.resultHeader}>
         <Text style={styles.resultCount}>
           {results.length} {results.length === 1 ? 'result' : 'results'}
         </Text>
-        <Text style={styles.helper}>Local catalog</Text>
+        <Text style={styles.helper}>Places</Text>
       </View>
 
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
@@ -156,18 +112,16 @@ export const ExploreScreen = ({
             ? state.busyId === item.destination.id
               ? item.updateAvailable
                 ? 'Updating…'
-                : item.saved
-                ? 'Removing…'
                 : 'Saving…'
               : item.updateAvailable
               ? 'Update'
               : item.saved
-              ? 'Remove'
-              : 'Save'
+              ? 'Open guide'
+              : 'Save offline'
             : undefined}
           actionDisabled={state.busyId !== null}
           busy={state.busyId === item.destination.id}
-          onAction={item.destination.status === 'available' ? () => runAction(item.destination.name, item) : undefined}
+          onAction={item.destination.status === 'available' ? () => item.saved && !item.updateAvailable ? onOpenDestination?.(item.destination.id) : runAction(item.destination.name, item) : undefined}
           onFavorite={() => void toggleFavorite(item.destination.id)}
           favoriteDisabled={state.busyId !== null}
         />)}
@@ -175,8 +129,8 @@ export const ExploreScreen = ({
 
       {!results.length && !state.loading ? <EmptyState
         icon="compass-outline"
-        title="No local packs match"
-        text="Clear the search and category filters to see the full Davao del Norte catalog."
+        title="No places found"
+        text="Clear your search or choose a different category."
         actionLabel="Clear filters"
         actionIcon="options-outline"
         onAction={() => {
@@ -184,6 +138,35 @@ export const ExploreScreen = ({
           viewModel.setCategory('all');
         }}
       /> : null}
+      <SmartExplorePanel viewModel={viewModel} />
+
+      <Disclosure title="Search the web">
+      <View style={styles.onlineCard}>
+        <View style={styles.onlineHeading}>
+          <View style={styles.onlineIcon}>
+            <Ionicons name="globe-outline" size={20} color={colors.primary} />
+          </View>
+          <View style={styles.onlineCopy}>
+            <Text style={styles.onlineTitle}>Look beyond LakBai</Text>
+            <Text style={styles.onlineText}>
+              Opens Google in your browser. These results have not been checked by LakBai.
+            </Text>
+          </View>
+        </View>
+        <SecondaryButton
+          label={state.onlineSearching ? 'Opening browser…' : 'Open web search'}
+          icon="open-outline"
+          disabled={state.onlineSearching}
+          onPress={() => void runWebSearch()}
+        />
+        <Text style={styles.onlineHint}>
+          {state.query.trim()
+            ? `Search: “${state.query.trim()}” + Davao del Norte tourism`
+            : 'No search term entered · opens a general Davao del Norte tourism search.'}
+        </Text>
+      </View>
+
+      </Disclosure>
     </ScrollView>;
 };
 const styles = StyleSheet.create({

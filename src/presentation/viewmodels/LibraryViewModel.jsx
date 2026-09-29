@@ -59,7 +59,7 @@ export class LibraryViewModel extends ViewModel {
       });
     } catch (error) {
       this.setState({
-        error: userMessage(error, 'Your local Library could not be loaded.')
+        error: userMessage(error, 'Your saved places could not load.')
       });
     } finally {
       this.setState({
@@ -82,12 +82,12 @@ export class LibraryViewModel extends ViewModel {
       });
       return {
         ok: true,
-        message: `${pack.destination.name} saved to your local Library.`
+        message: `${pack.destination.name} saved for offline use.`
       };
     } catch (error) {
       return {
         ok: false,
-        message: userMessage(error, 'The destination pack could not be saved.')
+        message: userMessage(error, 'The guide could not be saved.')
       };
     } finally {
       this.setState({
@@ -110,12 +110,12 @@ export class LibraryViewModel extends ViewModel {
       });
       return {
         ok: true,
-        message: `${pack.destination.name} offline files updated.`
+        message: `${pack.destination.name} offline guide updated.`
       };
     } catch (error) {
       return {
         ok: false,
-        message: userMessage(error, 'The saved destination pack could not be updated.')
+        message: userMessage(error, 'The saved guide could not be updated.')
       };
     } finally {
       this.setState({
@@ -155,12 +155,12 @@ export class LibraryViewModel extends ViewModel {
       });
       return {
         ok: true,
-        message: `${item?.destination.name ?? 'Pack'} removed from your Library.`
+        message: `${item?.destination.name ?? 'Guide'} removed from offline storage. Your favorites and trips are kept.`
       };
     } catch (error) {
       return {
         ok: false,
-        message: userMessage(error, 'The destination pack could not be removed.')
+        message: userMessage(error, 'The offline guide could not be removed.')
       };
     } finally {
       this.setState({

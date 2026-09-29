@@ -1,5 +1,6 @@
+import { ScreenScrollView as ScrollView } from "../components/ScreenScrollView.jsx";
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatKm } from "../../../core/utils/format.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
 import { BackAction, SecondaryButton } from "../components/Buttons.jsx";
@@ -14,7 +15,7 @@ export const NearbyScreen = ({ viewModel }) => {
   const searchResults = viewModel.searchResults;
   if (state.loading) {
     return <View style={styles.centerScreen}>
-        <LoadingState title="Preparing offline discovery" text="Loading local places, provincial street names, saved pins, and optional GPS distance ranking." />
+        <LoadingState title="Finding nearby places" text="Opening places, streets, and your saved map spots." />
       </View>;
   }
 
@@ -23,8 +24,8 @@ export const NearbyScreen = ({ viewModel }) => {
 
       <View style={styles.header}>
         <Text style={styles.eyebrow}>DAVAO DEL NORTE · OFFLINE</Text>
-        <Text style={styles.title}>Offline Discovery</Text>
-        <Text style={styles.subtitle}>Search LakBai’s bundled local places and provincial OSM street index, keep recent targets, or long-press the local map to save a dropped pin.</Text>
+        <Text style={styles.title}>Nearby places</Text>
+        <Text style={styles.subtitle}>Search places and streets. Touch and hold the map to save a spot.</Text>
       </View>
 
       <SearchField
@@ -43,8 +44,8 @@ export const NearbyScreen = ({ viewModel }) => {
 
       {state.permission === 'denied' ? <EmptyState
         icon="location-outline"
-        title="GPS distance sorting is off"
-        text="Offline search, street lookup, recents, and dropped pins still work. Allow foreground location only if you want nearby distance ranking. Your position is not uploaded by this feature."
+        title="Your location is off"
+        text="You can still search and use the map. Allow location access to see which places are closest."
         actionLabel="Try again"
         onAction={() => void viewModel.load()}
       /> : null}
@@ -72,13 +73,13 @@ export const NearbyScreen = ({ viewModel }) => {
             </View> : <EmptyState
               icon="search-outline"
               title="No offline match"
-              text="Try another local name, road name, OSM road reference, or destination alias."
+              text="Try another place or street name."
             />}
         </View> : <>
           {state.recents.length ? <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Recent destinations</Text>
-                <Text style={styles.sectionMeta}>Device local</Text>
+                <Text style={styles.sectionMeta}>Saved on your phone</Text>
               </View>
               <View style={styles.compactList}>
                 {state.recents.slice(0, 5).map(entry => <DiscoveryEntry
@@ -117,7 +118,7 @@ export const NearbyScreen = ({ viewModel }) => {
           </View>
           <View style={styles.gpsCopy}>
             <Text style={styles.gpsTitle}>{state.places.length} nearby saved {state.places.length === 1 ? 'place' : 'places'}</Text>
-            <Text style={styles.gpsText}>GPS accuracy: {state.fix.accuracy == null ? 'unavailable' : `about ${Math.round(state.fix.accuracy)} m`} · {state.savedPackCount} saved {state.savedPackCount === 1 ? 'pack' : 'packs'} searched</Text>
+            <Text style={styles.gpsText}>GPS accuracy: {state.fix.accuracy == null ? 'unavailable' : `about ${Math.round(state.fix.accuracy)} m`} · {state.savedPackCount} saved {state.savedPackCount === 1 ? 'guide' : 'guides'} searched</Text>
           </View>
           <Pressable accessibilityRole="button" accessibilityLabel="Refresh nearby places" onPress={() => void viewModel.load()} hitSlop={8} style={({ pressed }) => [styles.refreshButton, pressed && styles.pressed]}>
             <Ionicons name="refresh" size={18} color={colors.primary} />
@@ -126,7 +127,7 @@ export const NearbyScreen = ({ viewModel }) => {
 
       {state.fix && state.savedPackCount === 0 ? <InfoBanner
         tone="info"
-        text="Nearby ranking uses saved guide packs, but province-wide offline place/street search above uses bundled data even when your Library is empty."
+        text="Save a place’s guide to see nearby suggestions. You can already search places and streets above."
       /> : null}
 
       {state.places.length ? <View style={styles.list}>
@@ -158,7 +159,7 @@ export const NearbyScreen = ({ viewModel }) => {
 
       {state.savedPackCount > 0 ? <SecondaryButton label="Refresh GPS position" icon="locate-outline" onPress={() => void viewModel.load()} /> : null}
 
-      <InfoBanner tone="info" text="Offline Discovery does not query Google or live business listings. Street matches come from LakBai’s bundled Davao del Norte OSM routing dataset; mapped place coordinates and dropped pins are not automatically verified entrances." />
+      <InfoBanner tone="info" text="Nearby places does not query Google or live business listings. Street matches come from LakBai’s bundled Davao del Norte OSM routing dataset; mapped place coordinates and dropped pins are not automatically verified entrances." />
     </ScrollView>;
 };
 

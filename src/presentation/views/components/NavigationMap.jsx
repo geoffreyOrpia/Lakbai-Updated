@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Camera, GeoJSONSource, Layer, Map, UserLocation } from '@maplibre/maplibre-react-native';
-import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { createOfflineBasemapStyle } from "../../../core/maps/offlineBasemapStyle.jsx";
 import { routeBounds } from "../../../core/routing/graph.jsx";
 import { formatDurationMinutes, formatKm } from "../../../core/utils/format.jsx";
@@ -32,7 +33,23 @@ const pointFeature = (id, coordinates, role) => ({
   },
 });
 
-export const NavigationMap = ({
+export const NavigationMap = props => {
+  const [expanded, setExpanded] = useState(false);
+  return <>
+      {expanded ? <View style={styles.mapFrame} /> : <NavigationMapContent {...props} onExpand={() => setExpanded(true)} />}
+      <Modal visible={expanded} animationType="slide" onRequestClose={() => setExpanded(false)}>
+        <SafeAreaView style={styles.fullScreen}>
+          {expanded ? <NavigationMapContent {...props} expanded onExpand={() => setExpanded(false)} /> : null}
+        </SafeAreaView>
+      </Modal>
+    </>;
+};
+
+const NavigationMapContent = ({
+  expanded = false,
+  onExpand,
+  onStop,
+  onToggleVoice,
   route,
   target,
   offlineBasemapUri,
@@ -50,6 +67,7 @@ export const NavigationMap = ({
   timeIsReference = false,
 }) => {
   const [following, setFollowing] = useState(liveGps);
+  useEffect(() => setFollowing(liveGps), [liveGps]);
   const [basemapFailed, setBasemapFailed] = useState(false);
   const detailedOffline = Boolean(offlineBasemapUri) && !basemapFailed;
   const geometry = route.geometry;
@@ -177,11 +195,56 @@ export const NavigationMap = ({
     route.type,
   ]);
 
-  return <View style={[styles.card, shadows.card]}>
-      <View style={[styles.mapFrame, liveGps && styles.mapFrameLive]}>
+  return <View style={[styles.card, shadows.card, expanded && styles.expandedCard]}>
+      <View style={styles.toolbar}>
+        <Text style={styles.toolbarTitle}>Your route</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={expanded ? 'Close full-screen map' : 'Expand map'} onPress={onExpand} style={styles.mapAction}>
+          <Ionicons name={expanded ? 'contract-outline' : 'expand-outline'} size={20} color={colors.primary} />
+          <Text style={styles.actionLabel}>{expanded ? 'Done' : 'Expand map'}</Text>
+        </Pressable>
+      </View>
+        {liveGps ? <View pointerEvents="none" style={[styles.navigationHud, shadows.card]}>
+            <View style={styles.navigationHudIcon}>
+              <Ionicons
+                name={rerouting ? 'sync-outline' : maneuverIcon(nextManeuver?.kind)}
+                size={27}
+                color={colors.onPrimary}
+              />
+            </View>
+            <View style={styles.navigationHudCopy}>
+              <View style={styles.navigationHudTopline}>
+                <Text style={styles.navigationHudDistance}>
+                  {rerouting ? 'Rerouting…' : formatAhead(distanceToNextManeuverKm)}
+                </Text>
+                <Ionicons
+                  name={voiceGuidance ? 'volume-high-outline' : 'volume-mute-outline'}
+                  size={16}
+                  color={voiceGuidance ? colors.primary : colors.muted}
+                />
+              </View>
+              <Text style={styles.navigationHudInstruction} numberOfLines={2}>
+                {rerouting
+                  ? 'Finding another route'
+                  : nextManeuver?.instruction ?? 'Follow the mapped route'}
+              </Text>
+              <Text style={styles.navigationHudMeta}>
+                {remainingKm != null ? formatKm(remainingKm) : '—'} remaining
+                {' · '}
+                {remainingMin != null
+                  ? `${formatDurationMinutes(remainingMin)}${timeIsReference ? ' + ferry wait' : ''}`
+                  : '—'}
+              </Text>
+            </View>
+          </View> : null}
+
+
+      <View style={[styles.mapFrame, liveGps && styles.mapFrameLive, expanded && styles.expandedFrame]}>
         <Map
           key={detailedOffline ? 'nav-local-map' : 'nav-route-only'}
           style={styles.map}
+          dragPan
+          touchZoom
+          onPress={expanded ? undefined : onExpand}
           mapStyle={detailedOffline ? createOfflineBasemapStyle(offlineBasemapUri) : FALLBACK_STYLE}
           attribution={detailedOffline}
           attributionPosition={{ bottom: 8, right: 8 }}
@@ -196,7 +259,7 @@ export const NavigationMap = ({
               padding: { top: 64, right: 48, bottom: 64, left: 48 },
             }}
             trackUserLocation={liveGps && following ? 'course' : undefined}
-            zoom={16}
+            zoom={liveGps && following ? 16 : undefined}
             pitch={liveGps && following ? 34 : 0}
             onTrackUserLocationChange={event => {
               if (!event.nativeEvent?.trackUserLocation) setFollowing(false);
@@ -314,48 +377,6 @@ export const NavigationMap = ({
           {liveGps ? <UserLocation animated accuracy heading minDisplacement={3} /> : null}
         </Map>
 
-        {liveGps ? <View pointerEvents="none" style={[styles.navigationHud, shadows.card]}>
-            <View style={styles.navigationHudIcon}>
-              <Ionicons
-                name={rerouting ? 'sync-outline' : maneuverIcon(nextManeuver?.kind)}
-                size={27}
-                color={colors.onPrimary}
-              />
-            </View>
-            <View style={styles.navigationHudCopy}>
-              <View style={styles.navigationHudTopline}>
-                <Text style={styles.navigationHudDistance}>
-                  {rerouting ? 'Rerouting…' : formatAhead(distanceToNextManeuverKm)}
-                </Text>
-                <Ionicons
-                  name={voiceGuidance ? 'volume-high-outline' : 'volume-mute-outline'}
-                  size={16}
-                  color={voiceGuidance ? colors.primary : colors.muted}
-                />
-              </View>
-              <Text style={styles.navigationHudInstruction} numberOfLines={2}>
-                {rerouting
-                  ? 'Finding another offline route'
-                  : nextManeuver?.instruction ?? 'Follow the mapped route'}
-              </Text>
-              <Text style={styles.navigationHudMeta}>
-                {remainingKm != null ? formatKm(remainingKm) : '—'} remaining
-                {' · '}
-                {remainingMin != null
-                  ? `${formatDurationMinutes(remainingMin)}${timeIsReference ? ' travel ref.' : ''}`
-                  : '—'}
-              </Text>
-            </View>
-          </View> : null}
-
-        <View
-          pointerEvents="none"
-          style={[styles.statusBadge, liveGps ? styles.statusBadgeLive : styles.statusBadgeStatic]}
-        >
-          <View style={styles.statusDot} />
-          <Text style={styles.statusText}>{detailedOffline ? 'OFFLINE ROUTE · LOCAL MAP' : 'OFFLINE ROUTE · LINE ONLY'}</Text>
-        </View>
-
         {liveGps ? <Pressable
           accessibilityRole="button"
           accessibilityState={{ selected: following }}
@@ -368,14 +389,22 @@ export const NavigationMap = ({
           </Text>
         </Pressable> : null}
       </View>
+      {expanded && liveGps ? <View style={styles.toolbar}>
+          <Pressable accessibilityRole="button" accessibilityLabel={voiceGuidance ? 'Mute directions' : 'Unmute directions'} onPress={onToggleVoice} style={styles.mapAction}>
+            <Ionicons name={voiceGuidance ? 'volume-high-outline' : 'volume-mute-outline'} size={20} color={colors.primary} />
+            <Text style={styles.actionLabel}>{voiceGuidance ? 'Mute' : 'Unmute'}</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Stop directions" onPress={onStop} style={styles.mapAction}>
+            <Ionicons name="stop-circle-outline" size={20} color={colors.primary} />
+            <Text style={styles.actionLabel}>Stop directions</Text>
+          </Pressable>
+        </View> : null}
       <Text style={styles.caption}>
         {detailedOffline
-          ? ferryData
-            ? 'Road legs and the local basemap stay offline. The dashed ferry segment is an explicit source-reviewed transport leg, not a road across the channel.'
-            : trailData
-            ? 'Road route and saved map data are local. The dashed line shows the source-verified trail continuation after the entrance.'
-            : 'Route geometry and the Davao del Norte basemap are both local. No Google Maps or network tiles are used.'
-          : 'The route remains visible, but the detailed local basemap could not be loaded.'}
+          ? ferryData ? 'Works offline · Dashed line: ferry crossing'
+            : trailData ? 'Works offline · Dashed line: walking trail'
+            : 'Works offline · Drag to move, pinch to zoom'
+          : 'Map details could not load. Only your route is shown.'}
       </Text>
     </View>;
 };
@@ -391,6 +420,13 @@ const FALLBACK_STYLE = {
 };
 
 const styles = StyleSheet.create({
+  fullScreen: { flex: 1, backgroundColor: colors.background },
+  expandedCard: { flex: 1, borderRadius: 0, borderWidth: 0 },
+  expandedFrame: { flex: 1, height: undefined, minHeight: 120 },
+  toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.sm },
+  toolbarTitle: { color: colors.text, fontSize: 14, fontWeight: '800' },
+  mapAction: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: spacing.xs },
+  actionLabel: { color: colors.primary, fontSize: 13, fontWeight: '700' },
   card: {
     overflow: 'hidden',
     borderWidth: 1,
@@ -408,10 +444,8 @@ const styles = StyleSheet.create({
   },
   map: { flex: 1 },
   navigationHud: {
-    position: 'absolute',
-    top: spacing.sm,
-    left: spacing.sm,
-    right: spacing.sm,
+    marginHorizontal: spacing.sm,
+    marginBottom: spacing.sm,
     minHeight: 92,
     borderWidth: 1,
     borderColor: colors.border,
@@ -458,42 +492,11 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
   },
-  statusBadge: {
-    position: 'absolute',
-    left: spacing.sm,
-    minHeight: 28,
-    paddingHorizontal: 9,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(255,255,255,0.94)',
-    borderWidth: 1,
-    borderColor: colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  statusBadgeStatic: {
-    top: spacing.sm,
-  },
-  statusBadgeLive: {
-    bottom: spacing.sm,
-  },
-  statusDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: colors.primary,
-  },
-  statusText: {
-    color: colors.textSecondary,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0.35,
-  },
   followButton: {
     position: 'absolute',
     right: spacing.sm,
-    bottom: spacing.sm,
-    minHeight: 40,
+    bottom: 42,
+    minHeight: 44,
     paddingHorizontal: spacing.sm,
     borderRadius: radius.pill,
     borderWidth: 1,
@@ -516,8 +519,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     color: colors.muted,
-    fontSize: 9.8,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 18,
   },
   pressed: { opacity: 0.8 },
 });

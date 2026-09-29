@@ -1,5 +1,6 @@
+import { ScreenScrollView as ScrollView } from "../components/ScreenScrollView.jsx";
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BackAction } from "../components/Buttons.jsx";
 import { InfoBanner } from "../components/InfoBanner.jsx";
 import { ProgressBar } from "../components/ProgressBar.jsx";
@@ -60,7 +61,7 @@ export const TrailScreen = ({
           <View style={styles.trackingHeader}>
             <View style={styles.liveBadge}>
               <View style={styles.liveDot} />
-              <Text style={styles.liveText}>GPS LIVE</Text>
+              <Text style={styles.liveText}>FOLLOWING YOUR LOCATION</Text>
             </View>
             <Text style={styles.progressPct}>{state.progressPct}%</Text>
           </View>
@@ -83,7 +84,7 @@ export const TrailScreen = ({
             <Ionicons name="navigate" size={19} color={colors.onPrimary} />
           </View>
           <View style={styles.nextCopy}>
-            <Text style={styles.nextEyebrow}>NEXT WAYPOINT</Text>
+            <Text style={styles.nextEyebrow}>NEXT STOP</Text>
             <Text style={styles.nextName}>{state.nextWaypoint.name}</Text>
             <Text style={styles.nextDistance}>
               {state.distanceToNextWaypointKm != null ? `${Math.max(1, Math.round(state.distanceToNextWaypointKm * 1000))} m along trail` : 'Ahead on the verified route'}
@@ -94,7 +95,7 @@ export const TrailScreen = ({
 
       {state.tracking && state.completed ? <InfoBanner
         tone="success"
-        text="You reached the end of this verified mapped trail segment."
+        text="You have reached the end of this mapped trail."
       /> : null}
 
       {state.tracking && state.accuracyM != null ? <InfoBanner tone={viewModel.lowAccuracy ? "warn" : "info"} text={viewModel.lowAccuracy ? `GPS accuracy is about ${Math.round(state.accuracyM)} m. Trail progress and off-route warnings are paused until accuracy improves.` : `GPS accuracy is about ${Math.round(state.accuracyM)} m.`} /> : null}

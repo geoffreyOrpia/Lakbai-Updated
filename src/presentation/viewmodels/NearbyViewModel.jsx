@@ -51,6 +51,18 @@ export class NearbyViewModel extends ViewModel {
     this.setState({ query });
   };
 
+  refreshSavedPlaces = async () => {
+    try {
+      const saved = await this.destinationDeps.packRepository.listSavedMeta();
+      const places = saved.length && this.state.fix
+        ? await loadNearbySavedPlaces(this.destinationDeps, this.state.fix)
+        : [];
+      this.setState({ savedPackCount: saved.length, places });
+    } catch (error) {
+      this.setState({ error: userMessage(error, 'Your saved places could not refresh. Try again.') });
+    }
+  };
+
   load = async () => {
     this.setState({ loading: true, error: null });
     try {

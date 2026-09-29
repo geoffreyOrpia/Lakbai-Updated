@@ -26,7 +26,7 @@ export const DiscoveryMap = ({ basemapUri, fix, pins, onDropPin }) => {
   if (!basemapUri) return <View style={styles.unavailable}>
       <Text style={styles.unavailableTitle}>Offline map unavailable</Text>
       <Text style={styles.unavailableText}>
-        Local search still works, but LakBai could not materialize the bundled Davao del Norte basemap for dropped pins.
+        The map could not open. You can still search for places and streets.
       </Text>
     </View>;
 

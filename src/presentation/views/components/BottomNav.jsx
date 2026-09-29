@@ -18,7 +18,7 @@ const items = [{
   activeIcon: 'calendar'
 }, {
   key: 'library',
-  label: 'Library',
+  label: 'Saved',
   icon: 'bookmark-outline',
   activeIcon: 'bookmark'
 }, {

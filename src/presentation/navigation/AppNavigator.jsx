@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BackHandler, Image, StyleSheet, Text, View } from 'react-native';
 import { colors, spacing } from "../../theme.jsx";
 import { getContainer } from "../di/container.jsx";
@@ -27,6 +27,7 @@ import { SafetyScreen } from "../views/screens/SafetyScreen.jsx";
 import { SettingsScreen } from "../views/screens/SettingsScreen.jsx";
 import { TrailScreen } from "../views/screens/TrailScreen.jsx";
 import { TripsScreen } from "../views/screens/TripsScreen.jsx";
+import { ScreenActiveContext } from "../views/components/ScreenScrollView.jsx";
 import { BottomNav } from "../views/components/BottomNav.jsx";
 
 
@@ -38,10 +39,15 @@ export const AppNavigator = () => {
   const container = getContainer();
   const session = useViewModel(() => new SessionViewModel(container.preferencesDeps));
   const [tab, setTab] = useState('home');
+  const tripBackHandler = useRef(null);
   const [stack, setStack] = useState([]);
+  const nextRouteId = useRef(0);
   const [exploreQuery, setExploreQuery] = useState('');
   const [tripDraft, setTripDraft] = useState(null);
-  const push = route => setStack(current => [...current, route]);
+  const push = route => {
+    const entry = { ...route, screenKey: ++nextRouteId.current };
+    setStack(current => [...current, entry]);
+  };
   const pop = () => setStack(current => current.slice(0, -1));
   useEffect(() => {
     if (session.state.phase !== 'main') return undefined;
@@ -55,8 +61,9 @@ export const AppNavigator = () => {
           return;
         }
         setStack(current => current.length ? current : [{
-          name: 'navigation',
           ...saved.route,
+          name: 'navigation',
+          screenKey: 'resumed-navigation',
           resumeCompletedStopCount: completedStopCount,
           resumedSession: true,
         }]);
@@ -72,6 +79,7 @@ export const AppNavigator = () => {
         pop();
         return true;
       }
+      if (tab === 'trips' && tripBackHandler.current?.()) return true;
       if (tab !== 'home') {
         setTab('home');
         return true;
@@ -97,56 +105,57 @@ export const AppNavigator = () => {
   if (session.state.phase === 'onboarding') {
     return <OnboardingFlow session={session} />;
   }
-  const topRoute = stack[stack.length - 1];
-  if (topRoute?.name === 'destination') {
-    return <DestinationFlow destinationId={topRoute.destinationId} onOpenTrail={trailId => push({
-      name: 'trail',
-      destinationId: topRoute.destinationId,
-      trailId
-    })} onOpenNavigation={navigation => push({
-      name: 'navigation',
-      ...navigation
-    })} onPlanRoute={draft => {
-      setTripDraft(draft);
-      setStack([]);
-      setTab('trips');
-    }} onBack={pop} />;
-  }
-  if (topRoute?.name === 'trail') {
-    return <TrailFlow destinationId={topRoute.destinationId} trailId={topRoute.trailId} onBack={pop} />;
-  }
-  if (topRoute?.name === 'navigation') {
-    return <NavigationFlow
-      route={topRoute}
-      onOpenTrail={trailId => push({
+  const renderRoute = (route, active) => {
+    if (route?.name === 'destination') {
+      return <DestinationFlow destinationId={route.destinationId} onOpenTrail={trailId => push({
         name: 'trail',
-        destinationId: topRoute.destinationId,
+        destinationId: route.destinationId,
         trailId
-      })}
-      onBack={pop}
-    />;
-  }
-  if (topRoute?.name === 'settings') {
-    return <SettingsFlow
-      session={session}
-      onBack={pop}
-    />;
-  }
-  if (topRoute?.name === 'nearby') {
-    return <NearbyFlow onOpenDestination={destinationId => push({
-      name: 'destination',
-      destinationId
-    })} onOpenNavigation={navigation => push({
-      name: 'navigation',
-      ...navigation
-    })} onOpenLibrary={() => {
-      setStack([]);
-      setTab('library');
-    }} onBack={pop} />;
-  }
+      })} onOpenNavigation={navigation => push({
+        name: 'navigation',
+        ...navigation
+      })} onPlanRoute={draft => {
+        setTripDraft(draft);
+        setStack([]);
+        setTab('trips');
+      }} onBack={pop} />;
+    } else if (route?.name === 'trail') {
+      return <TrailFlow destinationId={route.destinationId} trailId={route.trailId} onBack={pop} />;
+    } else if (route?.name === 'navigation') {
+      return <NavigationFlow
+        active={active}
+        route={route}
+        onOpenTrail={trailId => push({
+          name: 'trail',
+          destinationId: route.destinationId,
+          trailId
+        })}
+        onBack={pop}
+      />;
+    } else if (route?.name === 'settings') {
+      return <SettingsFlow
+        session={session}
+        onBack={pop}
+      />;
+    } else if (route?.name === 'nearby') {
+      return <NearbyFlow active={active} onOpenDestination={destinationId => push({
+        name: 'destination',
+        destinationId
+      })} onOpenNavigation={navigation => push({
+        name: 'navigation',
+        ...navigation
+      })} onOpenLibrary={() => {
+        setStack([]);
+        setTab('library');
+      }} onBack={pop} />;
+    }
+    return null;
+  };
+  const hasOverlay = stack.length > 0;
   return <View style={styles.screen}>
+    <View style={[styles.content, hasOverlay && styles.hidden]} accessibilityElementsHidden={hasOverlay} importantForAccessibility={hasOverlay ? 'no-hide-descendants' : 'auto'}>
       <View style={styles.content}>
-        {tab === 'home' ? <HomeTab onOpenSettings={() => push({ name: 'settings' })} onOpenExplore={query => {
+        <RetainedTab visible={tab === 'home' && !hasOverlay}><HomeTab active={tab === 'home' && !hasOverlay} onOpenSettings={() => push({ name: 'settings' })} onOpenExplore={query => {
         setExploreQuery(query ?? '');
         setTab('explore');
       }} onOpenLibrary={() => setTab('library')} onOpenDestination={destinationId => push({
@@ -154,8 +163,8 @@ export const AppNavigator = () => {
         destinationId
       })} onOpenNearby={() => push({
         name: 'nearby'
-      })} /> : null}
-        {tab === 'explore' ? <ExploreTab
+      })} /></RetainedTab>
+        <RetainedTab visible={tab === 'explore' && !hasOverlay}><ExploreTab active={tab === 'explore' && !hasOverlay}
           onOpenSettings={() => push({ name: 'settings' })}
           initialQuery={exploreQuery}
           onOpenDestination={destinationId => push({
@@ -167,8 +176,8 @@ export const AppNavigator = () => {
             setExploreQuery('');
             setTab('trips');
           }}
-        /> : null}
-        {tab === 'trips' ? <TripsTab
+        /></RetainedTab>
+        <RetainedTab visible={tab === 'trips' && !hasOverlay}><TripsTab active={tab === 'trips' && !hasOverlay} backHandlerRef={tripBackHandler}
           onOpenSettings={() => push({ name: 'settings' })}
           initialRouteDraft={tripDraft}
           onDraftConsumed={() => setTripDraft(null)}
@@ -180,16 +189,47 @@ export const AppNavigator = () => {
             name: 'navigation',
             ...navigation
           })}
-        /> : null}
-        {tab === 'library' ? <LibraryTab onOpenSettings={() => push({ name: 'settings' })} onOpenDestination={destinationId => push({
+        /></RetainedTab>
+        <RetainedTab visible={tab === 'library' && !hasOverlay}><LibraryTab active={tab === 'library' && !hasOverlay} onOpenSettings={() => push({ name: 'settings' })} onOpenDestination={destinationId => push({
         name: 'destination',
         destinationId
-      })} /> : null}
-        {tab === 'safety' ? <SafetyTab onOpenSettings={() => push({ name: 'settings' })} /> : null}
+      })} /></RetainedTab>
+        <RetainedTab visible={tab === 'safety' && !hasOverlay}><SafetyTab active={tab === 'safety' && !hasOverlay} onOpenSettings={() => push({ name: 'settings' })} /></RetainedTab>
       </View>
       <BottomNav active={tab} onChange={setTab} />
+    </View>
+    {stack.map((route, index) => {
+      const active = index === stack.length - 1;
+      return <View
+        key={route.screenKey}
+        style={[styles.content, !active && styles.hidden]}
+        pointerEvents={active ? 'auto' : 'none'}
+        accessibilityElementsHidden={!active}
+        importantForAccessibility={active ? 'auto' : 'no-hide-descendants'}
+      >
+          <ScreenActiveContext.Provider value={active}>{renderRoute(route, active)}</ScreenActiveContext.Provider>
+        </View>;
+    })}
+  </View>;
+};
+// Keep visited tabs mounted so search, scroll, and unfinished forms survive a detour.
+const RetainedTab = ({ visible, children }) => {
+  const visited = useRef(false);
+  if (visible) visited.current = true;
+  return <View style={[styles.content, !visible && styles.hidden]} accessibilityElementsHidden={!visible} importantForAccessibility={visible ? 'auto' : 'no-hide-descendants'}>
+      <ScreenActiveContext.Provider value={visible}>{visited.current ? children : null}</ScreenActiveContext.Provider>
     </View>;
 };
+
+const useRefreshOnReturn = (viewModel, active) => {
+  const visited = useRef(false);
+  useEffect(() => {
+    if (!active) return;
+    if (visited.current) void viewModel.load();
+    visited.current = true;
+  }, [active, viewModel]);
+};
+
 const OnboardingFlow = ({
   session
 }) => {
@@ -216,6 +256,7 @@ const DestinationFlow = ({
   return <DestinationScreen viewModel={viewModel} />;
 };
 const NavigationFlow = ({
+  active,
   route,
   onOpenTrail,
   onBack
@@ -228,6 +269,9 @@ const NavigationFlow = ({
     route,
     { onBack, onOpenTrail },
   ));
+  useEffect(() => {
+    if (!active) viewModel.stopNavigation();
+  }, [active, viewModel]);
   return <NavigationScreen viewModel={viewModel} />;
 };
 
@@ -243,6 +287,7 @@ const TrailFlow = ({
   return <TrailScreen viewModel={viewModel} />;
 };
 const HomeTab = ({
+  active,
   onOpenExplore,
   onOpenLibrary,
   onOpenDestination,
@@ -256,9 +301,11 @@ const HomeTab = ({
     onOpenDestination,
     onOpenNearby
   }));
+  useRefreshOnReturn(viewModel, active);
   return <HomeScreen viewModel={viewModel} onOpenSettings={onOpenSettings} />;
 };
 const NearbyFlow = ({
+  active,
   onOpenDestination,
   onOpenNavigation,
   onOpenLibrary,
@@ -271,9 +318,16 @@ const NearbyFlow = ({
     onOpenLibrary,
     onBack
   }));
+  const visited = useRef(false);
+  useEffect(() => {
+    if (!active) return;
+    if (visited.current) void viewModel.refreshSavedPlaces();
+    visited.current = true;
+  }, [active, viewModel]);
   return <NearbyScreen viewModel={viewModel} />;
 };
 const ExploreTab = ({
+  active,
   initialQuery,
   onOpenDestination,
   onPlanTrip,
@@ -287,17 +341,22 @@ const ExploreTab = ({
     container.locationService,
     { onOpenDestination, onPlanTrip },
   ));
+  useRefreshOnReturn(viewModel, active);
   return <ExploreScreen viewModel={viewModel} initialQuery={initialQuery} onOpenDestination={onOpenDestination} onOpenSettings={onOpenSettings} />;
 };
 const LibraryTab = ({
+  active,
   onOpenDestination,
   onOpenSettings
 }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new LibraryViewModel(container.destinationDeps));
+  useRefreshOnReturn(viewModel, active);
   return <LibraryScreen viewModel={viewModel} onOpenDestination={onOpenDestination} onOpenSettings={onOpenSettings} />;
 };
 const TripsTab = ({
+  active,
+  backHandlerRef,
   onOpenDestination,
   onOpenNavigation,
   initialRouteDraft,
@@ -308,16 +367,24 @@ const TripsTab = ({
   const viewModel = useViewModel(() => new TripsViewModel(container.tripsDeps, container.destinationDeps, {
     onOpenDestination,
     onOpenNavigation,
-    initialRouteDraft
   }));
   useEffect(() => {
-    if (initialRouteDraft) onDraftConsumed?.();
-  }, [initialRouteDraft, onDraftConsumed]);
+    backHandlerRef.current = viewModel.handleBack;
+    return () => { backHandlerRef.current = null; };
+  }, [backHandlerRef, viewModel]);
+  useEffect(() => {
+    if (initialRouteDraft) {
+      viewModel.importRouteDraft(initialRouteDraft);
+      onDraftConsumed?.();
+    }
+  }, [initialRouteDraft, onDraftConsumed, viewModel]);
+  useRefreshOnReturn(viewModel, active);
   return <TripsScreen viewModel={viewModel} onOpenSettings={onOpenSettings} />;
 };
-const SafetyTab = ({ onOpenSettings }) => {
+const SafetyTab = ({ active, onOpenSettings }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new SafetyViewModel(container.safetyDeps, container.destinationDeps.packRepository));
+  useRefreshOnReturn(viewModel, active);
   return <SafetyScreen viewModel={viewModel} onOpenSettings={onOpenSettings} />;
 };
 const SettingsFlow = ({ session, onBack }) => {
@@ -337,6 +404,7 @@ const SettingsFlow = ({ session, onBack }) => {
   return <SettingsScreen viewModel={viewModel} />;
 };
 const styles = StyleSheet.create({
+  hidden: { display: 'none' },
   screen: {
     flex: 1,
     backgroundColor: colors.background

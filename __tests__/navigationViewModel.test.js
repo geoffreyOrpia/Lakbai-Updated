@@ -366,6 +366,34 @@ const createFerryVm = () => {
 };
 
 describe('NavigationViewModel', () => {
+  test.each(['permission', 'fix', 'watch'])('a stopped %s request cannot restart location tracking', async stage => {
+    const { vm, locationService, speechService } = createVm();
+    await vm.load();
+    await vm.startFromGps();
+    let finish;
+    const waiting = new Promise(resolve => { finish = resolve; });
+    const removeLateWatch = jest.fn();
+    if (stage === 'permission') {
+      vm.setState({ permission: 'unknown' });
+      locationService.requestPermissions.mockReturnValue(waiting);
+    } else if (stage === 'fix') {
+      locationService.getCurrentFix.mockReturnValue(waiting);
+    } else {
+      locationService.watchFix.mockReturnValue(waiting);
+    }
+    const start = vm.startNavigation();
+    await Promise.resolve();
+    vm.stopNavigation();
+    speechService.speak.mockClear();
+    finish(stage === 'permission' ? true : stage === 'fix' ? { lat: 7.3, lng: 125.68, accuracy: 8 } : removeLateWatch);
+    await start;
+    expect(vm.state.tracking).toBe(false);
+    expect(vm.unwatch).toBeNull();
+    expect(speechService.speak).not.toHaveBeenCalled();
+    if (stage === 'watch') expect(removeLateWatch).toHaveBeenCalledTimes(1);
+    else expect(locationService.watchFix).not.toHaveBeenCalled();
+  });
+
   test('persists multi-stop progress and clears the resume checkpoint on final arrival', async () => {
     const { vm, navigationSessionRepository } = createMultiStopVm();
     await vm.load();
@@ -892,7 +920,7 @@ describe('NavigationViewModel', () => {
 
     await vm.load();
 
-    expect(vm.state.error).toContain('could not prepare');
+    expect(vm.state.error).toBe('The saved map could not open. Please try again.');
     expect(vm.state.offlineBasemapUri).toBeNull();
   });
 

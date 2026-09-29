@@ -1,5 +1,6 @@
+import { ScreenScrollView as ScrollView } from "../components/ScreenScrollView.jsx";
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { APP_VERSION } from "../../../core/appInfo.jsx";
 import { formatSizeKb } from "../../../core/utils/format.jsx";
 import { useFeedback } from "../../../feedback/FeedbackProvider.jsx";
@@ -56,7 +57,7 @@ export const SettingsScreen = ({ viewModel }) => {
   const clearRecovery = () => {
     showConfirm({
       title: 'Clear saved navigation recovery?',
-      message: 'This removes only the resumable navigation checkpoint. Your Trips and downloaded destination packs are kept.',
+      message: 'This removes only the resumable navigation checkpoint. Your Trips and downloaded destination guides are kept.',
       confirmLabel: 'Clear',
       tone: 'danger',
       onConfirm: async () => {
@@ -72,7 +73,7 @@ export const SettingsScreen = ({ viewModel }) => {
   const restartSetup = () => {
     showConfirm({
       title: 'Restart LakBai setup?',
-      message: 'Your travel preferences will be reset and the Welcome/Onboarding flow will appear again. Trips, favorites, and offline packs are not deleted.',
+      message: 'Your travel preferences will be reset and the Welcome/Onboarding flow will appear again. Trips, favorites, and offline guides are not deleted.',
       confirmLabel: 'Restart setup',
       tone: 'danger',
       onConfirm: async () => {
@@ -96,7 +97,7 @@ export const SettingsScreen = ({ viewModel }) => {
       <ScreenIntro
         eyebrow="DEVICE-LOCAL"
         title="Settings & About"
-        subtitle="LakBai works without an account. Preferences, Trips, favorites, and saved packs stay on this device."
+        subtitle="LakBai works without an account. Preferences, Trips, favorites, and saved guides stay on this device."
       />
 
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
@@ -164,8 +165,8 @@ export const SettingsScreen = ({ viewModel }) => {
 
         <SettingRow
           icon="download-outline"
-          title={String(state.savedPackCount) + ' saved ' + (state.savedPackCount === 1 ? 'pack' : 'packs')}
-          text={formatSizeKb(state.offlineSizeBytes / 1024) + ' of destination/map files currently materialized locally.'}
+          title={String(state.savedPackCount) + ' saved ' + (state.savedPackCount === 1 ? 'guide' : 'guides')}
+          text={formatSizeKb(state.offlineSizeBytes / 1024) + ' of saved guides and maps on your phone.'}
         />
 
         <SettingRow
@@ -184,7 +185,7 @@ export const SettingsScreen = ({ viewModel }) => {
 
         <InfoBanner
           tone="info"
-          text="Removing or reinstalling the app can erase device-local Trips, favorites, preferences, and downloaded packs. LakBai does not currently sync these to an account."
+          text="Removing or reinstalling the app can erase device-local Trips, favorites, preferences, and downloaded guides. LakBai does not currently sync these to an account."
         />
       </View>
 
@@ -218,7 +219,7 @@ export const SettingsScreen = ({ viewModel }) => {
         <View style={styles.attribution}>
           <Text style={styles.attributionTitle}>Map & data attribution</Text>
           <Text style={styles.attributionText}>
-            Road, street, and geographic map data are derived in part from OpenStreetMap contributors. Destination facts are attributed within LakBai’s source-review records and should be rechecked when time-sensitive.
+            Map data includes contributions from OpenStreetMap. Sources are listed in each destination guide. Check opening hours and travel conditions before leaving.
           </Text>
         </View>
       </View>

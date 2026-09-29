@@ -21,7 +21,7 @@ export const DestinationCard = ({
     updateAvailable
   } = item;
   const available = destination.status === 'available';
-  const removing = saved && !updateAvailable;
+  const removing = actionLabel === 'Remove';
   return <Pressable accessibilityRole={onPress ? "button" : undefined} accessibilityLabel={onPress ? `Open ${destination.name}` : undefined} onPress={onPress} disabled={!onPress} style={({
     pressed
   }) => [styles.card, pressed && onPress && styles.pressed]}>
@@ -76,11 +76,11 @@ export const DestinationCard = ({
             accessibilityLabel={`${actionLabel} ${destination.name}`}
             accessibilityState={{ disabled: actionDisabled, busy }}
             disabled={actionDisabled}
-            onPress={onAction}
+            onPress={event => { event.stopPropagation?.(); onAction(); }}
             style={({
           pressed
         }) => [styles.actionButton, removing && styles.actionButtonRemove, actionDisabled && styles.actionButtonDisabled, pressed && !actionDisabled && styles.actionButtonPressed]}>
-              <Ionicons name={busy ? 'hourglass-outline' : updateAvailable ? 'refresh-outline' : removing ? 'trash-outline' : 'bookmark-outline'} size={13} color={removing ? colors.danger : colors.onPrimary} />
+              <Ionicons name={busy ? 'hourglass-outline' : updateAvailable ? 'refresh-outline' : removing ? 'trash-outline' : saved ? 'arrow-forward-outline' : 'download-outline'} size={13} color={removing ? colors.danger : colors.onPrimary} />
               <Text style={[styles.actionText, removing && styles.actionTextRemove]}>{actionLabel}</Text>
             </Pressable> : null}
         </View>
