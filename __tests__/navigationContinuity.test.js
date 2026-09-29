@@ -2,8 +2,21 @@ import React from 'react';
 import { act, create } from 'react-test-renderer';
 import { BackHandler } from 'react-native';
 
+const mockGetActiveSession = jest.fn().mockResolvedValue({
+  version: 1,
+  savedAt: Date.now(),
+  completedStopCount: 0,
+  route: {
+    destinationId: 'samal',
+    destinationName: 'Samal Island',
+    target: { lat: 7.13, lng: 125.68 },
+    multiStops: [{ name: 'Stop one', target: { lat: 7.13, lng: 125.68 } }],
+    tripId: 'saved-trip',
+  },
+});
+
 jest.mock('../src/presentation/di/container.jsx', () => ({ getContainer: () => ({
-  routingDeps: { navigationSessionRepository: { getActiveSession: () => Promise.resolve(null) } },
+  routingDeps: { navigationSessionRepository: { getActiveSession: mockGetActiveSession } },
 }) }));
 
 // Exercise the real navigator and model state, without storage or native screens.
@@ -35,6 +48,7 @@ describe('navigation continuity', () => {
   const pressBack = () => act(() => [...backListeners].reverse().some(listener => listener()));
   beforeEach(async () => {
     backListeners = new Set();
+    mockGetActiveSession.mockClear();
     jest.spyOn(BackHandler, 'addEventListener').mockImplementation((event, listener) => {
       backListeners.add(listener);
       return { remove: () => backListeners.delete(listener) };
@@ -42,6 +56,13 @@ describe('navigation continuity', () => {
     await act(async () => { tree = create(<AppNavigator />); });
   });
   afterEach(() => { act(() => tree.unmount()); jest.restoreAllMocks(); });
+
+  test('a fresh app launch opens Home instead of auto-resuming saved navigation', () => {
+    expect(tree.root.findByType('BottomNav').props.active).toBe('home');
+    expect(tree.root.findAllByType('NavigationScreen')).toHaveLength(0);
+    expect(tree.root.findAllByType('HomeScreen')).toHaveLength(1);
+    expect(mockGetActiveSession).not.toHaveBeenCalled();
+  });
 
   test('device Back returns from the trip editor before leaving Trips', () => {
     switchTab('trips');

@@ -50,30 +50,6 @@ export const AppNavigator = () => {
   };
   const pop = () => setStack(current => current.slice(0, -1));
   useEffect(() => {
-    if (session.state.phase !== 'main') return undefined;
-    let active = true;
-    void container.routingDeps.navigationSessionRepository?.getActiveSession()
-      .then(saved => {
-        if (!active || !saved?.route?.multiStops?.length) return;
-        const completedStopCount = Math.max(0, saved.completedStopCount ?? 0);
-        if (completedStopCount >= saved.route.multiStops.length) {
-          void container.routingDeps.navigationSessionRepository.clearActiveSession();
-          return;
-        }
-        setStack(current => current.length ? current : [{
-          ...saved.route,
-          name: 'navigation',
-          screenKey: 'resumed-navigation',
-          resumeCompletedStopCount: completedStopCount,
-          resumedSession: true,
-        }]);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [container.routingDeps.navigationSessionRepository, session.state.phase]);
-  useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       if (stack.length > 0) {
         pop();
