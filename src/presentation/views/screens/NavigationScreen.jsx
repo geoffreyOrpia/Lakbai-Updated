@@ -233,6 +233,7 @@ export const NavigationScreen = ({ viewModel }) => {
             rerouting={state.rerouting}
             voiceGuidance={state.voiceGuidance}
             trailPreview={state.trailPreview}
+            places={state.offlinePois}
             routePois={state.routePois}
             alternativeBaseRoute={state.alternativeBaseRoute}
             alternativeRoutes={state.alternativeRoutes}

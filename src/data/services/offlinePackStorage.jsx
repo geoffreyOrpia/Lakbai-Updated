@@ -2,7 +2,7 @@ import { Asset } from 'expo-asset';
 import { Directory, File, Paths } from 'expo-file-system';
 import { buildOfflinePackFiles } from "../../core/offline/offlinePackFiles.jsx";
 import { getDestinationPhotoModule } from "../assets/destinationPhotos.jsx";
-import { getOfflineBasemapModule } from "../assets/offlineBasemapAsset.jsx";
+import { getOfflineBasemapModule, OFFLINE_BASEMAP_META } from "../assets/offlineBasemapAsset.jsx";
 import { routingRegionFor } from "../assets/routingRegionAssets.jsx";
 import { sharedRoutingStorage } from "./sharedRoutingStorage.jsx";
 
@@ -11,11 +11,12 @@ const packDirectory = packId => new Directory(rootDirectory(), packId);
 const stagingDirectory = packId => new Directory(rootDirectory(), `${packId}.staging`);
 const backupDirectory = packId => new Directory(rootDirectory(), `${packId}.backup`);
 const mapDirectory = () => new Directory(Paths.document, 'lakbaylokal', 'maps');
-const basemapFile = () => new File(mapDirectory(), 'davao-del-norte.pmtiles');
+// A new bundled map must not silently reuse an older, less detailed saved copy.
+const basemapFile = () => new File(mapDirectory(), `davao-del-norte-${OFFLINE_BASEMAP_META.revision}.pmtiles`);
 
 const sharedBasemapStatus = () => {
   const file = basemapFile();
-  if (!file.exists) return null;
+  if (!file.exists || file.size !== OFFLINE_BASEMAP_META.sizeBytes) return null;
   return {
     uri: file.uri,
     sizeBytes: file.size ?? 0,
@@ -39,10 +40,13 @@ const ensureSharedBasemap = async () => {
     const asset = Asset.fromModule(moduleSource);
     await asset.downloadAsync();
     if (!asset.localUri) return null;
+    const prepared = sharedBasemapStatus();
+    if (prepared) return prepared;
+    if (destinationFile.exists) destinationFile.delete();
     new File(asset.localUri).copy(destinationFile);
     return sharedBasemapStatus();
   } catch {
-    if (destinationFile.exists) destinationFile.delete();
+    if (destinationFile.exists && !sharedBasemapStatus()) destinationFile.delete();
     return null;
   }
 };

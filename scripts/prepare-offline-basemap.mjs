@@ -1,4 +1,5 @@
-import { mkdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { dirname, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -13,7 +14,7 @@ const source = process.env.LAKBAYLOKAL_PMTILES_SOURCE
   ?? 'https://build.protomaps.com/20260925.pmtiles';
 const bbox = process.env.LAKBAYLOKAL_PMTILES_BBOX
   ?? '125.305271,6.894583,125.92785,8.000306';
-const maxzoom = process.env.LAKBAYLOKAL_PMTILES_MAXZOOM ?? '13';
+const maxzoom = process.env.LAKBAYLOKAL_PMTILES_MAXZOOM ?? '15';
 
 mkdirSync(mapsDir, { recursive: true });
 rmSync(temporary, { force: true });
@@ -46,14 +47,23 @@ if (result.error || result.status !== 0) {
   process.exit(result.status || 1);
 }
 
-rmSync(output, { force: true });
+const verification = spawnSync('pmtiles', ['verify', temporary], { cwd: root, stdio: 'inherit' });
+if (verification.error || verification.status !== 0) {
+  rmSync(temporary, { force: true });
+  console.error('Map verification failed. The existing archive was left unchanged.');
+  process.exit(1);
+}
+const archive = readFileSync(temporary);
+const revision = createHash('sha256').update(archive).digest('hex').slice(0, 12);
 renameSync(temporary, output);
 
 const registrySource = `export const OFFLINE_BASEMAP_META = Object.freeze({
   region: 'Davao del Norte',
   source: '${source}',
-  bounds: [125.305271, 6.894583, 125.92785, 8.000306],
+  bounds: [${bbox.split(',').map(Number).join(', ')}],
   maxzoom: ${Number(maxzoom)},
+  sizeBytes: ${archive.length},
+  revision: '${revision}',
   attribution: '© OpenStreetMap contributors · Protomaps',
 });
 

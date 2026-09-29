@@ -36,7 +36,7 @@ export const toPmtilesSourceUrl = fileUri => {
   return fileUri.startsWith('pmtiles://') ? fileUri : `pmtiles://${fileUri}`;
 };
 
-export const createOfflineBasemapStyle = fileUri => {
+export const createOfflineBasemapStyle = (fileUri, { showPlaceDots = true } = {}) => {
   const sourceUrl = toPmtilesSourceUrl(fileUri);
   if (!sourceUrl) return null;
 
@@ -263,6 +263,6 @@ export const createOfflineBasemapStyle = fileUri => {
           'circle-stroke-width': 1.5,
         },
       },
-    ],
+    ].filter(layer => showPlaceDots || !layer.id.startsWith('offline-pois-')),
   };
 };

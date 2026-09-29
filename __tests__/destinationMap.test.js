@@ -93,9 +93,14 @@ describe('destination planning map data', () => {
   test('pins the bundled regional basemap metadata', () => {
     expect(OFFLINE_BASEMAP_META).toEqual(expect.objectContaining({
       region: 'Davao del Norte',
-      maxzoom: 13,
-      sizeBytes: 5939044,
+      maxzoom: 15,
+      sizeBytes: 23872600,
     }));
+    const archive = require('node:fs').readFileSync(require('node:path').join(__dirname, '../assets/maps/davao-del-norte.pmtiles'));
+    expect(archive.subarray(0, 7).toString()).toBe('PMTiles');
+    expect(archive[101]).toBe(OFFLINE_BASEMAP_META.maxzoom);
+    expect(archive.length).toBe(OFFLINE_BASEMAP_META.sizeBytes);
+    expect(require('node:crypto').createHash('sha256').update(archive).digest('hex').slice(0, 12)).toBe(OFFLINE_BASEMAP_META.revision);
   });
 
   test('wraps a local file URI with the MapLibre PMTiles protocol', () => {

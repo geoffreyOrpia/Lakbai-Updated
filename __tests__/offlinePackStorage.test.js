@@ -1,6 +1,7 @@
 const mockFiles=new Map();const mockDirs=new Set();let mockFailPromotion=false;
 const mockGraph='routing-bytes';
 let mockVersion='v1';let mockDownloadFails=false;
+let mockBasemapAvailable=false;
 const mockHash=require('node:crypto').createHash('md5').update(mockGraph).digest('hex');
 jest.mock('expo-file-system',()=>{
  const key=parts=>parts.map(p=>typeof p==='string'?p:p.uri).join('/').replace(/\/+$/,'');
@@ -28,17 +29,17 @@ jest.mock('expo-file-system',()=>{
  }
  return {File,Directory,Paths:{document:'/documents'}};
 });
-jest.mock('expo-asset',()=>({Asset:{fromModule:()=>({localUri:'/asset/routing',downloadAsync:async()=>{if(mockDownloadFails)throw new Error('offline');}})}}));
+jest.mock('expo-asset',()=>({Asset:{fromModule:module=>({localUri:module===2?'/asset/basemap':'/asset/routing',downloadAsync:async()=>{if(mockDownloadFails)throw new Error('offline');}})}}));
 jest.mock('../src/data/assets/routingRegionAssets.jsx',()=>({
  routingRegionFor:()=> 'mainland',getRoutingRegionAsset:()=>1,
  routingReferenceFor:()=>({datasetId:'province',version:mockVersion,regionId:'mainland',bytes:13,md5:mockHash}),
 }));
-jest.mock('../src/data/assets/offlineBasemapAsset.jsx',()=>({getOfflineBasemapModule:()=>null}));
+jest.mock('../src/data/assets/offlineBasemapAsset.jsx',()=>({getOfflineBasemapModule:()=>mockBasemapAvailable?2:null,OFFLINE_BASEMAP_META:{revision:'detailed',sizeBytes:12}}));
 jest.mock('../src/data/assets/destinationPhotos.jsx',()=>({getDestinationPhotoModule:()=>null}));
 import {createOfflinePackStorage} from '../src/data/services/offlinePackStorage.jsx';
 const pack=id=>({id,version:1,destination:{name:id,municipality:'Tagum'},spots:[],trails:[]});
 const root='/documents/lakbaylokal/packs/';
-beforeEach(()=>{mockFiles.clear();mockDirs.clear();mockFiles.set('/asset/routing',mockGraph);mockFailPromotion=false;mockVersion='v1';mockDownloadFails=false;});
+beforeEach(()=>{mockFiles.clear();mockDirs.clear();mockFiles.set('/asset/routing',mockGraph);mockFiles.set('/asset/basemap','detailed-map');mockBasemapAvailable=false;mockFailPromotion=false;mockVersion='v1';mockDownloadFails=false;});
 
 test('two destination packs share one checked routing file and deleting one preserves it',async()=>{
  const store=createOfflinePackStorage();
@@ -73,4 +74,32 @@ test('a failed dataset update leaves the old pack routing usable and verifies it
   expect(recovered.sharedRouting.version).toBe('v1');
   mockFiles.set(old.routingGraphUri, 'damaged');
   expect((await store.getStatus('tagum')).routingGraphUri).toBeNull();
+});
+
+test('existing installations receive the detailed map without reusing or removing the old archive', async () => {
+  mockBasemapAvailable = true;
+  const oldUri = '/documents/lakbaylokal/maps/davao-del-norte.pmtiles';
+  mockFiles.set(oldUri, 'old-map');
+  const store = createOfflinePackStorage();
+  const [a, b] = await Promise.all([store.getBasemapStatus(), store.getBasemapStatus()]);
+  expect(a).toEqual({ uri: '/documents/lakbaylokal/maps/davao-del-norte-detailed.pmtiles', sizeBytes: 12 });
+  expect(b).toEqual(a);
+  expect(mockFiles.get(oldUri)).toBe('old-map');
+  mockDownloadFails = true;
+  expect(await store.getBasemapStatus()).toEqual(a);
+});
+
+test('an incomplete map copy is repaired; a failed preparation preserves the previous archive', async () => {
+  mockBasemapAvailable = true;
+  const oldUri = '/documents/lakbaylokal/maps/davao-del-norte.pmtiles';
+  const newUri = '/documents/lakbaylokal/maps/davao-del-norte-detailed.pmtiles';
+  mockFiles.set(oldUri, 'old-map');
+  mockFiles.set(newUri, 'partial');
+  const store = createOfflinePackStorage();
+  mockDownloadFails = true;
+  expect(await store.getBasemapStatus()).toBeNull();
+  expect(mockFiles.get(oldUri)).toBe('old-map');
+  mockDownloadFails = false;
+  expect((await store.getBasemapStatus()).uri).toBe(newUri);
+  expect(mockFiles.get(newUri)).toBe('detailed-map');
 });

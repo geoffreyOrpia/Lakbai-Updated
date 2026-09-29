@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Camera, GeoJSONSource, Images, Layer, Map } from '@maplibre/maplibre-react-native';
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { createOfflineBasemapStyle } from "../../../core/maps/offlineBasemapStyle.jsx";
+import { NAVIGATION_PLACE_FILTERS, NAVIGATION_PLACE_ICON, navigationPlaceDetails, navigationPlaceFilter, navigationPlacesData } from "../../../core/maps/navigationPlaces.jsx";
 import { routeBounds } from "../../../core/routing/graph.jsx";
 import { formatDurationMinutes, formatKm } from "../../../core/utils/format.jsx";
 import { colors, radius, shadows, spacing } from "../../../theme.jsx";
@@ -19,39 +20,30 @@ const POI_ICON_IMAGES = {
   'poi-parking': require('../../../../assets/map-icons/poi-parking.png'),
   'poi-information': require('../../../../assets/map-icons/poi-information.png'),
   'poi-attraction': require('../../../../assets/map-icons/poi-attraction.png'),
+  'poi-camp': require('../../../../assets/map-icons/poi-camp.png'),
+  'poi-pharmacy': require('../../../../assets/map-icons/poi-pharmacy.png'),
+  'poi-fire': require('../../../../assets/map-icons/poi-fire.png'),
+  'poi-emergency': require('../../../../assets/map-icons/poi-emergency.png'),
+  'poi-ferry': require('../../../../assets/map-icons/poi-ferry.png'),
+  'poi-airport': require('../../../../assets/map-icons/poi-airport.png'),
+  'poi-taxi': require('../../../../assets/map-icons/poi-taxi.png'),
+  'poi-charging': require('../../../../assets/map-icons/poi-charging.png'),
+  'poi-atm': require('../../../../assets/map-icons/poi-atm.png'),
+  'poi-bank': require('../../../../assets/map-icons/poi-bank.png'),
+  'poi-toilets': require('../../../../assets/map-icons/poi-toilets.png'),
+  'poi-water': require('../../../../assets/map-icons/poi-water.png'),
+  'poi-shops': require('../../../../assets/map-icons/poi-shops.png'),
+  'poi-post': require('../../../../assets/map-icons/poi-post.png'),
+  'poi-museum': require('../../../../assets/map-icons/poi-museum.png'),
+  'poi-beach': require('../../../../assets/map-icons/poi-beach.png'),
+  'poi-viewpoint': require('../../../../assets/map-icons/poi-viewpoint.png'),
+  'poi-park': require('../../../../assets/map-icons/poi-park.png'),
+  'poi-worship': require('../../../../assets/map-icons/poi-worship.png'),
+  'poi-place': require('../../../../assets/map-icons/poi-place.png'),
   'nav-walk': require('../../../../assets/map-icons/nav-walk.png'),
   'nav-car': require('../../../../assets/map-icons/nav-car.png'),
   'nav-destination': require('../../../../assets/map-icons/nav-destination.png'),
 };
-
-const POI_ICON_KINDS = [
-  'restaurant', 'cafe', 'fast_food', 'food_court', 'bakery', 'bbq',
-  'hotel', 'hostel', 'guest_house', 'bed_and_breakfast', 'chalet', 'camp_site',
-  'police', 'fire_station', 'ranger_station',
-  'hospital', 'clinic', 'doctors', 'pharmacy', 'emergency_phone',
-  'fuel', 'charging_station',
-  'bus_stop', 'station', 'taxi', 'car_rental',
-  'parking',
-  'information', 'toilets', 'drinking_water', 'atm', 'post_office',
-  'attraction', 'viewpoint', 'museum', 'artwork', 'memorial', 'beach', 'park',
-  'picnic_site', 'marina', 'zoo', 'library', 'national_park', 'nature_reserve',
-];
-
-const POI_ICON_IMAGE = [
-  'match',
-  ['get', 'kind'],
-  ['cafe'], 'poi-cafe',
-  ['hotel', 'hostel', 'guest_house', 'bed_and_breakfast', 'chalet', 'camp_site'], 'poi-hotel',
-  ['police', 'fire_station', 'ranger_station'], 'poi-police',
-  ['hospital', 'clinic', 'doctors', 'pharmacy', 'emergency_phone'], 'poi-medical',
-  ['fuel', 'charging_station'], 'poi-fuel',
-  ['bus_stop', 'station', 'taxi', 'car_rental'], 'poi-transit',
-  ['parking'], 'poi-parking',
-  ['information', 'toilets', 'drinking_water', 'atm', 'post_office'], 'poi-information',
-  ['attraction', 'viewpoint', 'museum', 'artwork', 'memorial', 'beach', 'park',
-    'picnic_site', 'marina', 'zoo', 'library', 'national_park', 'nature_reserve'], 'poi-attraction',
-  'poi-restaurant',
-];
 
 const maneuverIcon = kind => {
   if (kind === 'left' || kind === 'sharp-left' || kind === 'slight-left') return 'return-up-back-outline';
@@ -80,11 +72,14 @@ const pointFeature = (id, coordinates, role) => ({
 
 export const NavigationMap = props => {
   const [expanded, setExpanded] = useState(false);
+  const [placeCategory, setPlaceCategory] = useState('all');
+  const [selectedPlace, setSelectedPlace] = useState(null);
+  const placeProps = { placeCategory, setPlaceCategory, selectedPlace, setSelectedPlace };
   return <>
-      {expanded ? <View style={styles.mapFrame} /> : <NavigationMapContent {...props} onExpand={() => setExpanded(true)} />}
+      {expanded ? <View style={styles.mapFrame} /> : <NavigationMapContent {...props} {...placeProps} onExpand={() => setExpanded(true)} />}
       <Modal visible={expanded} animationType="slide" onRequestClose={() => setExpanded(false)}>
         <SafeAreaView style={styles.fullScreen}>
-          {expanded ? <NavigationMapContent {...props} expanded onExpand={() => setExpanded(false)} /> : null}
+          {expanded ? <NavigationMapContent {...props} {...placeProps} expanded onExpand={() => setExpanded(false)} /> : null}
         </SafeAreaView>
       </Modal>
     </>;
@@ -92,6 +87,10 @@ export const NavigationMap = props => {
 
 const NavigationMapContent = ({
   expanded = false,
+  placeCategory,
+  setPlaceCategory,
+  selectedPlace,
+  setSelectedPlace,
   onExpand,
   onStop,
   onToggleVoice,
@@ -109,10 +108,19 @@ const NavigationMapContent = ({
   voiceGuidance = true,
   trailPreview = null,
   routePois = [],
+  places,
   alternativeBaseRoute = null,
   alternativeRoutes = [],
   timeIsReference = false,
 }) => {
+  const mapRef = useRef(null);
+  const tapRequest = useRef(0);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [placeError, setPlaceError] = useState(false);
+  const placeData = useMemo(() => navigationPlacesData(places ?? routePois), [places, routePois]);
+  const placeFilter = useMemo(() => navigationPlaceFilter(placeCategory), [placeCategory]);
+  const selectedCategory = NAVIGATION_PLACE_FILTERS.find(category => category.id === placeCategory);
+  useEffect(() => () => { tapRequest.current += 1; }, []);
   const [following, setFollowing] = useState(liveGps);
   useEffect(() => setFollowing(liveGps), [liveGps]);
   const [basemapFailed, setBasemapFailed] = useState(false);
@@ -122,6 +130,28 @@ const NavigationMapContent = ({
     setMapReady(false);
   }, [offlineBasemapUri]);
   const detailedOffline = Boolean(offlineBasemapUri) && !basemapFailed;
+  const mapStyle = useMemo(() => detailedOffline
+    ? createOfflineBasemapStyle(offlineBasemapUri, { showPlaceDots: false })
+    : FALLBACK_STYLE, [detailedOffline, offlineBasemapUri]);
+  const handleMapPress = async event => {
+    const point = event?.nativeEvent?.point;
+    if (!mapReady || !point || !mapRef.current) return;
+    const request = ++tapRequest.current;
+    try {
+      // A finger-sized hit area makes the small symbols easier to select.
+      const [x, y] = point;
+      const features = await mapRef.current.queryRenderedFeatures([x - 22, y - 22, x + 22, y + 22], {
+        layers: [...(detailedOffline ? ['lakbai-tourism-poi-icons'] : []), 'lakbai-guide-place-icons'],
+      });
+      if (request !== tapRequest.current) return;
+      setPlaceError(false);
+      setSelectedPlace(features?.length ? navigationPlaceDetails(features[0]) : null);
+    } catch {
+      if (request !== tapRequest.current) return;
+      setSelectedPlace(null);
+      setPlaceError(true);
+    }
+  };
   const geometry = route.geometry;
   const bounds = routeBounds(geometry);
   const currentUserData = useMemo(() => ({
@@ -235,18 +265,12 @@ const NavigationMapContent = ({
           'trail-end',
         )]
         : []),
-      ...routePois.map(place => pointFeature(
-        'route-poi-' + place.id,
-        [place.lng, place.lat],
-        'poi',
-      )),
     ],
   }), [
     geometry.coordinates,
     target.lat,
     target.lng,
     trailPreview,
-    routePois,
     route.ferryLeg,
     route.ferryLegs,
     route.stopOffsets,
@@ -261,6 +285,30 @@ const NavigationMapContent = ({
           <Text style={styles.actionLabel}>{expanded ? 'Done' : 'Expand map'}</Text>
         </Pressable>
       </View>
+      <View style={styles.placeToolbar}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Choose places to show" accessibilityState={{ expanded: filtersOpen }} onPress={() => setFiltersOpen(value => !value)} style={styles.mapAction}>
+          <Ionicons name={selectedCategory.icon} size={18} color={colors.primary} />
+          <Text style={styles.actionLabel}>{selectedCategory.label}</Text>
+          <Ionicons name={filtersOpen ? 'chevron-up' : 'chevron-down'} size={16} color={colors.primary} />
+        </Pressable>
+        <Text style={styles.placeHint}>{expanded ? 'Tap a symbol for details' : 'Expand to explore places'}</Text>
+      </View>
+      {filtersOpen ? <ScrollView horizontal showsHorizontalScrollIndicator style={styles.placeFilters} contentContainerStyle={styles.placeFilterContent}>
+        {NAVIGATION_PLACE_FILTERS.map(category => <Pressable key={category.id}
+          accessibilityRole="button" accessibilityLabel={`Show ${category.label.toLowerCase()}`}
+          accessibilityState={{ selected: category.id === placeCategory }}
+          onPress={() => {
+            tapRequest.current += 1;
+            setPlaceCategory(category.id);
+            setSelectedPlace(null);
+            setPlaceError(false);
+            setFiltersOpen(false);
+          }}
+          style={[styles.placeChip, category.id === placeCategory && styles.placeChipSelected]}>
+          <Ionicons name={category.icon} size={18} color={category.id === placeCategory ? colors.onPrimary : colors.primary} />
+          <Text style={[styles.actionLabel, category.id === placeCategory && styles.followTextActive]}>{category.label}</Text>
+        </Pressable>)}
+      </ScrollView> : null}
         {liveGps ? <View pointerEvents="none" style={[styles.navigationHud, shadows.card]}>
             <View style={styles.navigationHudIcon}>
               <Ionicons
@@ -298,12 +346,13 @@ const NavigationMapContent = ({
 
       <View style={[styles.mapFrame, liveGps && styles.mapFrameLive, expanded && styles.expandedFrame]}>
         <Map
+          ref={mapRef}
           key={detailedOffline ? 'nav-local-map' : 'nav-route-only'}
           style={styles.map}
           dragPan
           touchZoom
-          onPress={expanded ? undefined : onExpand}
-          mapStyle={detailedOffline ? createOfflineBasemapStyle(offlineBasemapUri) : FALLBACK_STYLE}
+          onPress={expanded ? handleMapPress : onExpand}
+          mapStyle={mapStyle}
           attribution={detailedOffline}
           attributionPosition={{ bottom: 8, right: 8 }}
           logo={false}
@@ -317,7 +366,7 @@ const NavigationMapContent = ({
             setBasemapFailed(true);
           }}
         >
-          {detailedOffline && mapReady ? <Images images={POI_ICON_IMAGES} /> : null}
+          {mapReady ? <Images images={POI_ICON_IMAGES} /> : null}
           <Camera
             initialViewState={{
               bounds,
@@ -330,21 +379,6 @@ const NavigationMapContent = ({
               if (!event.nativeEvent?.trackUserLocation) setFollowing(false);
             }}
           />
-
-          {detailedOffline && mapReady ? <Layer
-            id="lakbai-tourism-poi-icons"
-            type="symbol"
-            source="offline-basemap"
-            source-layer="pois"
-            minzoom={12}
-            filter={['match', ['get', 'kind'], POI_ICON_KINDS, true, false]}
-            layout={{
-              'icon-image': POI_ICON_IMAGE,
-              'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.42, 15, 0.62, 17, 0.72],
-              'icon-allow-overlap': false,
-              'icon-ignore-placement': false,
-            }}
-          /> : null}
 
           {alternativeData ? <GeoJSONSource id="lakbai-navigation-alternatives" data={alternativeData}>
               <Layer
@@ -431,6 +465,32 @@ const NavigationMapContent = ({
               />
             </GeoJSONSource> : null}
 
+          {detailedOffline && mapReady ? <Layer
+            id="lakbai-tourism-poi-icons"
+            type="symbol"
+            source="offline-basemap"
+            source-layer="pois"
+            minzoom={12}
+            filter={placeFilter}
+            layout={{
+              'icon-image': NAVIGATION_PLACE_ICON,
+              'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.48, 15, 0.62, 17, 0.72],
+              'icon-allow-overlap': false,
+              'icon-ignore-placement': false,
+            }}
+          /> : null}
+
+          {mapReady ? <GeoJSONSource id="lakbai-guide-places" data={placeData}>
+            <Layer id="lakbai-guide-place-icons" type="symbol" source="lakbai-guide-places"
+              filter={placeFilter}
+              layout={{
+                'icon-image': NAVIGATION_PLACE_ICON,
+                'icon-size': 0.62,
+                'icon-allow-overlap': false,
+                'icon-ignore-placement': false,
+              }} />
+          </GeoJSONSource> : null}
+
           <GeoJSONSource id="lakbai-navigation-markers" data={markers}>
             <Layer
               id="lakbai-navigation-marker-dots"
@@ -495,14 +555,6 @@ const NavigationMapContent = ({
             </View>
           </View> : null}
 
-        {detailedOffline && mapReady ? <View pointerEvents="none" style={styles.poiLegend}>
-            <LegendItem icon="restaurant" color="#D96A2B" label="Food" />
-            <LegendItem icon="bed" color="#6B67C8" label="Stay" />
-            <LegendItem icon="shield-checkmark" color={colors.danger} label="Safety" />
-            <LegendItem icon="information-circle" color={colors.brandSea} label="Useful" />
-            <LegendItem icon="camera" color={colors.accent} label="Sights" />
-          </View> : null}
-
         {liveGps ? <Pressable
           accessibilityRole="button"
           accessibilityState={{ selected: following }}
@@ -515,6 +567,17 @@ const NavigationMapContent = ({
           </Text>
         </Pressable> : null}
       </View>
+      {selectedPlace ? <View style={styles.placeDetails} accessibilityLiveRegion="polite">
+        <Image source={POI_ICON_IMAGES[selectedPlace.imageId]} style={styles.placeDetailIcon} />
+        <View style={styles.placeDetailsCopy}>
+          <Text style={styles.placeName} numberOfLines={2}>{selectedPlace.name}</Text>
+          {selectedPlace.name !== selectedPlace.label ? <Text style={styles.placeHint}>{selectedPlace.label}</Text> : null}
+        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Close place details" onPress={() => { tapRequest.current += 1; setSelectedPlace(null); }} style={styles.mapAction}>
+          <Ionicons name="close" size={24} color={colors.primary} />
+        </Pressable>
+      </View> : null}
+      {placeError ? <Text style={styles.caption} accessibilityLiveRegion="polite">Couldn’t open that place. Try tapping again.</Text> : null}
       {expanded && liveGps ? <View style={styles.toolbar}>
           <Pressable accessibilityRole="button" accessibilityLabel={voiceGuidance ? 'Mute directions' : 'Unmute directions'} onPress={onToggleVoice} style={styles.mapAction}>
             <Ionicons name={voiceGuidance ? 'volume-high-outline' : 'volume-mute-outline'} size={20} color={colors.primary} />
@@ -530,15 +593,10 @@ const NavigationMapContent = ({
           ? ferryData ? 'Works offline · Dashed line: ferry crossing'
             : trailData ? 'Works offline · Dashed line: walking trail'
             : 'Works offline · Drag to move, pinch to zoom'
-          : 'Map details could not load. Only your route is shown.'}
+          : 'Map details could not load. Your route and guide places are still available.'}
       </Text>
     </View>;
 };
-
-const LegendItem = ({ icon, color, label }) => <View style={styles.legendItem}>
-    <Ionicons name={icon} size={11} color={color} />
-    <Text style={styles.legendLabel}>{label}</Text>
-  </View>;
 
 const FALLBACK_STYLE = {
   version: 8,
@@ -607,29 +665,16 @@ const styles = StyleSheet.create({
     fontSize: 9.8,
     lineHeight: 14,
   },
-  poiLegend: {
-    position: 'absolute',
-    left: spacing.sm,
-    bottom: 10,
-    maxWidth: '72%',
-    borderRadius: radius.md,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 6,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 7,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  legendLabel: {
-    color: colors.textSecondary,
-    fontSize: 8.5,
-    fontWeight: '800',
-  },
+  placeToolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.xs, paddingHorizontal: spacing.sm },
+  placeHint: { color: colors.muted, fontSize: 12, flexShrink: 1 },
+  placeFilters: { flexGrow: 0, maxHeight: 62 },
+  placeFilterContent: { gap: spacing.xs, paddingHorizontal: spacing.sm, paddingBottom: spacing.sm },
+  placeChip: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: spacing.sm, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border },
+  placeChipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  placeDetails: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.sm, borderTopWidth: 1, borderColor: colors.border },
+  placeDetailsCopy: { flex: 1, paddingVertical: spacing.sm },
+  placeDetailIcon: { width: 36, height: 36 },
+  placeName: { color: colors.text, fontSize: 15, fontWeight: '800' },
   navigationHud: {
     marginHorizontal: spacing.sm,
     marginBottom: spacing.sm,
