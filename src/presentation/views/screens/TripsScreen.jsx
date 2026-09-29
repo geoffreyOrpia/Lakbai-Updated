@@ -226,7 +226,7 @@ const TripEditor = ({
         {form.stops.length === 0 ? <View style={styles.inlineEmpty}>
             <Text style={styles.inlineEmptyText}>Add destinations above to build the itinerary.</Text>
           </View> : <View style={styles.stopList}>
-            {form.stops.map((stop, index) => <View key={stop.destinationId} style={styles.stopEditor}>
+            {form.stops.map((stop, index) => <View key={`${stop.destinationId}:${stop.placeId ?? 'destination'}`} style={styles.stopEditor}>
                 <View style={styles.stopHeader}>
                   <View style={styles.orderBadge}>
                     <Text style={styles.orderText}>{index + 1}</Text>
@@ -392,7 +392,7 @@ const TripDetails = ({
           </View>
           <View style={styles.missingList}>
             {readiness.missingStops.map(stop => <Pressable
-              key={stop.destinationId}
+              key={`${stop.destinationId}:${stop.placeId ?? 'destination'}`}
               accessibilityRole="button"
               accessibilityLabel={`Open ${stop.destinationName} to save it for offline use`}
               onPress={() => viewModel.openDestination(stop.destinationId)}
