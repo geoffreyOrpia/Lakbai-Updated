@@ -1,5 +1,5 @@
 import { dedupeEmergencyContacts, listChecklist, listCompletedKeys, resetChecklist, setChecklistItemCompleted } from "../../domain/usecases/safety.jsx";
-import { callVerifiedEmergencyContact } from "../../domain/usecases/emergencyContacts.jsx";
+import { callNationalEmergencyHotline, callVerifiedEmergencyContact } from "../../domain/usecases/emergencyContacts.jsx";
 import { userMessage } from "../../core/errors/appError.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 /** Safety hub: preparation checklist plus offline emergency contacts from packs. */
@@ -77,6 +77,20 @@ export class SafetyViewModel extends ViewModel {
       });
     } catch (error) {
       throw new Error(userMessage(error, 'The checklist could not be reset.'));
+    }
+  };
+  call911 = async () => {
+    try {
+      await callNationalEmergencyHotline(this.deps);
+      return {
+        ok: true,
+        message: 'Opening 911…'
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        message: userMessage(error, '911 could not be opened on this device.')
+      };
     }
   };
   callContact = async contact => {

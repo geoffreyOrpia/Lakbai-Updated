@@ -54,6 +54,15 @@ export const SafetyScreen = ({
       onConfirm: () => void resetChecklist()
     });
   };
+  const call911 = async () => {
+    const result = await viewModel.call911();
+    if (!result.ok) {
+      showSnackbar({
+        message: result.message,
+        tone: 'error'
+      });
+    }
+  };
   const callContact = async contact => {
     const result = await viewModel.callContact(contact);
     if (!result.ok) {
@@ -91,9 +100,19 @@ export const SafetyScreen = ({
         <View style={styles.emergencyCopy}>
           <Text style={styles.emergencyTitle}>Emergency information</Text>
           <Text style={styles.emergencyText}>
-            Verified emergency contacts from saved guides appear below. Nationwide 911 still requires available cellular service.
+            Call 911 opens your phone app with the nationwide emergency hotline. Your device may ask you to confirm the call.
           </Text>
         </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Call 911 national emergency hotline"
+          accessibilityHint="Opens the phone app for an emergency call to 911"
+          onPress={() => void call911()}
+          style={({ pressed }) => [styles.emergencyCallButton, pressed && styles.pressed]}
+        >
+          <Ionicons name="call" size={16} color={colors.onPrimary} />
+          <Text style={styles.emergencyCallButtonText}>Call 911</Text>
+        </Pressable>
       </View>
 
       <View style={styles.section}>
@@ -211,6 +230,22 @@ const styles = StyleSheet.create({
   },
   emergencyCopy: {
     flex: 1
+  },
+  emergencyCallButton: {
+    minWidth: 82,
+    minHeight: 44,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.danger,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xxs
+  },
+  emergencyCallButtonText: {
+    color: colors.onPrimary,
+    fontSize: 11,
+    fontWeight: '900'
   },
   emergencyTitle: {
     color: colors.text,

@@ -2,6 +2,13 @@ import React from 'react';
 import { act, create } from 'react-test-renderer';
 import { BackHandler } from 'react-native';
 
+const mockClearPreferences = jest.fn().mockResolvedValue(undefined);
+const mockSavePreferences = jest.fn().mockResolvedValue(undefined);
+const mockGetPreferences = jest.fn().mockResolvedValue({
+  interests: ['Beaches'],
+  pace: 'balanced',
+  offlineFirst: true,
+});
 const mockGetActiveSession = jest.fn().mockResolvedValue({
   version: 1,
   savedAt: Date.now(),
@@ -16,6 +23,20 @@ const mockGetActiveSession = jest.fn().mockResolvedValue({
 });
 
 jest.mock('../src/presentation/di/container.jsx', () => ({ getContainer: () => ({
+  preferencesDeps: {
+    preferencesRepository: {
+      clear: mockClearPreferences,
+      save: mockSavePreferences,
+      get: mockGetPreferences,
+    },
+  },
+  destinationDeps: {
+    packRepository: {},
+  },
+  safetyDeps: {
+    safetyRepository: {},
+    phoneService: { call: jest.fn().mockResolvedValue(undefined) },
+  },
   routingDeps: { navigationSessionRepository: { getActiveSession: mockGetActiveSession } },
 }) }));
 
@@ -49,6 +70,9 @@ describe('navigation continuity', () => {
   beforeEach(async () => {
     backListeners = new Set();
     mockGetActiveSession.mockClear();
+    mockClearPreferences.mockClear();
+    mockSavePreferences.mockClear();
+    mockGetPreferences.mockClear();
     jest.spyOn(BackHandler, 'addEventListener').mockImplementation((event, listener) => {
       backListeners.add(listener);
       return { remove: () => backListeners.delete(listener) };
@@ -73,6 +97,36 @@ describe('navigation continuity', () => {
     expect(tree.root.findByType('BottomNav').props.active).toBe('trips');
     pressBack();
     expect(tree.root.findByType('BottomNav').props.active).toBe('home');
+  });
+
+  test('resetting setup from Safety clears navigation state and finishes back on Home', async () => {
+    switchTab('safety');
+    act(() => tree.root.findByType('SafetyScreen').props.onOpenSettings());
+    const settings = tree.root.findByType('SettingsScreen').props.viewModel;
+
+    await act(async () => {
+      const result = await settings.restartSetup();
+      expect(result.ok).toBe(true);
+    });
+
+    expect(mockClearPreferences).toHaveBeenCalledTimes(1);
+    expect(tree.root.findAllByType('LandingScreen')).toHaveLength(1);
+
+    act(() => tree.root.findByType('LandingScreen').props.onContinue());
+    const onboarding = tree.root.findByType('OnboardingScreen').props.viewModel;
+    act(() => {
+      onboarding.toggleInterest('Beaches');
+      onboarding.next();
+    });
+    await act(async () => {
+      expect(await onboarding.complete()).toBe(true);
+    });
+
+    expect(mockSavePreferences).toHaveBeenCalledTimes(1);
+    expect(tree.root.findByType('BottomNav').props.active).toBe('home');
+    expect(tree.root.findAllByType('HomeScreen')).toHaveLength(1);
+    expect(tree.root.findAllByType('SafetyScreen')).toHaveLength(0);
+    expect(tree.root.findAllByType('SettingsScreen')).toHaveLength(0);
   });
 
   test('keeps Nearby and its search mounted through destination and trail visits, then releases popped pages', () => {

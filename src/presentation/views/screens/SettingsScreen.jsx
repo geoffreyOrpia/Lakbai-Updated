@@ -73,7 +73,7 @@ export const SettingsScreen = ({ viewModel }) => {
   const restartSetup = () => {
     showConfirm({
       title: 'Restart LakBai setup?',
-      message: 'Your travel preferences will be reset and the Welcome/Onboarding flow will appear again. Trips, favorites, and offline guides are not deleted.',
+      message: 'Your travel preferences will be reset and the Welcome/Onboarding flow will appear again. When setup is finished, LakBai will open Home. Trips, favorites, and offline guides are not deleted.',
       confirmLabel: 'Restart setup',
       tone: 'danger',
       onConfirm: async () => {
@@ -228,7 +228,7 @@ export const SettingsScreen = ({ viewModel }) => {
         <Text style={styles.sectionEyebrow}>SETUP</Text>
         <Text style={styles.sectionTitle}>Restart personalization</Text>
         <Text style={styles.aboutText}>
-          Use this if you want to choose your interests and travel pace again. It does not log out because LakBai has no account system.
+          Use this if you want to choose your interests and travel pace again. The app navigation is reset too, so finishing setup always returns to Home.
         </Text>
         <SecondaryButton label="Restart setup" icon="refresh-outline" onPress={restartSetup} />
       </View>

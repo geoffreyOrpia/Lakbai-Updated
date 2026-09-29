@@ -44,6 +44,15 @@ export const AppNavigator = () => {
   const nextRouteId = useRef(0);
   const [exploreQuery, setExploreQuery] = useState('');
   const [tripDraft, setTripDraft] = useState(null);
+  const restartAppSetup = async () => {
+    await session.restartSetup();
+    setTab('home');
+    setStack([]);
+    setExploreQuery('');
+    setTripDraft(null);
+    tripBackHandler.current = null;
+    nextRouteId.current = 0;
+  };
   const push = route => {
     const entry = { ...route, screenKey: ++nextRouteId.current };
     setStack(current => [...current, entry]);
@@ -124,8 +133,8 @@ export const AppNavigator = () => {
       />;
     } else if (route?.name === 'settings') {
       return <SettingsFlow
-        session={session}
         onBack={pop}
+        onRestartSetup={restartAppSetup}
       />;
     } else if (route?.name === 'nearby') {
       return <NearbyFlow active={active} onOpenDestination={destinationId => push({
@@ -377,7 +386,7 @@ const SafetyTab = ({ active, onOpenSettings }) => {
   useRefreshOnReturn(viewModel, active);
   return <SafetyScreen viewModel={viewModel} onOpenSettings={onOpenSettings} />;
 };
-const SettingsFlow = ({ session, onBack }) => {
+const SettingsFlow = ({ onBack, onRestartSetup }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new SettingsViewModel(
     container.preferencesDeps,
@@ -385,10 +394,7 @@ const SettingsFlow = ({ session, onBack }) => {
     container.routingDeps,
     {
       onBack,
-      onRestartSetup: async () => {
-        onBack();
-        await session.restartSetup();
-      },
+      onRestartSetup,
     },
   ));
   return <SettingsScreen viewModel={viewModel} />;
