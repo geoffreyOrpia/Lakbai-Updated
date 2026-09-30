@@ -63,6 +63,79 @@ describe('navigation map interactions', () => {
     expect(tree.root.findByType(Modal).props.visible).toBe(false);
   });
 
+  test('shows only the current itinerary leg as the primary route and mutes later legs', () => {
+    const firstGeometry = {
+      type: 'LineString',
+      coordinates: [[125.6, 7.3], [125.65, 7.34]],
+    };
+    const secondGeometry = {
+      type: 'LineString',
+      coordinates: [[125.65, 7.34], [125.72, 7.4]],
+    };
+    const itinerary = {
+      type: 'multi-stop-journey',
+      geometry: {
+        type: 'LineString',
+        coordinates: [...firstGeometry.coordinates, ...secondGeometry.coordinates.slice(1)],
+      },
+      roadLegs: [
+        { stopIndex: 0, route: { geometry: firstGeometry } },
+        { stopIndex: 1, route: { geometry: secondGeometry } },
+      ],
+      ferryLegs: [],
+      stopOffsets: [
+        {
+          stopIndex: 0,
+          distanceAlongKm: 3,
+          stop: { name: 'First stop', target: { lat: 7.34, lng: 125.65 } },
+        },
+        {
+          stopIndex: 1,
+          distanceAlongKm: 8,
+          stop: { name: 'Second stop', target: { lat: 7.4, lng: 125.72 } },
+        },
+      ],
+    };
+
+    act(() => {
+      tree = create(<NavigationMap
+        {...props}
+        route={itinerary}
+        target={{ lat: 7.4, lng: 125.72 }}
+        completedStopCount={0}
+        distanceAlongKm={1}
+      />);
+    });
+
+    const source = id => tree.root.findAllByType('Source').find(node => node.props.id === id);
+    expect(source('lakbai-navigation-route').props.data.features).toEqual([
+      expect.objectContaining({ geometry: firstGeometry }),
+    ]);
+    expect(source('lakbai-navigation-itinerary-context').props.data.features).toEqual([
+      expect.objectContaining({ geometry: secondGeometry }),
+    ]);
+    const renderedText = tree.root.findAllByType('Text')
+      .map(node => (Array.isArray(node.props.children) ? node.props.children : [node.props.children])
+        .filter(value => typeof value === 'string')
+        .join(''))
+      .join('|');
+    expect(renderedText).toContain('Current leg · First stop');
+    expect(renderedText).toContain('Later itinerary');
+
+    act(() => tree.update(<NavigationMap
+      {...props}
+      route={itinerary}
+      target={{ lat: 7.4, lng: 125.72 }}
+      completedStopCount={1}
+      distanceAlongKm={4}
+    />));
+
+    expect(source('lakbai-navigation-route').props.data.features).toEqual([
+      expect.objectContaining({ geometry: secondGeometry }),
+    ]);
+    expect(source('lakbai-navigation-itinerary-context')).toBeUndefined();
+  });
+
   test('a sample route offers current-location directions while optional details stay collapsed', () => {
     const startFromGps = jest.fn();
     const viewModel = {

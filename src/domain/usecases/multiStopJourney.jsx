@@ -143,6 +143,7 @@ export const calculateOfflineMultiStopJourney = async ({
       for (const roadLeg of route.legs.filter(leg => leg.kind === 'road')) {
         roadLegs.push({
           ...roadLeg,
+          stopIndex: originalStopIndex,
           region: roadLeg.region,
           startKm: legStartKm + roadLeg.startKm * progressScale,
           endKm: legStartKm + roadLeg.endKm * progressScale,
@@ -151,6 +152,7 @@ export const calculateOfflineMultiStopJourney = async ({
       }
       ferryLegs.push({
         ...route.ferryLeg,
+        stopIndex: originalStopIndex,
         startKm: legStartKm + route.ferryLeg.startKm * progressScale,
         endKm: legStartKm + route.ferryLeg.endKm * progressScale,
         progressScale,
@@ -158,6 +160,7 @@ export const calculateOfflineMultiStopJourney = async ({
     } else {
       roadLegs.push({
         kind: 'road',
+        stopIndex: originalStopIndex,
         region: targetRegion,
         startKm: legStartKm,
         endKm: legEndKm,

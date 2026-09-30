@@ -100,6 +100,8 @@ const NavigationMapContent = ({
   liveGps = false,
   mode = 'walk',
   currentPosition = null,
+  distanceAlongKm = 0,
+  completedStopCount = 0,
   nextManeuver = null,
   distanceToNextManeuverKm = null,
   remainingKm = null,
@@ -154,19 +156,33 @@ const NavigationMapContent = ({
   };
   const geometry = route.geometry;
   const bounds = routeBounds(geometry);
+  const activeItineraryStop = useMemo(() => {
+    if (route.type !== 'multi-stop-journey') return null;
+    const stops = route.stopOffsets ?? [];
+    return stops.find(marker => marker.stopIndex === completedStopCount)
+      ?? stops.find(marker => distanceAlongKm < marker.distanceAlongKm + 0.02)
+      ?? null;
+  }, [completedStopCount, distanceAlongKm, route.stopOffsets, route.type]);
+  const activeStopIndex = activeItineraryStop?.stopIndex ?? null;
   const currentUserData = useMemo(() => ({
     type: 'FeatureCollection',
     features: currentPosition
       ? [pointFeature('current-user', [currentPosition.lng, currentPosition.lat], 'user')]
       : [],
   }), [currentPosition]);
-  const routeData = useMemo(() => ({
-    type: 'FeatureCollection',
-    features: route.type === 'multi-stop-journey'
-      ? (route.roadLegs ?? []).map((leg, index) => ({
+  const routeData = useMemo(() => {
+    const activeRoadLegs = route.type === 'multi-stop-journey'
+      ? (route.roadLegs ?? []).filter(leg => (
+        activeStopIndex == null || leg.stopIndex === activeStopIndex
+      ))
+      : null;
+    return {
+      type: 'FeatureCollection',
+      features: route.type === 'multi-stop-journey'
+      ? activeRoadLegs.map((leg, index) => ({
         type: 'Feature',
         id: `road-leg-${index}`,
-        properties: { kind: 'road' },
+        properties: { kind: 'road', itinerary: 'active' },
         geometry: leg.route.geometry,
       }))
       : (
@@ -187,7 +203,30 @@ const NavigationMapContent = ({
         properties: { kind: 'road' },
         geometry,
       }],
-  }), [geometry, route.type, route.legs, route.roadLegs]);
+    };
+  }, [activeStopIndex, geometry, route.type, route.legs, route.roadLegs]);
+  const itineraryContextData = useMemo(() => {
+    if (route.type !== 'multi-stop-journey' || activeStopIndex == null) return null;
+    const features = [
+      ...(route.roadLegs ?? [])
+        .filter(leg => leg.stopIndex > activeStopIndex)
+        .map((leg, index) => ({
+          type: 'Feature',
+          id: `upcoming-road-leg-${index}`,
+          properties: { kind: 'road', itinerary: 'upcoming' },
+          geometry: leg.route.geometry,
+        })),
+      ...(route.ferryLegs ?? [])
+        .filter(leg => leg.stopIndex > activeStopIndex)
+        .map((leg, index) => ({
+          type: 'Feature',
+          id: `upcoming-ferry-leg-${index}`,
+          properties: { kind: 'ferry', itinerary: 'upcoming' },
+          geometry: leg.geometry,
+        })),
+    ];
+    return features.length ? { type: 'FeatureCollection', features } : null;
+  }, [activeStopIndex, route.ferryLegs, route.roadLegs, route.type]);
   const alternativeData = useMemo(() => {
     const candidates = [alternativeBaseRoute, ...(alternativeRoutes ?? [])]
       .filter(candidate => candidate?.ok && candidate !== route)
@@ -209,7 +248,9 @@ const NavigationMapContent = ({
   }, [alternativeBaseRoute, alternativeRoutes, route]);
   const ferryData = useMemo(() => {
     const ferryLegs = route.type === 'multi-stop-journey'
-      ? route.ferryLegs ?? []
+      ? (route.ferryLegs ?? []).filter(leg => (
+        activeStopIndex == null || leg.stopIndex === activeStopIndex
+      ))
       : route.ferryLeg?.geometry?.coordinates?.length ? [route.ferryLeg] : [];
     if (!ferryLegs.length) return null;
     return {
@@ -221,7 +262,7 @@ const NavigationMapContent = ({
         geometry: leg.geometry,
       })),
     };
-  }, [route.ferryLeg, route.ferryLegs, route.type]);
+  }, [activeStopIndex, route.ferryLeg, route.ferryLegs, route.type]);
   const trailData = useMemo(() => {
     const trailGeometry = route.trailLeg?.geometry ?? trailPreview?.geometry;
     if (!trailGeometry?.coordinates?.length) return null;
@@ -240,7 +281,11 @@ const NavigationMapContent = ({
     features: [
       pointFeature('route-start', geometry.coordinates[0], 'start'),
       pointFeature('route-destination', [target.lng, target.lat], 'destination'),
-      ...((route.type === 'multi-stop-journey' ? route.ferryLegs ?? [] : route.ferryLeg ? [route.ferryLeg] : [])
+      ...((route.type === 'multi-stop-journey'
+        ? (route.ferryLegs ?? []).filter(leg => (
+          activeStopIndex == null || leg.stopIndex === activeStopIndex
+        ))
+        : route.ferryLeg ? [route.ferryLeg] : [])
         .flatMap((leg, index) => [
           pointFeature(
             `ferry-origin-terminal-${index}`,
@@ -256,7 +301,7 @@ const NavigationMapContent = ({
       ...(route.stopOffsets ?? []).slice(0, -1).map(marker => pointFeature(
         `multi-stop-${marker.stopIndex}`,
         [marker.stop.target.lng, marker.stop.target.lat],
-        'stop',
+        marker.stopIndex === activeStopIndex ? 'stop-active' : 'stop-upcoming',
       )),
       ...(trailPreview?.geometry?.coordinates?.length
         ? [pointFeature(
@@ -271,6 +316,7 @@ const NavigationMapContent = ({
     target.lat,
     target.lng,
     trailPreview,
+    activeStopIndex,
     route.ferryLeg,
     route.ferryLegs,
     route.stopOffsets,
@@ -285,6 +331,18 @@ const NavigationMapContent = ({
           <Text style={styles.actionLabel}>{expanded ? 'Done' : 'Expand map'}</Text>
         </Pressable>
       </View>
+      {route.type === 'multi-stop-journey' ? <View style={styles.itineraryLegend}>
+        <View style={styles.itineraryLegendItem}>
+          <View style={styles.activeRouteSwatch} />
+          <Text style={styles.itineraryLegendText} numberOfLines={1}>
+            Current leg{activeItineraryStop?.stop?.name ? ` · ${activeItineraryStop.stop.name}` : ''}
+          </Text>
+        </View>
+        <View style={styles.itineraryLegendItem}>
+          <View style={styles.upcomingRouteSwatch} />
+          <Text style={styles.itineraryLegendMuted}>Later itinerary</Text>
+        </View>
+      </View> : null}
       <View style={styles.placeToolbar}>
         <Pressable accessibilityRole="button" accessibilityLabel="Choose places to show" accessibilityState={{ expanded: filtersOpen }} onPress={() => setFiltersOpen(value => !value)} style={styles.mapAction}>
           <Ionicons name={selectedCategory.icon} size={18} color={colors.primary} />
@@ -390,6 +448,20 @@ const NavigationMapContent = ({
                   'line-width': 4,
                   'line-opacity': 0.72,
                   'line-dasharray': [1.4, 1.2],
+                }}
+              />
+            </GeoJSONSource> : null}
+
+          {itineraryContextData ? <GeoJSONSource id="lakbai-navigation-itinerary-context" data={itineraryContextData}>
+              <Layer
+                id="lakbai-navigation-itinerary-context-line"
+                type="line"
+                source="lakbai-navigation-itinerary-context"
+                paint={{
+                  'line-color': colors.muted,
+                  'line-width': 3.5,
+                  'line-opacity': 0.48,
+                  'line-dasharray': [1.4, 1.4],
                 }}
               />
             </GeoJSONSource> : null}
@@ -505,7 +577,8 @@ const NavigationMapContent = ({
                   'destination', colors.accent,
                   'trail-end', colors.accentDark,
                   'ferry-terminal', colors.accentDark,
-                  'stop', colors.primary,
+                  'stop-active', colors.accent,
+                  'stop-upcoming', colors.muted,
                   'poi', colors.accentDark,
                   colors.primary,
                 ],
@@ -590,7 +663,9 @@ const NavigationMapContent = ({
         </View> : null}
       <Text style={styles.caption}>
         {detailedOffline
-          ? ferryData ? 'Works offline · Dashed line: ferry crossing'
+          ? route.type === 'multi-stop-journey' && itineraryContextData
+            ? 'Works offline · Green: current leg · Gray dashed: later itinerary'
+            : ferryData ? 'Works offline · Dashed line: ferry crossing'
             : trailData ? 'Works offline · Dashed line: walking trail'
             : 'Works offline · Drag to move, pinch to zoom'
           : 'Map details could not load. Your route and guide places are still available.'}
@@ -614,6 +689,46 @@ const styles = StyleSheet.create({
   expandedFrame: { flex: 1, height: undefined, minHeight: 120 },
   toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.sm },
   toolbarTitle: { color: colors.text, fontSize: 14, fontWeight: '800' },
+  itineraryLegend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
+  itineraryLegendItem: {
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  itineraryLegendText: {
+    maxWidth: 210,
+    color: colors.textSecondary,
+    fontSize: 10.5,
+    lineHeight: 14,
+    fontWeight: '800',
+  },
+  itineraryLegendMuted: {
+    color: colors.muted,
+    fontSize: 10.5,
+    lineHeight: 14,
+    fontWeight: '700',
+  },
+  activeRouteSwatch: {
+    width: 22,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.primary,
+  },
+  upcomingRouteSwatch: {
+    width: 22,
+    height: 2,
+    borderTopWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: colors.muted,
+  },
   mapAction: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: spacing.xs },
   actionLabel: { color: colors.primary, fontSize: 13, fontWeight: '700' },
   card: {

@@ -64,6 +64,8 @@ describe('offline multi-stop journeys', () => {
     expect(result.journeyLegs.map(leg => leg.kind)).toEqual(['road-journey', 'ferry-journey']);
     expect(result.stopOffsets.map(marker => marker.stopIndex)).toEqual([0, 1]);
     expect(result.ferryLegs).toHaveLength(1);
+    expect(new Set(result.roadLegs.map(leg => leg.stopIndex))).toEqual(new Set([0, 1]));
+    expect(result.ferryLegs[0].stopIndex).toBe(1);
     expect(result.maneuvers).toEqual(expect.arrayContaining([
       expect.objectContaining({ kind: 'stop-arrive', stopIndex: 0 }),
       expect.objectContaining({ kind: 'ferry-board' }),

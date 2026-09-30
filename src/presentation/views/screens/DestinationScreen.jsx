@@ -98,6 +98,18 @@ export const DestinationScreen = ({
         {state.offlineBundle?.basemapUri ? <Pill icon="trail-sign-outline" text="Offline roads & water" tone="primary" /> : null}
       </View>
 
+      <View style={[styles.atAGlanceCard, shadows.soft]}>
+        <Text style={styles.atAGlanceEyebrow}>AT A GLANCE</Text>
+        <Text style={styles.atAGlanceTitle}>What you’ll find</Text>
+        <Text style={styles.atAGlanceSummary}>{destination.summary}</Text>
+        {(destination.highlights ?? []).length ? <View style={styles.atAGlanceHighlights}>
+            {(destination.highlights ?? []).map(highlight => <View key={highlight} style={styles.atAGlanceHighlight}>
+                <View style={styles.atAGlanceDot} />
+                <Text style={styles.atAGlanceHighlightText}>{highlight}</Text>
+              </View>)}
+          </View> : null}
+      </View>
+
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ selected: state.favorite }}
@@ -183,18 +195,11 @@ export const DestinationScreen = ({
           {!state.saved ? <Text style={styles.connectionHint}>Save this place to use the map without internet.</Text> : null}
         </View> : null}
 
-      <View style={styles.section}>
-        <SectionHeader eyebrow="About" title="Destination guide" />
+      <Disclosure title="More about this destination">
         <View style={[styles.card, shadows.card]}>
           <Text style={styles.bodyText}>{destination.description}</Text>
-          {destination.highlights.length ? <View style={styles.highlightList}>
-              {destination.highlights.map(highlight => <View key={highlight} style={styles.highlightRow}>
-                  <Ionicons name="checkmark-circle" size={15} color={colors.primary} />
-                  <Text style={styles.highlightText}>{highlight}</Text>
-                </View>)}
-            </View> : null}
         </View>
-      </View>
+      </Disclosure>
 
       <Disclosure title={state.saved ? 'Saved for offline use · Manage' : 'Save for offline use'}>
       <Pressable
@@ -502,6 +507,54 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.xs
+  },
+  atAGlanceCard: {
+    borderWidth: 1,
+    borderColor: '#DCE9E1',
+    borderRadius: radius.lg,
+    backgroundColor: colors.primarySofter,
+    padding: spacing.md,
+    gap: spacing.xs
+  },
+  atAGlanceEyebrow: {
+    color: colors.primary,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.9
+  },
+  atAGlanceTitle: {
+    color: colors.text,
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: '900'
+  },
+  atAGlanceSummary: {
+    color: colors.textSecondary,
+    fontSize: 12.2,
+    lineHeight: 18
+  },
+  atAGlanceHighlights: {
+    gap: 6,
+    marginTop: 2
+  },
+  atAGlanceHighlight: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs
+  },
+  atAGlanceDot: {
+    width: 7,
+    height: 7,
+    marginTop: 5,
+    borderRadius: 4,
+    backgroundColor: colors.primary
+  },
+  atAGlanceHighlightText: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 11.5,
+    lineHeight: 16,
+    fontWeight: '700'
   },
   pill: {
     minHeight: 28,

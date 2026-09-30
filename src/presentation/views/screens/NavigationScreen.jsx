@@ -235,6 +235,8 @@ export const NavigationScreen = ({ viewModel }) => {
             liveGps={state.tracking}
             mode={state.mode}
             currentPosition={state.fix}
+            distanceAlongKm={state.distanceAlongKm}
+            completedStopCount={state.completedStopCount}
             nextManeuver={state.nextManeuver}
             distanceToNextManeuverKm={state.distanceToNextManeuverKm}
             remainingKm={state.remainingKm}
