@@ -100,18 +100,18 @@ export const SafetyScreen = ({
         <View style={styles.emergencyCopy}>
           <Text style={styles.emergencyTitle}>Emergency information</Text>
           <Text style={styles.emergencyText}>
-            Call 911 opens your phone app with the nationwide emergency hotline. Your device may ask you to confirm the call.
+            Dial 911 opens your phone app with the nationwide emergency hotline ready. Confirm the emergency call in your phone app.
           </Text>
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Call 911 national emergency hotline"
-          accessibilityHint="Opens the phone app for an emergency call to 911"
+          accessibilityLabel="Dial 911 national emergency hotline"
+          accessibilityHint="Opens the phone app with 911 ready to dial"
           onPress={() => void call911()}
           style={({ pressed }) => [styles.emergencyCallButton, pressed && styles.pressed]}
         >
           <Ionicons name="call" size={16} color={colors.onPrimary} />
-          <Text style={styles.emergencyCallButtonText}>Call 911</Text>
+          <Text style={styles.emergencyCallButtonText}>Dial 911</Text>
         </Pressable>
       </View>
 

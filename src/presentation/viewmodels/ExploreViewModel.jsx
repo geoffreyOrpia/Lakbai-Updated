@@ -181,7 +181,7 @@ export class ExploreViewModel extends ViewModel {
         });
         return false;
       }
-      const fix = await this.locationService.getCurrentFix();
+      const fix = await this.locationService.getCurrentFix({ purpose: 'discovery' });
       if (!fix) {
         this.setState({
           smartLocationStatus: 'unavailable',

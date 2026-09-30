@@ -315,53 +315,39 @@ export class NavigationViewModel extends ViewModel {
 
   resumeActiveNavigationSession = async () => {
     if (!this.activeSessionId || !this.state.route || !this.state.tracking) return;
+    let backgroundActive = false;
     try {
       const active = await this.locationService.isBackgroundNavigationActive?.();
       if (active) {
-        this.backgroundNavigationActive = true;
-        this.setState({
-          backgroundPermission: 'granted',
-          backgroundNavigation: true,
-          backgroundWarning: null,
-        });
-        return;
-      }
-      if (this.state.backgroundNavigation) {
-        const restarted = await this.locationService.startBackgroundNavigation?.({
+        backgroundActive = true;
+      } else if (this.state.backgroundNavigation) {
+        backgroundActive = await this.locationService.startBackgroundNavigation?.({
           destinationName: this.state.target?.label ?? this.state.destinationName,
-        });
-        if (restarted) {
-          this.backgroundNavigationActive = true;
-          this.setState({
-            backgroundPermission: 'granted',
-            backgroundNavigation: true,
-            backgroundWarning: null,
-          });
-          await this.persistActiveNavigationSession();
-          return;
-        }
+        }) === true;
       }
     } catch {
-      // Fall through to foreground-only tracking when Android cannot resume its service.
+      backgroundActive = false;
     }
 
-    this.backgroundNavigationActive = false;
+    this.backgroundNavigationActive = backgroundActive;
     this.setState({
-      backgroundNavigation: false,
-      backgroundWarning: 'Background navigation stopped. Keep LakBai open or start navigation again to re-enable it.',
+      backgroundPermission: backgroundActive ? 'granted' : this.state.backgroundPermission,
+      backgroundNavigation: backgroundActive,
+      backgroundWarning: backgroundActive
+        ? null
+        : 'Background navigation stopped. LakBai will keep live GPS active while the app is open.',
     });
+    if (backgroundActive) await this.persistActiveNavigationSession();
+
+    const request = ++this.locationWatchRequest;
     try {
-      const request = ++this.locationWatchRequest;
-      const unwatch = await this.locationService.watchFix(
-        fix => { if (request === this.locationWatchRequest) this.applyFix(fix); },
-        error => { if (request === this.locationWatchRequest) this.handleLocationError(error); },
-      );
-      if (request !== this.locationWatchRequest) unwatch?.();
-      else this.unwatch = unwatch;
+      await this.startForegroundLocationWatch(request);
     } catch {
       this.setState({
-        tracking: false,
-        gpsError: 'LakBai could not resume live GPS navigation.',
+        tracking: backgroundActive,
+        gpsError: backgroundActive
+          ? 'Foreground GPS is reconnecting. Background navigation is still active.'
+          : 'LakBai could not resume live GPS navigation.',
       });
     }
   };
@@ -491,10 +477,13 @@ export class NavigationViewModel extends ViewModel {
         return;
       }
       this.setState({ permission: 'granted' });
-      const fix = await this.locationService.getCurrentFix();
+      const fix = await this.locationService.getCurrentFix({ purpose: 'route' });
       if (!fix) {
+        const message = await this.locationService.locationFailureMessage?.(
+          'Your location could not be found yet. Move to an open area and try again.',
+        );
         this.setState({
-          error: 'Your location could not be found yet. Check that device location is on, then try again.',
+          error: message ?? 'Your location could not be found yet. Move to an open area and try again.',
         });
         return;
       }
@@ -761,6 +750,7 @@ export class NavigationViewModel extends ViewModel {
     const unwatch = await this.locationService.watchFix(
       fix => { if (request === this.locationWatchRequest) this.applyFix(fix); },
       error => { if (request === this.locationWatchRequest) this.handleLocationError(error); },
+      { purpose: 'navigation' },
     );
     if (request !== this.locationWatchRequest) unwatch?.();
     else this.unwatch = unwatch;
@@ -797,7 +787,7 @@ export class NavigationViewModel extends ViewModel {
     );
 
     try {
-      const currentFix = await this.locationService.getCurrentFix();
+      const currentFix = await this.locationService.getCurrentFix({ purpose: 'navigation' });
       if (request !== this.locationWatchRequest) return;
       if (currentFix) this.applyFix(currentFix);
       if (request !== this.locationWatchRequest) return;
@@ -857,7 +847,6 @@ export class NavigationViewModel extends ViewModel {
                 : 'Background navigation can continue, but Android notification permission was not allowed. The ongoing navigation status may appear only in Android’s active-apps area.',
             });
             await this.persistActiveNavigationSession();
-            return;
           }
         } catch {
           this.backgroundNavigationActive = false;
@@ -869,7 +858,18 @@ export class NavigationViewModel extends ViewModel {
         }
       }
 
-      await this.startForegroundLocationWatch(request);
+      try {
+        await this.startForegroundLocationWatch(request);
+      } catch (error) {
+        if (this.backgroundNavigationActive) {
+          this.setState({
+            gpsError: 'Foreground GPS is reconnecting. Background navigation remains active.',
+          });
+          await this.persistActiveNavigationSession();
+          return;
+        }
+        throw error;
+      }
     } catch {
       if (request !== this.locationWatchRequest) return;
       this.stopLocationWatch();

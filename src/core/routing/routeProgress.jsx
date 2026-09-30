@@ -6,6 +6,86 @@ const routePoints = route => (
   (route?.geometry?.coordinates ?? []).map(([lng, lat]) => ({ lat, lng }))
 );
 
+const sameCoordinate = (a, b) => (
+  Array.isArray(a)
+  && Array.isArray(b)
+  && Math.abs(a[0] - b[0]) < 1e-10
+  && Math.abs(a[1] - b[1]) < 1e-10
+);
+
+export const splitRouteGeometryAtDistance = (route, distanceAlongKm = 0) => {
+  const coordinates = route?.geometry?.coordinates ?? [];
+  if (coordinates.length < 2) {
+    return {
+      completed: null,
+      remaining: route?.geometry ?? null,
+    };
+  }
+
+  const segmentLengths = [];
+  let totalKm = 0;
+  for (let index = 0; index < coordinates.length - 1; index += 1) {
+    const start = coordinates[index];
+    const end = coordinates[index + 1];
+    const lengthKm = haversineKm(
+      { lng: start[0], lat: start[1] },
+      { lng: end[0], lat: end[1] },
+    );
+    segmentLengths.push(lengthKm);
+    totalKm += lengthKm;
+  }
+
+  const targetKm = Math.max(0, Math.min(totalKm, distanceAlongKm ?? 0));
+  if (targetKm <= 0) {
+    return {
+      completed: null,
+      remaining: { type: 'LineString', coordinates: [...coordinates] },
+    };
+  }
+  if (targetKm >= totalKm) {
+    return {
+      completed: { type: 'LineString', coordinates: [...coordinates] },
+      remaining: null,
+    };
+  }
+
+  let cumulativeKm = 0;
+  for (let index = 0; index < segmentLengths.length; index += 1) {
+    const segmentKm = segmentLengths[index];
+    const segmentEndKm = cumulativeKm + segmentKm;
+    if (targetKm <= segmentEndKm || index === segmentLengths.length - 1) {
+      const start = coordinates[index];
+      const end = coordinates[index + 1];
+      const ratio = segmentKm > 0
+        ? Math.max(0, Math.min(1, (targetKm - cumulativeKm) / segmentKm))
+        : 0;
+      const splitPoint = [
+        start[0] + (end[0] - start[0]) * ratio,
+        start[1] + (end[1] - start[1]) * ratio,
+      ];
+      const completedCoordinates = coordinates.slice(0, index + 1);
+      if (!sameCoordinate(completedCoordinates.at(-1), splitPoint)) {
+        completedCoordinates.push(splitPoint);
+      }
+      const remainingCoordinates = [splitPoint, ...coordinates.slice(index + 1)];
+      return {
+        completed: completedCoordinates.length >= 2
+          ? { type: 'LineString', coordinates: completedCoordinates }
+          : null,
+        remaining: remainingCoordinates.length >= 2
+          ? { type: 'LineString', coordinates: remainingCoordinates }
+          : null,
+      };
+    }
+    cumulativeKm = segmentEndKm;
+  }
+
+  return {
+    completed: null,
+    remaining: { type: 'LineString', coordinates: [...coordinates] },
+  };
+};
+
 const normalizedHeading = value => (
   Number.isFinite(value) ? ((value % 360) + 360) % 360 : null
 );

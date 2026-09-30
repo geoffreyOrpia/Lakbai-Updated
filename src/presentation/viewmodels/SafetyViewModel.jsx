@@ -1,5 +1,5 @@
 import { dedupeEmergencyContacts, listChecklist, listCompletedKeys, resetChecklist, setChecklistItemCompleted } from "../../domain/usecases/safety.jsx";
-import { callNationalEmergencyHotline, callVerifiedEmergencyContact } from "../../domain/usecases/emergencyContacts.jsx";
+import { callNationalEmergencyHotline, callVerifiedEmergencyContact, isNationalEmergencyHotline } from "../../domain/usecases/emergencyContacts.jsx";
 import { userMessage } from "../../core/errors/appError.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 /** Safety hub: preparation checklist plus offline emergency contacts from packs. */
@@ -40,7 +40,8 @@ export class SafetyViewModel extends ViewModel {
       this.setState({
         checklist,
         completed,
-        contacts: dedupeEmergencyContacts(contacts),
+        contacts: dedupeEmergencyContacts(contacts)
+          .filter(contact => !isNationalEmergencyHotline(contact)),
         error: null
       });
     } catch (error) {
@@ -84,12 +85,12 @@ export class SafetyViewModel extends ViewModel {
       await callNationalEmergencyHotline(this.deps);
       return {
         ok: true,
-        message: 'Opening 911…'
+        message: 'Opening the phone dialer for 911…'
       };
     } catch (error) {
       return {
         ok: false,
-        message: userMessage(error, '911 could not be opened on this device.')
+        message: userMessage(error, 'The phone dialer could not be opened for 911 on this device.')
       };
     }
   };

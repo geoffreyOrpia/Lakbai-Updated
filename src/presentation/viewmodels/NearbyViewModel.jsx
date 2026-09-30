@@ -16,6 +16,10 @@ const SEARCH_PAGE_SIZE = 10;
 const TOURISM_PAGE_SIZE = 10;
 
 export class NearbyViewModel extends ViewModel {
+  unwatch = null;
+  refinementTimer = null;
+  refinementRequest = 0;
+
   constructor(destinationDeps, locationService, nav) {
     super({
       loading: true,
@@ -39,6 +43,44 @@ export class NearbyViewModel extends ViewModel {
 
   onInit = () => {
     void this.load();
+  };
+
+  onDispose = () => {
+    this.stopLocationRefinement();
+  };
+
+  stopLocationRefinement = () => {
+    this.refinementRequest += 1;
+    if (this.refinementTimer) clearTimeout(this.refinementTimer);
+    this.refinementTimer = null;
+    this.unwatch?.();
+    this.unwatch = null;
+  };
+
+  startLocationRefinement = async () => {
+    this.stopLocationRefinement();
+    const request = this.refinementRequest;
+    try {
+      const unwatch = await this.locationService.watchFix(
+        fix => {
+          if (request !== this.refinementRequest) return;
+          this.setState({ fix, error: null });
+          if ((fix.accuracy ?? Number.POSITIVE_INFINITY) <= 80) {
+            this.stopLocationRefinement();
+          }
+        },
+        () => {},
+        { purpose: 'discovery' },
+      );
+      if (request !== this.refinementRequest) unwatch?.();
+      else {
+        this.unwatch = unwatch;
+        this.refinementTimer = setTimeout(() => this.stopLocationRefinement(), 30_000);
+        this.refinementTimer?.unref?.();
+      }
+    } catch {
+      // Nearby remains fully useful without a live refinement watch.
+    }
   };
 
   get searchPage() {
@@ -108,6 +150,7 @@ export class NearbyViewModel extends ViewModel {
   };
 
   load = async () => {
+    this.stopLocationRefinement();
     this.setState({
       loading: true,
       error: null,
@@ -140,12 +183,16 @@ export class NearbyViewModel extends ViewModel {
         return;
       }
 
-      const fix = await this.locationService.getCurrentFix();
+      const fix = await this.locationService.getCurrentFix({ purpose: 'discovery' });
       if (!fix) {
+        const message = await this.locationService.locationFailureMessage?.(
+          'LakBai could not get a location estimate yet. All tourism places and offline search still work; distance ordering is unavailable.',
+        );
         this.setState({
           permission: 'granted',
           fix: null,
-          error: 'LakBai could not get a location estimate yet. All tourism places and offline search still work; distance ordering is unavailable.',
+          error: message
+            ?? 'LakBai could not get a location estimate yet. All tourism places and offline search still work; distance ordering is unavailable.',
         });
         return;
       }
@@ -154,6 +201,16 @@ export class NearbyViewModel extends ViewModel {
         permission: 'granted',
         fix,
       });
+      const fixAgeMs = Number.isFinite(fix.timestamp)
+        ? Math.max(0, Date.now() - fix.timestamp)
+        : Number.POSITIVE_INFINITY;
+      if (
+        fix.source !== 'current'
+        || fixAgeMs > 15_000
+        || (fix.accuracy ?? Number.POSITIVE_INFINITY) > 80
+      ) {
+        void this.startLocationRefinement();
+      }
     } catch (error) {
       this.setState({
         error: userMessage(error, 'Offline discovery could not be prepared from local data.'),

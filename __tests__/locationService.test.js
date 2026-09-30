@@ -8,10 +8,21 @@ const mockWatchPositionAsync = jest.fn();
 const mockHasStartedLocationUpdatesAsync = jest.fn();
 const mockStartLocationUpdatesAsync = jest.fn();
 const mockStopLocationUpdatesAsync = jest.fn();
+const mockHasServicesEnabledAsync = jest.fn();
+const mockGetProviderStatusAsync = jest.fn();
 const mockNotificationCheck = jest.fn();
 const mockNotificationRequest = jest.fn();
+let mockAppStateListener = null;
+const mockAppState = {
+  currentState: 'active',
+  addEventListener: jest.fn((event, listener) => {
+    mockAppStateListener = listener;
+    return { remove: jest.fn() };
+  }),
+};
 
 jest.mock('react-native', () => ({
+  AppState: mockAppState,
   Platform: { OS: 'android', Version: 33 },
   PermissionsAndroid: {
     PERMISSIONS: {
@@ -43,6 +54,8 @@ jest.mock('expo-location', () => ({
   hasStartedLocationUpdatesAsync: (...args) => mockHasStartedLocationUpdatesAsync(...args),
   startLocationUpdatesAsync: (...args) => mockStartLocationUpdatesAsync(...args),
   stopLocationUpdatesAsync: (...args) => mockStopLocationUpdatesAsync(...args),
+  hasServicesEnabledAsync: (...args) => mockHasServicesEnabledAsync(...args),
+  getProviderStatusAsync: (...args) => mockGetProviderStatusAsync(...args),
 }));
 
 import { ExpoLocationService } from '../src/data/services/locationService.jsx';
@@ -71,8 +84,16 @@ describe('ExpoLocationService resilient fixes', () => {
     mockHasStartedLocationUpdatesAsync.mockResolvedValue(false);
     mockStartLocationUpdatesAsync.mockResolvedValue(undefined);
     mockStopLocationUpdatesAsync.mockResolvedValue(undefined);
+    mockHasServicesEnabledAsync.mockResolvedValue(true);
+    mockGetProviderStatusAsync.mockResolvedValue({
+      locationServicesEnabled: true,
+      gpsAvailable: true,
+      networkAvailable: true,
+    });
     mockNotificationCheck.mockResolvedValue(false);
     mockNotificationRequest.mockResolvedValue('granted');
+    mockAppState.currentState = 'active';
+    mockAppStateListener = null;
   });
 
   test('returns a recent accurate cached fix immediately indoors', async () => {
@@ -127,6 +148,134 @@ describe('ExpoLocationService resilient fixes', () => {
     mockGetCurrentPositionAsync.mockRejectedValue(new Error('GPS unavailable'));
 
     await expect(new ExpoLocationService().getCurrentFix()).resolves.toBeNull();
+  });
+
+  test('uses a stricter freshness profile for route starts', async () => {
+    mockGetLastKnownPositionAsync.mockResolvedValue(location({
+      accuracy: 180,
+      timestamp: Date.now() - 20_000,
+    }));
+    mockGetCurrentPositionAsync.mockResolvedValue(location({ accuracy: 20 }));
+
+    const fix = await new ExpoLocationService().getCurrentFix({ purpose: 'route' });
+
+    expect(fix).toEqual(expect.objectContaining({
+      accuracy: 20,
+      source: 'current',
+    }));
+    expect(mockGetLastKnownPositionAsync).toHaveBeenCalledWith({
+      maxAge: 30_000,
+      requiredAccuracy: 250,
+    });
+    expect(mockGetCurrentPositionAsync).toHaveBeenCalledWith({ accuracy: 4 });
+  });
+
+  test('refreshes an accurate discovery fix when it is no longer fresh enough for proximity', async () => {
+    const staleAccurate = location({
+      accuracy: 20,
+      timestamp: Date.now() - 60_000,
+      lat: 7.4,
+    });
+    mockGetLastKnownPositionAsync.mockResolvedValue(staleAccurate);
+    mockGetCurrentPositionAsync.mockResolvedValue(location({
+      accuracy: 18,
+      lat: 7.5,
+    }));
+
+    const fix = await new ExpoLocationService().getCurrentFix({ purpose: 'discovery' });
+
+    expect(fix).toEqual(expect.objectContaining({
+      lat: 7.5,
+      source: 'current',
+    }));
+    expect(mockGetCurrentPositionAsync).toHaveBeenCalledTimes(1);
+  });
+
+  test('hydrates one recent app-owned fix across runtime recreation', async () => {
+    const now = 50_000;
+    const snapshotStore = {
+      get: jest.fn().mockResolvedValue({
+        lat: 7.44,
+        lng: 125.8,
+        accuracy: 25,
+        heading: null,
+        speed: null,
+        timestamp: now - 5_000,
+      }),
+      save: jest.fn(),
+      clear: jest.fn(),
+    };
+    const service = new ExpoLocationService({ snapshotStore, now: () => now });
+
+    const fix = await service.getCurrentFix({ purpose: 'route' });
+
+    expect(fix).toEqual(expect.objectContaining({
+      lat: 7.44,
+      accuracy: 25,
+      source: 'persisted',
+    }));
+    expect(mockGetLastKnownPositionAsync).not.toHaveBeenCalled();
+    expect(mockGetCurrentPositionAsync).not.toHaveBeenCalled();
+  });
+
+  test('shares one native foreground watcher across multiple consumers', async () => {
+    const nativeRemove = jest.fn();
+    mockWatchPositionAsync.mockResolvedValue({ remove: nativeRemove });
+    const first = jest.fn();
+    const second = jest.fn();
+    const service = new ExpoLocationService();
+
+    const stopFirst = await service.watchFix(first, jest.fn(), { purpose: 'navigation' });
+    const stopSecond = await service.watchFix(second, jest.fn(), { purpose: 'trail' });
+    const emit = mockWatchPositionAsync.mock.calls[0][1];
+
+    expect(mockWatchPositionAsync).toHaveBeenCalledTimes(1);
+    emit(location({ timestamp: 10_000, accuracy: 8 }));
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).toHaveBeenCalledTimes(1);
+
+    stopFirst();
+    expect(nativeRemove).not.toHaveBeenCalled();
+    stopSecond();
+    expect(nativeRemove).toHaveBeenCalledTimes(1);
+  });
+
+  test('stops the native foreground watcher in background and restores it on foreground', async () => {
+    const firstRemove = jest.fn();
+    const secondRemove = jest.fn();
+    mockWatchPositionAsync
+      .mockResolvedValueOnce({ remove: firstRemove })
+      .mockResolvedValueOnce({ remove: secondRemove });
+    const service = new ExpoLocationService();
+    const stop = await service.watchFix(jest.fn(), jest.fn(), { purpose: 'navigation' });
+
+    mockAppState.currentState = 'background';
+    service.handleAppStateChange('background');
+    expect(firstRemove).toHaveBeenCalledTimes(1);
+
+    mockAppState.currentState = 'active';
+    service.handleAppStateChange('active');
+    for (let attempt = 0; attempt < 10 && mockWatchPositionAsync.mock.calls.length < 2; attempt += 1) {
+      await Promise.resolve();
+    }
+
+    expect(mockWatchPositionAsync).toHaveBeenCalledTimes(2);
+    if (service.watchStartPromise) await service.watchStartPromise;
+    stop();
+    expect(secondRemove).toHaveBeenCalledTimes(1);
+  });
+
+  test('reports when device location services are disabled', async () => {
+    mockHasServicesEnabledAsync.mockResolvedValue(false);
+    mockGetProviderStatusAsync.mockResolvedValue({
+      locationServicesEnabled: false,
+      gpsAvailable: false,
+      networkAvailable: false,
+    });
+
+    await expect(
+      new ExpoLocationService().locationFailureMessage('GPS unavailable'),
+    ).resolves.toContain('turned off');
   });
 
   test('requests Android background permission only after foreground location is available', async () => {

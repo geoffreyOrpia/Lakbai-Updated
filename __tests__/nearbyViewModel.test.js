@@ -39,7 +39,10 @@ const createVm = ({ permission = false } = {}) => {
       lat: 7.13,
       lng: 125.68,
       accuracy: 8,
+      timestamp: Date.now(),
+      source: 'current',
     }),
+    watchFix: jest.fn().mockResolvedValue(jest.fn()),
   };
   const nav = {
     onOpenDestination: jest.fn(),
@@ -90,6 +93,26 @@ describe('NearbyViewModel offline discovery', () => {
       expect.objectContaining({ name: 'Port of Babak' }),
     ]));
     expect(vm.tourismPlaceCount).toBe(2);
+  });
+
+  test('temporarily refines a stale current fix instead of treating it as live proximity', async () => {
+    const { vm } = createVm({ permission: true });
+    vm.locationService.getCurrentFix.mockResolvedValue({
+      lat: 7.13,
+      lng: 125.68,
+      accuracy: 20,
+      timestamp: Date.now() - 30_000,
+      source: 'current',
+    });
+
+    await vm.load();
+
+    expect(vm.locationService.watchFix).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.any(Function),
+      { purpose: 'discovery' },
+    );
+    vm.onDispose();
   });
 
   test('progressively reveals large tourism catalogs instead of rendering everything at once', () => {

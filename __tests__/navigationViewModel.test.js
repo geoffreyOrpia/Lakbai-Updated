@@ -366,7 +366,7 @@ const createFerryVm = () => {
 };
 
 describe('NavigationViewModel', () => {
-  test('uses the Android background service instead of a duplicate foreground watch when permission is granted', async () => {
+  test('keeps a foreground GPS watch while Android background navigation is active', async () => {
     const { vm, locationService, routingDeps } = createVm();
     const navigationSessionRepository = {
       saveActiveSession: jest.fn().mockResolvedValue(undefined),
@@ -388,7 +388,12 @@ describe('NavigationViewModel', () => {
     expect(locationService.startBackgroundNavigation).toHaveBeenCalledWith({
       destinationName: 'Panabo Mangrove Park',
     });
-    expect(locationService.watchFix).not.toHaveBeenCalled();
+    expect(locationService.watchFix).toHaveBeenCalledTimes(1);
+    expect(locationService.watchFix).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.any(Function),
+      { purpose: 'navigation' },
+    );
     expect(vm.state.backgroundNavigation).toBe(true);
     expect(navigationSessionRepository.saveActiveSession).toHaveBeenCalledWith(
       expect.objectContaining({

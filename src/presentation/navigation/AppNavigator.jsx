@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, BackHandler, Image, StyleSheet, Text, View } from 'react-native';
 import { navigationRequestFromSession } from "../../data/repositories/navigationSessionRepository.jsx";
-import { colors, spacing } from "../../theme.jsx";
+import { colors, layout, spacing } from "../../theme.jsx";
 import { getContainer } from "../di/container.jsx";
 import { useViewModel } from "../viewmodel/useViewModel.jsx";
+import { AssistantViewModel } from "../viewmodels/AssistantViewModel.jsx";
 import { DestinationViewModel } from "../viewmodels/DestinationViewModel.jsx";
 import { LibraryViewModel } from "../viewmodels/LibraryViewModel.jsx";
 import { NearbyViewModel } from "../viewmodels/NearbyViewModel.jsx";
@@ -16,6 +17,7 @@ import { SessionViewModel } from "../viewmodels/SessionViewModel.jsx";
 import { SettingsViewModel } from "../viewmodels/SettingsViewModel.jsx";
 import { TrailViewModel } from "../viewmodels/TrailViewModel.jsx";
 import { TripsViewModel } from "../viewmodels/TripsViewModel.jsx";
+import { AssistantScreen } from "../views/screens/AssistantScreen.jsx";
 import { DestinationScreen } from "../views/screens/DestinationScreen.jsx";
 import { LibraryScreen } from "../views/screens/LibraryScreen.jsx";
 import { NearbyScreen } from "../views/screens/NearbyScreen.jsx";
@@ -30,6 +32,7 @@ import { TrailScreen } from "../views/screens/TrailScreen.jsx";
 import { TripsScreen } from "../views/screens/TripsScreen.jsx";
 import { ScreenActiveContext } from "../views/components/ScreenScrollView.jsx";
 import { BottomNav } from "../views/components/BottomNav.jsx";
+import { FloatingAssistantGuide } from "../views/components/FloatingAssistantGuide.jsx";
 
 
 /**
@@ -156,6 +159,18 @@ export const AppNavigator = () => {
         })}
         onBack={pop}
       />;
+    } else if (route?.name === 'assistant') {
+      return <AssistantFlow
+        destinationId={route.destinationId ?? null}
+        onOpenDestination={destinationId => push({ name: 'destination', destinationId })}
+        onOpenNavigation={navigation => push({ name: 'navigation', ...navigation })}
+        onPlanTrip={draft => {
+          setTripDraft(draft);
+          setStack([]);
+          setTab('trips');
+        }}
+        onBack={pop}
+      />;
     } else if (route?.name === 'settings') {
       return <SettingsFlow
         onBack={pop}
@@ -176,6 +191,10 @@ export const AppNavigator = () => {
     return null;
   };
   const hasOverlay = stack.length > 0;
+  const topRoute = hasOverlay ? stack[stack.length - 1] : null;
+  const showAssistantGuide = !hasOverlay
+    || ['destination', 'trail', 'nearby'].includes(topRoute?.name);
+  const assistantDestinationId = topRoute?.destinationId ?? null;
   return <View style={styles.screen}>
     <View style={[styles.content, hasOverlay && styles.hidden]} accessibilityElementsHidden={hasOverlay} importantForAccessibility={hasOverlay ? 'no-hide-descendants' : 'auto'}>
       <View style={styles.content}>
@@ -234,6 +253,13 @@ export const AppNavigator = () => {
           <ScreenActiveContext.Provider value={active}>{renderRoute(route, active)}</ScreenActiveContext.Provider>
         </View>;
     })}
+    {showAssistantGuide ? <FloatingAssistantGuide
+      bottomOffset={hasOverlay ? spacing.md : layout.tabBarHeight + spacing.lg}
+      onPress={() => push({
+        name: 'assistant',
+        ...(assistantDestinationId ? { destinationId: assistantDestinationId } : {}),
+      })}
+    /> : null}
   </View>;
 };
 // Keep visited tabs mounted so search, scroll, and unfinished forms survive a detour.
@@ -278,6 +304,22 @@ const DestinationFlow = ({
     onBack
   }, container.directionsDeps));
   return <DestinationScreen viewModel={viewModel} />;
+};
+const AssistantFlow = ({
+  destinationId,
+  onOpenDestination,
+  onOpenNavigation,
+  onPlanTrip,
+  onBack
+}) => {
+  const container = getContainer();
+  const viewModel = useViewModel(() => new AssistantViewModel(
+    container.destinationDeps,
+    container.locationService,
+    { onOpenDestination, onOpenNavigation, onPlanTrip, onBack },
+    destinationId,
+  ));
+  return <AssistantScreen viewModel={viewModel} />;
 };
 const NavigationFlow = ({
   active,

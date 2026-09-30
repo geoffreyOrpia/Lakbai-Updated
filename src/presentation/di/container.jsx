@@ -2,6 +2,7 @@ import { createDestinationCacheDao } from "../../data/local/sqlite/destinationCa
 import { createDiscoveryStateDao } from "../../data/local/sqlite/discoveryStateDao.jsx";
 import { createFavoriteDao } from "../../data/local/sqlite/favoriteDao.jsx";
 import { createItineraryDao } from "../../data/local/sqlite/itineraryDao.jsx";
+import { createLocationSnapshotDao } from "../../data/local/sqlite/locationSnapshotDao.jsx";
 import { createNavigationSessionDao } from "../../data/local/sqlite/navigationSessionDao.jsx";
 import { createPackContentDao } from "../../data/local/sqlite/packContentDao.jsx";
 import { createPackMetaDao } from "../../data/local/sqlite/packMetaDao.jsx";
@@ -34,6 +35,7 @@ const buildContainer = () => {
   const packMetaDao = createPackMetaDao();
   const preferencesDao = createPreferencesDao();
   const itineraryDao = createItineraryDao();
+  const locationSnapshotDao = createLocationSnapshotDao();
   const navigationSessionDao = createNavigationSessionDao();
   const safetyDao = createSafetyDao();
   const offlinePackStorage = createOfflinePackStorage();
@@ -50,7 +52,7 @@ const buildContainer = () => {
   const routingGraphRepository = new BundledRoutingGraphRepository();
 
   // Platform services
-  const locationService = new ExpoLocationService();
+  const locationService = new ExpoLocationService({ snapshotStore: locationSnapshotDao });
   const onlineResearchService = createOnlineResearchService();
   const phoneService = createPhoneService();
   const speechService = createSpeechService();

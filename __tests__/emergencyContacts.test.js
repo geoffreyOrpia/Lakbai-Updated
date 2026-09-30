@@ -1,6 +1,7 @@
 import {
   callNationalEmergencyHotline,
   callVerifiedEmergencyContact,
+  isNationalEmergencyHotline,
   NATIONAL_EMERGENCY_HOTLINE,
 } from '../src/domain/usecases/emergencyContacts.jsx';
 
@@ -46,5 +47,11 @@ describe('verified emergency contact calling', () => {
       verified: false,
     })).rejects.toThrow('not been verified');
     expect(phoneService.call).not.toHaveBeenCalled();
+  });
+
+  test('recognizes 911 contacts regardless of display formatting', () => {
+    expect(isNationalEmergencyHotline({ phone: '911' })).toBe(true);
+    expect(isNationalEmergencyHotline({ phone: '9-1-1' })).toBe(true);
+    expect(isNationalEmergencyHotline({ phone: '0911' })).toBe(false);
   });
 });

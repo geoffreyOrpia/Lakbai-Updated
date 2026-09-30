@@ -98,6 +98,24 @@ export const NavigationScreen = ({ viewModel }) => {
       && maneuver.distanceAlongKm >= (state.distanceAlongKm ?? 0) - 0.005
     )).length ?? 0) - routeSteps.filter(step => step.kind !== 'depart').length)
     : 0;
+  const gpsAgeSeconds = Number.isFinite(state.fix?.timestamp)
+    ? Math.max(0, Math.round((Date.now() - state.fix.timestamp) / 1000))
+    : null;
+  const recentGpsSource = state.fix?.source === 'last-known' || state.fix?.source === 'persisted';
+  const gpsStatus = state.tracking && !state.gpsError
+    ? !state.fix
+      ? { tone: 'info', text: 'Acquiring GPS. Your route stays ready while LakBai finds your position.' }
+      : gpsAgeSeconds != null && gpsAgeSeconds > 15
+        ? { tone: 'warn', text: `Last GPS update was ${gpsAgeSeconds} seconds ago. LakBai is reconnecting without resetting your route.` }
+        : recentGpsSource
+          ? {
+            tone: 'info',
+            text: `Using a recent location${state.accuracyM != null ? ` (about ${Math.round(state.accuracyM)} m accuracy` : ''}${state.accuracyM != null ? ')' : ''} while GPS refines your position.`,
+          }
+          : state.accuracyM != null
+            ? { tone: 'success', text: `GPS ready · about ${Math.round(state.accuracyM)} m accuracy.` }
+            : { tone: 'success', text: 'GPS ready.' }
+    : null;
 
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <BackAction label={state.destinationName || 'Destination'} onPress={() => viewModel.back()} />
@@ -118,6 +136,12 @@ export const NavigationScreen = ({ viewModel }) => {
 
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
       {state.gpsError ? <InfoBanner tone="warn" text={state.gpsError} /> : null}
+      {gpsStatus ? <InfoBanner tone={gpsStatus.tone} icon="locate" text={gpsStatus.text} /> : null}
+      {state.route && !state.tracking && !state.preview && recentGpsSource ? <InfoBanner
+        tone="info"
+        icon="locate-outline"
+        text={`This route starts from a recent location${gpsAgeSeconds != null ? ` from ${gpsAgeSeconds} seconds ago` : ''}. Start directions to let LakBai refine your live position before route progress begins.`}
+      /> : null}
       {state.backgroundWarning ? <InfoBanner tone="warn" text={state.backgroundWarning} /> : null}
       {state.route && !state.preview && !state.tracking && !state.arrived ? <InfoBanner
         tone="info"
@@ -242,6 +266,7 @@ export const NavigationScreen = ({ viewModel }) => {
             remainingKm={state.remainingKm}
             remainingMin={state.remainingMin}
             rerouting={state.rerouting}
+            routeDeviated={viewModel.offRoute}
             voiceGuidance={state.voiceGuidance}
             trailPreview={state.trailPreview}
             places={state.offlinePois}

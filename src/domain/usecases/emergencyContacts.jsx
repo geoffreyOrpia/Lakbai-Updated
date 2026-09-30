@@ -4,6 +4,12 @@ export const NATIONAL_EMERGENCY_HOTLINE = Object.freeze({
   verified: true,
 });
 
+const digitsOnly = value => String(value ?? '').replace(/\D/g, '');
+
+export const isNationalEmergencyHotline = contact => (
+  digitsOnly(contact?.phone) === NATIONAL_EMERGENCY_HOTLINE.phone
+);
+
 export const callVerifiedEmergencyContact = async (deps, contact) => {
   if (!contact?.verified) {
     throw new Error('This contact has not been verified for direct calling.');

@@ -14,6 +14,14 @@ export const NearbyScreen = ({ viewModel }) => {
   const state = viewModel.state;
   const searchResults = viewModel.searchResults ?? [];
   const tourismPlaces = viewModel.tourismPlaces ?? [];
+  const fixAgeSeconds = Number.isFinite(state.fix?.timestamp)
+    ? Math.max(0, Math.round((Date.now() - state.fix.timestamp) / 1000))
+    : null;
+  const fixSourceLabel = state.fix?.source === 'persisted'
+    ? 'Recent LakBai location'
+    : state.fix?.source === 'last-known'
+      ? 'Recent device location'
+      : 'Current device location';
   if (state.loading) {
     return <View style={styles.centerScreen}>
         <LoadingState title="Finding nearby places" text="Opening places, streets, and your saved map spots." />
@@ -155,7 +163,8 @@ export const NearbyScreen = ({ viewModel }) => {
               {viewModel.tourismPlaceCount ?? tourismPlaces.length} curated tourism places
             </Text>
             <Text style={styles.gpsText}>
-              {state.fix.source === 'last-known' ? 'Recent device location' : 'Current device location'} · {state.fix.accuracy == null ? 'accuracy unavailable' : `about ${Math.round(state.fix.accuracy)} m accuracy`}
+              {fixSourceLabel} · {state.fix.accuracy == null ? 'accuracy unavailable' : `about ${Math.round(state.fix.accuracy)} m accuracy`}
+              {fixAgeSeconds != null && state.fix.source !== 'current' ? ` · ${fixAgeSeconds}s old` : ''}
             </Text>
           </View>
           <Pressable accessibilityRole="button" accessibilityLabel="Refresh nearby places" onPress={() => void viewModel.load()} hitSlop={8} style={({ pressed }) => [styles.refreshButton, pressed && styles.pressed]}>

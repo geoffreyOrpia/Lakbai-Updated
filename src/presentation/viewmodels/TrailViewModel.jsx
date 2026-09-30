@@ -76,7 +76,7 @@ export class TrailViewModel extends ViewModel {
     });
 
     if (trail) {
-      const fix = await this.location.getCurrentFix();
+      const fix = await this.location.getCurrentFix({ purpose: 'trail' });
       if (fix && !this.state.tracking) {
         this.applyFix(fix);
       }
@@ -99,7 +99,7 @@ export class TrailViewModel extends ViewModel {
       gpsError: null
     });
 
-    const initialFix = await this.location.getCurrentFix();
+    const initialFix = await this.location.getCurrentFix({ purpose: 'trail' });
     if (initialFix) {
       this.applyFix(initialFix);
     } else {
@@ -114,6 +114,7 @@ export class TrailViewModel extends ViewModel {
         message => this.setState({
           gpsError: message || 'Location updates are unavailable right now.'
         }),
+        { purpose: 'trail' },
       );
     } catch {
       this.setState({

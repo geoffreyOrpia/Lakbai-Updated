@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { createOfflineBasemapStyle } from "../../../core/maps/offlineBasemapStyle.jsx";
 import { NAVIGATION_PLACE_FILTERS, NAVIGATION_PLACE_ICON, navigationPlaceDetails, navigationPlaceFilter, navigationPlacesData } from "../../../core/maps/navigationPlaces.jsx";
 import { routeBounds } from "../../../core/routing/graph.jsx";
+import { splitRouteGeometryAtDistance } from "../../../core/routing/routeProgress.jsx";
 import { formatDurationMinutes, formatKm } from "../../../core/utils/format.jsx";
 import { colors, radius, shadows, spacing } from "../../../theme.jsx";
 
@@ -107,6 +108,7 @@ const NavigationMapContent = ({
   remainingKm = null,
   remainingMin = null,
   rerouting = false,
+  routeDeviated = false,
   voiceGuidance = true,
   trailPreview = null,
   routePois = [],
@@ -155,6 +157,14 @@ const NavigationMapContent = ({
     }
   };
   const geometry = route.geometry;
+  const simpleLiveSplit = useMemo(() => (
+    liveGps
+    && route.type !== 'multi-stop-journey'
+    && route.type !== 'ferry-journey'
+    && route.type !== 'road-trail-journey'
+      ? splitRouteGeometryAtDistance(route, distanceAlongKm)
+      : null
+  ), [distanceAlongKm, liveGps, route]);
   const bounds = routeBounds(geometry);
   const activeItineraryStop = useMemo(() => {
     if (route.type !== 'multi-stop-journey') return null;
@@ -201,10 +211,22 @@ const NavigationMapContent = ({
         type: 'Feature',
         id: 'route',
         properties: { kind: 'road' },
-        geometry,
+        geometry: simpleLiveSplit?.remaining ?? geometry,
       }],
     };
-  }, [activeStopIndex, geometry, route.type, route.legs, route.roadLegs]);
+  }, [activeStopIndex, geometry, route.type, route.legs, route.roadLegs, simpleLiveSplit]);
+  const completedRouteData = useMemo(() => {
+    if (!simpleLiveSplit?.completed) return null;
+    return {
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        id: 'completed-route',
+        properties: { kind: 'completed' },
+        geometry: simpleLiveSplit.completed,
+      }],
+    };
+  }, [simpleLiveSplit]);
   const itineraryContextData = useMemo(() => {
     if (route.type !== 'multi-stop-journey' || activeStopIndex == null) return null;
     const features = [
@@ -466,6 +488,19 @@ const NavigationMapContent = ({
               />
             </GeoJSONSource> : null}
 
+          {completedRouteData ? <GeoJSONSource id="lakbai-navigation-completed-route" data={completedRouteData}>
+              <Layer
+                id="lakbai-navigation-completed-route-line"
+                type="line"
+                source="lakbai-navigation-completed-route"
+                paint={{
+                  'line-color': colors.muted,
+                  'line-width': 3.5,
+                  'line-opacity': 0.34,
+                }}
+              />
+            </GeoJSONSource> : null}
+
           <GeoJSONSource id="lakbai-navigation-route" data={routeData}>
             <Layer
               id="lakbai-navigation-route-casing"
@@ -474,7 +509,7 @@ const NavigationMapContent = ({
               paint={{
                 'line-color': colors.white,
                 'line-width': 9,
-                'line-opacity': 0.95,
+                'line-opacity': routeDeviated || rerouting ? 0.5 : 0.95,
               }}
             />
             <Layer
@@ -482,9 +517,10 @@ const NavigationMapContent = ({
               type="line"
               source="lakbai-navigation-route"
               paint={{
-                'line-color': colors.primary,
+                'line-color': routeDeviated || rerouting ? colors.muted : colors.primary,
                 'line-width': 5.5,
-                'line-opacity': 0.98,
+                'line-opacity': routeDeviated || rerouting ? 0.72 : 0.98,
+                ...(routeDeviated || rerouting ? { 'line-dasharray': [1.4, 1.1] } : {}),
               }}
             />
           </GeoJSONSource>

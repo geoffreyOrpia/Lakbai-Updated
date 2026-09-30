@@ -1,7 +1,7 @@
 import { SafetyViewModel } from '../src/presentation/viewmodels/SafetyViewModel.jsx';
 
 describe('SafetyViewModel emergency calling', () => {
-  test('Call 911 works without requiring a saved destination guide', async () => {
+  test('Dial 911 works without requiring a saved destination guide', async () => {
     const phoneService = {
       call: jest.fn().mockResolvedValue(undefined),
     };
@@ -40,5 +40,49 @@ describe('SafetyViewModel emergency calling', () => {
 
     expect(result.ok).toBe(false);
     expect(result.message).toContain('Calling is not available');
+  });
+
+  test('does not repeat nationwide 911 inside saved guide contacts', async () => {
+    const phoneService = {
+      call: jest.fn().mockResolvedValue(undefined),
+    };
+    const vm = new SafetyViewModel(
+      {
+        safetyRepository: {
+          listChecklist: jest.fn().mockResolvedValue([]),
+          listCompletedKeys: jest.fn().mockResolvedValue([]),
+        },
+        phoneService,
+      },
+      {
+        listSavedMeta: jest.fn().mockResolvedValue([{ packId: 'samal' }]),
+        getSavedPack: jest.fn().mockResolvedValue({
+          destination: { name: 'Samal Island' },
+          safety: {
+            emergencyContacts: [
+              {
+                label: 'National Emergency Hotline',
+                phone: '911',
+                verified: true,
+              },
+              {
+                label: 'Verified local tourism office',
+                phone: '1234',
+                verified: true,
+              },
+            ],
+          },
+        }),
+      },
+    );
+
+    await vm.load();
+
+    expect(vm.state.contacts).toEqual([
+      expect.objectContaining({
+        label: 'Verified local tourism office',
+        phone: '1234',
+      }),
+    ]);
   });
 });

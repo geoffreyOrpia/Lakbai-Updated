@@ -1,7 +1,11 @@
 import { buildRoutingIndex, nearestGraphEdge } from '../src/core/routing/graph.jsx';
 import { haversineKm } from '../src/core/utils/geo.jsx';
 import { calculateOfflineRoute } from '../src/domain/usecases/offlineNavigation.jsx';
-import { placesAlongRoute, projectPositionOntoRoute } from '../src/core/routing/routeProgress.jsx';
+import {
+  placesAlongRoute,
+  projectPositionOntoRoute,
+  splitRouteGeometryAtDistance,
+} from '../src/core/routing/routeProgress.jsx';
 
 const coordinates = [[125, 7], [125, 7.01], [125.01, 7.01], [125.01, 7]];
 const point = ([lng, lat]) => ({ lng, lat });
@@ -59,6 +63,21 @@ describe('source road edge geometry', () => {
     const arrival = projectPositionOntoRoute(route, point(coordinates.at(-1)));
     expect(arrival.remainingKm).toBeCloseTo(0, 8);
     expect(arrival.progress).toBeCloseTo(1, 8);
+  });
+
+  test('splits completed and remaining route geometry without mutating the route', () => {
+    const route = calculate(coordinates[0], coordinates.at(-1), graphFor(), 'drive');
+    const before = JSON.stringify(route.geometry);
+    const firstSegmentKm = lengthKm(coordinates.slice(0, 2));
+    const split = splitRouteGeometryAtDistance(route, firstSegmentKm / 2);
+
+    expect(split.completed?.coordinates).toHaveLength(2);
+    expect(split.remaining?.coordinates.length).toBeGreaterThanOrEqual(4);
+    expect(split.completed.coordinates.at(-1)).toEqual(split.remaining.coordinates[0]);
+    expect(split.completed.coordinates.at(-1)[0]).toBeCloseTo(125, 7);
+    expect(split.completed.coordinates.at(-1)[1]).toBeCloseTo(7.005, 5);
+    expect(split.remaining.coordinates.at(-1)).toEqual(coordinates.at(-1));
+    expect(JSON.stringify(route.geometry)).toBe(before);
   });
 
   test.each([false, true])('clips both snapped endpoints without losing bends (reverse=%s)', reverse => {

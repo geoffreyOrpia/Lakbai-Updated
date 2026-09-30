@@ -9,10 +9,10 @@ export const createPhoneService = () => ({
       throw new Error('The contact does not have a valid phone number.');
     }
     const url = `tel:${sanitized}`;
-    const supported = await Linking.canOpenURL(url);
-    if (!supported) {
-      throw new Error('Calling is not available on this device.');
+    try {
+      await Linking.openURL(url);
+    } catch {
+      throw new Error('The phone dialer could not be opened on this device.');
     }
-    await Linking.openURL(url);
   }
 });
