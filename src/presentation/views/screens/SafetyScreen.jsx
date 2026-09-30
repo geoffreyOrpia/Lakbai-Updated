@@ -164,16 +164,6 @@ export const SafetyScreen = ({
           </View> : <EmptyState icon="call-outline" title="No guide contacts yet" text="Save a destination guide to saved places to include its local emergency numbers here." />}
       </View>
 
-      <View style={styles.section}>
-        <SectionHeader eyebrow="Essentials" title="Travel readiness" />
-        <View style={styles.grid}>
-          <SafetyTile icon="medical-outline" title="Medical" text="Reconfirm nearby care locally" />
-          <SafetyTile icon="call-outline" title="Contacts" text="Verified 911 reference" />
-          <SafetyTile icon="navigate-outline" title="Route" text="Saved trail references" />
-          <SafetyTile icon="information-circle-outline" title="Advisories" text="Destination reminders" />
-        </View>
-      </View>
-
       <View style={styles.guidance}>
         <Ionicons name="compass-outline" size={18} color={colors.accent} />
         <Text style={styles.guidanceText}>
@@ -181,17 +171,6 @@ export const SafetyScreen = ({
         </Text>
       </View>
     </ScrollView>;
-};
-const SafetyTile = ({
-  icon,
-  title,
-  text
-}) => {
-  return <View style={[styles.tile, shadows.soft]}>
-      <Ionicons name={icon} size={19} color={colors.primary} />
-      <Text style={styles.tileTitle}>{title}</Text>
-      <Text style={styles.tileText}>{text}</Text>
-    </View>;
 };
 const styles = StyleSheet.create({
   content: {
@@ -364,33 +343,6 @@ const styles = StyleSheet.create({
     color: colors.onPrimary,
     fontSize: 10.5,
     fontWeight: '900'
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm
-  },
-  tile: {
-    flexGrow: 1,
-    minWidth: '46%',
-    minHeight: 92,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    backgroundColor: colors.white
-  },
-  tileTitle: {
-    marginTop: spacing.xs,
-    color: colors.text,
-    fontSize: 12.5,
-    fontWeight: '800'
-  },
-  tileText: {
-    marginTop: 2,
-    color: colors.muted,
-    fontSize: 10.5,
-    lineHeight: 14
   },
   guidance: {
     padding: spacing.md,

@@ -85,6 +85,37 @@ describe('Ask LakBai grounded assistant engine', () => {
     expect(response.recommendationIds.some(id => id.startsWith('monfort-bat-sanctuary:'))).toBe(true);
   });
 
+  test('uses saved interests only when a recommendation request is broad', () => {
+    const knowledge = knowledgeFixture();
+    const response = respondToAssistant({
+      message: 'Recommend something',
+      knowledge,
+      preferences: {
+        interests: ['Wildlife'],
+        pace: 'balanced',
+      },
+    });
+
+    expect(response.text).toContain('Using your saved interests');
+    expect(response.recommendationIds.length).toBeGreaterThan(0);
+    expect(response.recommendationIds.some(id => id.startsWith('monfort-bat-sanctuary:'))).toBe(true);
+  });
+
+  test('explicit interests override saved recommendation interests', () => {
+    const knowledge = knowledgeFixture();
+    const response = respondToAssistant({
+      message: 'Recommend a beach',
+      knowledge,
+      preferences: {
+        interests: ['Wildlife'],
+        pace: 'balanced',
+      },
+    });
+
+    expect(response.text).not.toContain('Using your saved interests');
+    expect(response.recommendationIds.some(id => id.startsWith('monfort-bat-sanctuary:'))).toBe(false);
+  });
+
   test('builds an editable trip draft instead of inventing a new trip system', () => {
     const knowledge = knowledgeFixture();
     const response = respondToAssistant({
@@ -102,6 +133,22 @@ describe('Ask LakBai grounded assistant engine', () => {
       }),
     ]));
     expect(response.actions[0].draft.stops.length).toBeGreaterThanOrEqual(2);
+  });
+
+  test('uses saved trip pace for generic assisted trip drafts', () => {
+    const knowledge = knowledgeFixture();
+    const response = respondToAssistant({
+      message: 'Plan a trip',
+      knowledge,
+      preferences: {
+        interests: [],
+        pace: 'chill',
+      },
+    });
+
+    const draft = response.actions.find(action => action.type === 'plan-trip')?.draft;
+    expect(draft).toBeTruthy();
+    expect(draft.stops).toHaveLength(2);
   });
 
   test('plans from the exact previous recommendations when the user says "with these"', () => {

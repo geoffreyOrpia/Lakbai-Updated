@@ -89,15 +89,6 @@ export const DestinationScreen = ({
       </CoverArt>
       {firstPhoto ? <Text style={styles.photoCredit}>Photo: {firstPhoto.credit}</Text> : null}
 
-      <View style={styles.pillRow}>
-        <Pill icon="ellipse" text={`v${pack.version}`} />
-        <Pill icon="time-outline" text={formatRelativeTime(pack.updatedAt)} />
-        <Pill icon="archive-outline" text={formatSizeKb(pack.sizeKb)} />
-        {state.saved ? <Pill icon="checkmark-circle" text="Offline ready" tone="primary" /> : null}
-        {state.offlineBundle?.contextMapUri ? <Pill icon="map-outline" text="Regional map saved" /> : null}
-        {state.offlineBundle?.basemapUri ? <Pill icon="trail-sign-outline" text="Offline roads & water" tone="primary" /> : null}
-      </View>
-
       <View style={[styles.atAGlanceCard, shadows.soft]}>
         <Text style={styles.atAGlanceEyebrow}>AT A GLANCE</Text>
         <Text style={styles.atAGlanceTitle}>What you’ll find</Text>
@@ -124,7 +115,6 @@ export const DestinationScreen = ({
       </Pressable>
 
       {state.updateAvailable ? <InfoBanner tone="info" text={`An updated guide is available. Your favorites and trips will stay.`} /> : null}
-      {!state.saved && destination.status === 'available' ? <InfoBanner tone="info" text="Save this place to use its guide and map without internet." /> : null}
 
       <InfoBanner tone="warn" text="Travel conditions, access rules, transport schedules, and local facilities can change. Confirm time-sensitive details with the destination or local authorities before traveling." />
 
@@ -147,27 +137,29 @@ export const DestinationScreen = ({
               </View>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={state.saved ? `Navigate to ${destination.name} with LakBai` : `Save ${destination.name} to enable LakBai navigation`}
+                accessibilityLabel={`Navigate to ${destination.name} with LakBai`}
                 accessibilityState={{ disabled: state.busy }}
                 disabled={state.busy}
                 onPress={() => void openSavedRoute()}
                 style={({ pressed }) => [styles.directionsButton, state.busy && styles.ctaDisabled, pressed && !state.busy && styles.pressed]}
               >
-                <Ionicons name={state.saved ? 'navigate' : 'download-outline'} size={17} color={colors.onPrimary} />
-                <Text style={styles.directionsButtonText}>{state.busy ? 'Saving…' : state.saved ? 'Get directions' : 'Save and get directions'}</Text>
+                <Ionicons name={state.busy ? 'hourglass-outline' : 'navigate'} size={17} color={colors.onPrimary} />
+                <Text style={styles.directionsButtonText}>{state.busy ? 'Preparing…' : 'Get directions'}</Text>
               </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Open optional external directions to ${destination.name}`}
-                accessibilityState={{ disabled: state.directionsBusyId !== null, busy: state.directionsBusyId === destination.id }}
-                disabled={state.directionsBusyId !== null}
-                onPress={() => void runDirections(destination)}
-                style={({ pressed }) => [styles.externalDirectionsButton, state.directionsBusyId !== null && styles.ctaDisabled, pressed && state.directionsBusyId === null && styles.pressed]}
-              >
-                <Ionicons name={state.directionsBusyId === destination.id ? 'hourglass-outline' : 'open-outline'} size={16} color={colors.primary} />
-                <Text style={styles.externalDirectionsText}>{state.directionsBusyId === destination.id ? 'Opening…' : 'Open another maps app'}</Text>
-              </Pressable>
-              <Text style={styles.connectionHint}>Directions in LakBai work offline. Other maps apps may need internet.</Text>
+              {!state.saved ? <Text style={styles.connectionHint}>LakBai prepares the offline guide automatically before navigation starts.</Text> : null}
+              <Disclosure title="Other navigation options">
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open optional external directions to ${destination.name}`}
+                  accessibilityState={{ disabled: state.directionsBusyId !== null, busy: state.directionsBusyId === destination.id }}
+                  disabled={state.directionsBusyId !== null}
+                  onPress={() => void runDirections(destination)}
+                  style={({ pressed }) => [styles.externalDirectionsButton, state.directionsBusyId !== null && styles.ctaDisabled, pressed && state.directionsBusyId === null && styles.pressed]}
+                >
+                  <Ionicons name={state.directionsBusyId === destination.id ? 'hourglass-outline' : 'open-outline'} size={16} color={colors.primary} />
+                  <Text style={styles.externalDirectionsText}>{state.directionsBusyId === destination.id ? 'Opening…' : 'Open another maps app'}</Text>
+                </Pressable>
+              </Disclosure>
             </> : <>
               <Pressable
                 accessibilityRole="button"
@@ -192,7 +184,6 @@ export const DestinationScreen = ({
             offlineContextUri={state.offlineBundle?.contextMapUri}
             offlineBasemapUri={state.offlineBundle?.basemapUri}
           />
-          {!state.saved ? <Text style={styles.connectionHint}>Save this place to use the map without internet.</Text> : null}
         </View> : null}
 
       <Disclosure title="More about this destination">
@@ -201,7 +192,15 @@ export const DestinationScreen = ({
         </View>
       </Disclosure>
 
-      <Disclosure title={state.saved ? 'Saved for offline use · Manage' : 'Save for offline use'}>
+      <Disclosure title="Guide & offline details">
+      <View style={styles.pillRow}>
+        <Pill icon="ellipse" text={`v${pack.version}`} />
+        <Pill icon="time-outline" text={formatRelativeTime(pack.updatedAt)} />
+        <Pill icon="archive-outline" text={formatSizeKb(pack.sizeKb)} />
+        {state.saved ? <Pill icon="checkmark-circle" text="Offline ready" tone="primary" /> : null}
+        {state.offlineBundle?.contextMapUri ? <Pill icon="map-outline" text="Regional map saved" /> : null}
+        {state.offlineBundle?.basemapUri ? <Pill icon="trail-sign-outline" text="Offline roads & water" tone="primary" /> : null}
+      </View>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={state.updateAvailable ? `Update ${destination.name} saved guide` : state.saved ? `Remove ${destination.name} saved guide` : `Save ${destination.name} for offline use`}
@@ -235,7 +234,8 @@ export const DestinationScreen = ({
 
       </Disclosure>
 
-      {destination.verification ? <View style={[styles.verificationCard, shadows.soft]}>
+      {destination.verification ? <Disclosure title="Sources & content status">
+        <View style={[styles.verificationCard, shadows.soft]}>
           <View style={styles.verificationHeading}>
             <Ionicons
               name={destination.verification.status === 'partial' ? "shield-checkmark-outline" : "flask-outline"}
@@ -257,7 +257,6 @@ export const DestinationScreen = ({
           {destination.verification.operationalNote ? <Text style={styles.verificationOperational}>
               {destination.verification.operationalNote}
             </Text> : null}
-          <Disclosure title="Information sources">
           {destination.verification.sources?.length ? <View style={styles.verificationSources}>
               {destination.verification.sources.map(source => <View key={source.url} style={styles.verificationSource}>
                   <Ionicons name="document-text-outline" size={14} color={colors.primary} />
@@ -267,9 +266,9 @@ export const DestinationScreen = ({
                   </View>
                 </View>)}
             </View> : null}
-          </Disclosure>
           <Text style={styles.verificationReviewed}>Reviewed {destination.verification.reviewedAt}</Text>
-        </View> : null}
+        </View>
+      </Disclosure> : null}
 
       {pack.routeSuggestions?.length ? <View style={styles.section}>
           <SectionHeader eyebrow="Suggested tourist routes" title="Suggested stops" />
@@ -329,7 +328,7 @@ export const DestinationScreen = ({
             {pack.trails.map(trail => <Pressable
               key={trail.id}
               accessibilityRole="button"
-              accessibilityLabel={state.saved ? `Open ${trail.name} trail navigator` : `Save ${destination.name} and open ${trail.name}`}
+              accessibilityLabel={`Open ${trail.name} trail navigator`}
               accessibilityState={{
                 disabled: state.busy
               }}
@@ -349,8 +348,8 @@ export const DestinationScreen = ({
                     {trail.description}
                   </Text>
                   <View style={[styles.trailOpen, state.busy && styles.trailOpenLocked]}>
-                    <Text style={[styles.trailOpenText, state.busy && styles.trailOpenTextLocked]}>{state.busy ? 'Saving…' : state.saved ? 'Open trail' : 'Save and open trail'}</Text>
-                    <Ionicons name={state.saved ? 'navigate' : 'download-outline'} size={14} color={state.saved ? colors.primary : colors.muted} />
+                    <Text style={[styles.trailOpenText, state.busy && styles.trailOpenTextLocked]}>{state.busy ? 'Preparing…' : 'Open trail'}</Text>
+                    <Ionicons name="navigate" size={14} color={state.saved ? colors.primary : colors.muted} />
                   </View>
                 </View>
               </Pressable>)}
@@ -370,9 +369,7 @@ export const DestinationScreen = ({
                   {spot.tip ? <Text style={styles.spotTip}>Tip: {spot.tip}</Text> : null}
                   {destination.offlineNavigation ? <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={state.saved
-                      ? `Navigate offline to ${spot.name} with LakBai`
-                      : `Save ${destination.name} to navigate offline to ${spot.name}`}
+                    accessibilityLabel={`Navigate to ${spot.name} with LakBai`}
                     accessibilityState={{ disabled: state.busy }}
                     disabled={state.busy}
                     onPress={() => void openSavedRoute({ place: spot })}
@@ -383,40 +380,37 @@ export const DestinationScreen = ({
                     ]}
                   >
                     <Ionicons
-                      name={state.saved ? 'navigate' : 'download-outline'}
+                      name={state.busy ? 'hourglass-outline' : 'navigate'}
                       size={13}
                       color={colors.onPrimary}
                     />
                     <Text style={styles.spotOfflineRouteText}>
-                      {state.busy ? 'Saving…' : state.saved ? 'Get directions' : 'Save and get directions'}
+                      {state.busy ? 'Preparing…' : 'Get directions'}
                     </Text>
-                  </Pressable> : null}
-                  <Pressable
+                  </Pressable> : <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`Open optional external directions to ${spot.name}`}
+                    accessibilityLabel={`Open directions to ${spot.name}`}
                     disabled={state.directionsBusyId !== null}
                     onPress={() => void runDirections(spot)}
                     style={({ pressed }) => [styles.spotDirections, state.directionsBusyId !== null && styles.ctaDisabled, pressed && state.directionsBusyId === null && styles.pressed]}
                   >
                     <Ionicons name={state.directionsBusyId === spot.id ? 'hourglass-outline' : 'navigate-outline'} size={13} color={colors.primary} />
                     <Text style={styles.spotDirectionsText}>{state.directionsBusyId === spot.id ? 'Opening…' : 'Directions'}</Text>
-                  </Pressable>
+                  </Pressable>}
                 </View>
               </View>)}
           </View>
         </View> : null}
 
-      <View style={styles.section}>
-        <SectionHeader eyebrow="Getting around" title="Transport notes" />
+      <Disclosure title="Transport notes">
         <View style={[styles.card, shadows.card]}>
           <NoteGroup title="Getting there" icon="caret-forward" items={pack.transport.gettingThere} />
           <NoteGroup title="Getting around" icon="caret-forward" items={pack.transport.gettingAround} />
           <NoteGroup title="Local tips" icon="bulb-outline" items={pack.transport.localTips} />
         </View>
-      </View>
+      </Disclosure>
 
-      <View style={styles.section}>
-        <SectionHeader eyebrow="Safety" title="Reminders and contacts" />
+      <Disclosure title="Safety & local contacts">
         <View style={[styles.card, shadows.card]}>
           <NoteGroup title="Reminders" icon="shield-checkmark-outline" items={pack.safety.reminders} />
           {pack.safety.emergencyContacts.length ? <View style={styles.contactBlock}>
@@ -431,7 +425,7 @@ export const DestinationScreen = ({
             </View> : null}
           {pack.safety.facilities.length ? <Text style={styles.facilities}>Nearby: {pack.safety.facilities.join(' · ')}</Text> : null}
         </View>
-      </View>
+      </Disclosure>
     </ScrollView>;
 };
 const Pill = ({

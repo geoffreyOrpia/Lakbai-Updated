@@ -32,8 +32,6 @@ const TripList = ({
 }) => {
   const state = viewModel.state;
   const [tripLimit, setTripLimit] = useState(8);
-  const totalStops = state.trips.reduce((count, trip) => count + trip.stops.length, 0);
-  const offlineStops = state.trips.reduce((count, trip) => count + viewModel.tripReadiness(trip).ready, 0);
   if (state.loading && !state.trips.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AppHeader onOpenSettings={onOpenSettings} />
@@ -54,12 +52,6 @@ const TripList = ({
         title="Your trips"
         subtitle="Plan, save, and review personal trips stored only on this device."
       />
-
-      <View style={styles.quickStatsRow}>
-        <TripStat value={String(state.trips.length)} label={state.trips.length === 1 ? 'Trip' : 'Trips'} />
-        <TripStat value={String(totalStops)} label={totalStops === 1 ? 'Stop' : 'Stops'} />
-        <TripStat value={String(offlineStops)} label="Offline ready" />
-      </View>
 
       <Pressable accessibilityRole="button" accessibilityLabel="Create a trip" style={({
       pressed
@@ -93,15 +85,6 @@ const TripList = ({
           </View>
         </View>}
     </ScrollView>;
-};
-const TripStat = ({
-  value,
-  label
-}) => {
-  return <View style={[styles.tripStat, shadows.soft]}>
-      <Text style={styles.tripStatValue}>{value}</Text>
-      <Text style={styles.tripStatLabel}>{label}</Text>
-    </View>;
 };
 const TripCard = ({
   trip,
@@ -507,36 +490,6 @@ const styles = StyleSheet.create({
   tripsHeaderCopy: {
     flex: 1,
     gap: spacing.xs
-  },
-  quickStatsRow: {
-    flexDirection: 'row',
-    gap: spacing.sm
-  },
-  tripStat: {
-    flex: 1,
-    minHeight: 72,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    backgroundColor: colors.white,
-    paddingHorizontal: spacing.sm,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    gap: spacing.xxs
-  },
-  tripStatValue: {
-    color: colors.text,
-    fontSize: 23,
-    lineHeight: 26,
-    fontWeight: '900',
-    letterSpacing: -0.6
-  },
-  tripStatLabel: {
-    color: colors.muted,
-    fontSize: 9.5,
-    lineHeight: 12,
-    fontWeight: '800',
-    textTransform: 'uppercase'
   },
   createTripButton: {
     minHeight: 76,

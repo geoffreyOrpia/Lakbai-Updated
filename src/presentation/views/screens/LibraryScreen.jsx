@@ -24,10 +24,8 @@ export const LibraryScreen = ({
   } = useFeedback();
   const saved = viewModel.saved;
   const favorites = viewModel.favorites;
-  const available = viewModel.available;
   const [favoriteLimit, setFavoriteLimit] = useState(6);
   const [savedLimit, setSavedLimit] = useState(6);
-  const [availableLimit, setAvailableLimit] = useState(6);
   if (state.loading && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AppHeader onOpenSettings={onOpenSettings} />
@@ -118,29 +116,6 @@ export const LibraryScreen = ({
             label="Show more offline guides"
             icon="chevron-down-outline"
             onPress={() => setSavedLimit(value => value + 6)}
-          /> : null}
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <SectionHeader eyebrow="Built into the app" title="Available to save" />
-        <View style={styles.list}>
-          {available.length ? available.slice(0, availableLimit).map(item => <DestinationCard
-            key={item.destination.id}
-            item={item}
-            showCover={false}
-            onPress={() => onOpenDestination?.(item.destination.id)}
-            actionLabel={state.busyId === item.destination.id ? 'Saving…' : 'Save offline'}
-            actionDisabled={state.busyId !== null}
-            busy={state.busyId === item.destination.id}
-            onAction={() => item.saved && !item.updateAvailable ? onOpenDestination?.(item.destination.id) : runAction(item)}
-            onFavorite={() => void toggleFavorite(item.destination.id)}
-            favoriteDisabled={state.busyId !== null}
-          />) : <Text style={styles.emptyText}>All available guides are saved offline.</Text>}
-          {available.length > availableLimit ? <SecondaryButton
-            label="Show more places to save"
-            icon="chevron-down-outline"
-            onPress={() => setAvailableLimit(value => value + 6)}
           /> : null}
         </View>
       </View>

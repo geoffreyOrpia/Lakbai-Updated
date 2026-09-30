@@ -18,7 +18,6 @@ export const HomeScreen = ({
   const state = viewModel.state;
   const [searchQuery, setSearchQuery] = useState('');
   const featured = state.items.filter(item => item.destination.featured).slice(0, 3);
-  const firstSaved = state.items.find(item => item.saved);
   if (state.loading && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AppHeader onOpenSettings={onOpenSettings} />
@@ -42,23 +41,6 @@ export const HomeScreen = ({
 
       <SearchField value={searchQuery} onChangeText={setSearchQuery} placeholder="Search places" onSubmit={value => viewModel.openExplore(value)} />
 
-      <Pressable accessibilityRole="button" accessibilityLabel="Open saved places" style={({
-      pressed
-    }) => [styles.readiness, shadows.card, pressed && styles.pressed]} onPress={() => viewModel.openLibrary()}>
-        <View style={styles.readinessIcon}>
-          <Ionicons name="cloud-done-outline" size={21} color={colors.primary} />
-        </View>
-        <View style={styles.readinessCopy}>
-          <Text style={styles.readinessTitle}>
-            {state.savedCount} {state.savedCount === 1 ? 'guide' : 'guides'} ready offline
-          </Text>
-          <Text style={styles.readinessText}>
-            {firstSaved ? `${firstSaved.destination.name} is saved on this device.` : 'Save a guide and map to use without internet.'}
-          </Text>
-        </View>
-        <Ionicons name="chevron-forward" size={18} color={colors.primary} />
-      </Pressable>
-
       <Pressable accessibilityRole="button" accessibilityLabel="Open offline discovery" style={({
       pressed
     }) => [styles.nearby, shadows.card, pressed && styles.pressed]} onPress={() => viewModel.openNearby()}>
@@ -67,7 +49,9 @@ export const HomeScreen = ({
         </View>
         <View style={styles.readinessCopy}>
           <Text style={styles.nearbyTitle}>Nearby places</Text>
-          <Text style={styles.readinessText}>Find places and streets, or save a spot on the map. Works offline.</Text>
+          <Text style={styles.readinessText}>
+            Find places and streets near you. {state.savedCount ? `${state.savedCount} offline ${state.savedCount === 1 ? 'guide' : 'guides'} ready.` : 'Works offline.'}
+          </Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color={colors.accent} />
       </Pressable>
@@ -81,32 +65,7 @@ export const HomeScreen = ({
         </View>
       </View>
 
-      <View style={styles.section}>
-        <SectionHeader eyebrow="Simple flow" title="How LakBai works" />
-        <View style={[styles.flowCard, shadows.card]}>
-          <FlowStep icon="bookmark-outline" number="01" title="Save" text="Save a guide and map." />
-          <View style={styles.flowDivider} />
-          <FlowStep icon="cloud-offline-outline" number="02" title="Explore" text="Read guides without a connection." />
-          <View style={styles.flowDivider} />
-          <FlowStep icon="navigate-outline" number="03" title="Follow" text="Get directions when you are ready." />
-        </View>
-      </View>
     </ScrollView>;
-};
-const FlowStep = ({
-  icon,
-  number,
-  title,
-  text
-}) => {
-  return <View style={styles.flowStep}>
-      <View style={styles.flowIcon}>
-        <Ionicons name={icon} size={18} color={colors.primary} />
-      </View>
-      <Text style={styles.flowNumber}>{number}</Text>
-      <Text style={styles.flowTitle}>{title}</Text>
-      <Text style={styles.flowText}>{text}</Text>
-    </View>;
 };
 const styles = StyleSheet.create({
   content: {
@@ -138,25 +97,6 @@ const styles = StyleSheet.create({
     fontSize: 13.2,
     lineHeight: 19
   },
-  readiness: {
-    minHeight: 74,
-    padding: spacing.md,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: '#CBE6D5',
-    backgroundColor: colors.primarySofter,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm
-  },
-  readinessIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: radius.md,
-    backgroundColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
   nearby: {
     minHeight: 74,
     padding: spacing.md,
@@ -184,11 +124,6 @@ const styles = StyleSheet.create({
   readinessCopy: {
     flex: 1
   },
-  readinessTitle: {
-    color: colors.primaryDark,
-    fontSize: 13.5,
-    fontWeight: '800'
-  },
   readinessText: {
     marginTop: 2,
     color: colors.muted,
@@ -200,50 +135,6 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: spacing.sm
-  },
-  flowCard: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-    flexDirection: 'row',
-    padding: spacing.md
-  },
-  flowStep: {
-    flex: 1,
-    alignItems: 'flex-start',
-    paddingHorizontal: spacing.xs
-  },
-  flowIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: radius.sm + 2,
-    backgroundColor: colors.primarySofter,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xs
-  },
-  flowNumber: {
-    color: colors.accent,
-    fontSize: 9,
-    fontWeight: '900'
-  },
-  flowTitle: {
-    marginTop: 2,
-    color: colors.text,
-    fontSize: 12.5,
-    fontWeight: '800'
-  },
-  flowText: {
-    marginTop: 2,
-    color: colors.muted,
-    fontSize: 10.5,
-    lineHeight: 14
-  },
-  flowDivider: {
-    width: 1,
-    backgroundColor: colors.border,
-    marginVertical: 3
   },
   pressed: {
     opacity: 0.85,

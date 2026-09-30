@@ -10,6 +10,7 @@ import {
   SETTINGS_PACE_OPTIONS,
 } from "../../viewmodels/SettingsViewModel.jsx";
 import { BackAction, PrimaryButton, SecondaryButton } from "../components/Buttons.jsx";
+import { Disclosure } from "../components/Disclosure.jsx";
 import { InfoBanner } from "../components/InfoBanner.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { ScreenIntro } from "../components/ScreenIntro.jsx";
@@ -97,14 +98,17 @@ export const SettingsScreen = ({ viewModel }) => {
       <ScreenIntro
         eyebrow="DEVICE-LOCAL"
         title="Settings & About"
-        subtitle="LakBai works without an account. Preferences, Trips, favorites, and saved guides stay on this device."
+        subtitle="Manage travel preferences, offline storage, and app details."
       />
 
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
 
       <View style={[styles.card, shadows.card]}>
         <Text style={styles.sectionEyebrow}>TRAVEL PREFERENCES</Text>
-        <Text style={styles.sectionTitle}>Personalize Smart Explore</Text>
+        <Text style={styles.sectionTitle}>Ask LakBai preferences</Text>
+        <Text style={styles.aboutText}>
+          Used as defaults when you ask LakBai for broad recommendations or a trip idea. Specific requests always take priority.
+        </Text>
 
         <Text style={styles.fieldLabel}>Interests</Text>
         <View style={styles.wrap}>
@@ -129,27 +133,6 @@ export const SettingsScreen = ({ viewModel }) => {
             />
           ))}
         </View>
-
-        <SettingRow
-          icon="cloud-offline-outline"
-          title="Prefer offline-first guidance"
-          text="Keeps LakBai focused on local data and downloaded travel information."
-        >
-          <Pressable
-            accessibilityRole="switch"
-            accessibilityState={{ checked: state.preferences.offlineFirst }}
-            onPress={() => viewModel.setOfflineFirst(!state.preferences.offlineFirst)}
-            style={[
-              styles.switch,
-              state.preferences.offlineFirst && styles.switchOn,
-            ]}
-          >
-            <View style={[
-              styles.switchThumb,
-              state.preferences.offlineFirst && styles.switchThumbOn,
-            ]} />
-          </Pressable>
-        </SettingRow>
 
         <PrimaryButton
           label={state.saving ? 'Saving…' : 'Save preferences'}
@@ -189,49 +172,45 @@ export const SettingsScreen = ({ viewModel }) => {
         />
       </View>
 
-      <View style={[styles.card, shadows.card]}>
-        <Text style={styles.sectionEyebrow}>PRIVACY & DATA</Text>
-        <Text style={styles.sectionTitle}>Accountless by design</Text>
-        <SettingRow
-          icon="person-outline"
-          title="No sign-in required"
-          text="LakBai does not require a user account for Explore, Trips, offline maps, recommendations, or navigation."
-        />
-        <SettingRow
-          icon="location-outline"
-          title="Location stays in the navigation flow"
-          text="Foreground GPS is used for nearby ranking and navigation. Smart Explore can still work without granting location."
-        />
-        <SettingRow
-          icon="sparkles-outline"
-          title="No paid cloud AI"
-          text="Smart Explore is deterministic and runs from LakBai’s local tourism data and routing context."
-        />
-      </View>
-
-      <View style={[styles.card, shadows.card]}>
-        <Text style={styles.sectionEyebrow}>ABOUT</Text>
-        <Text style={styles.sectionTitle}>LakBai</Text>
-        <Text style={styles.aboutText}>
-          An offline-first tourism and navigation experience for Davao del Norte, combining local destination guides, source-aware recommendations, and on-device geospatial routing.
-        </Text>
-        <Text style={styles.version}>Version {APP_VERSION}</Text>
-        <View style={styles.attribution}>
-          <Text style={styles.attributionTitle}>Map & data attribution</Text>
-          <Text style={styles.attributionText}>
-            Map data includes contributions from OpenStreetMap. Sources are listed in each destination guide. Check opening hours and travel conditions before leaving.
+      <Disclosure title="Privacy & about LakBai">
+        <View style={[styles.card, shadows.card]}>
+          <Text style={styles.sectionEyebrow}>PRIVACY & DATA</Text>
+          <Text style={styles.sectionTitle}>Device-local by design</Text>
+          <SettingRow
+            icon="person-outline"
+            title="No sign-in required"
+            text="Explore, Trips, saved guides, recommendations, and navigation work without a user account."
+          />
+          <SettingRow
+            icon="location-outline"
+            title="Location is used when needed"
+            text="GPS supports Nearby and navigation. LakBai can still browse local guides without location access."
+          />
+          <Text style={styles.sectionEyebrow}>ABOUT</Text>
+          <Text style={styles.sectionTitle}>LakBai</Text>
+          <Text style={styles.aboutText}>
+            An offline-first tourism and navigation experience for Davao del Norte. Ask LakBai and recommendations use the app’s local tourism data and routing context.
           </Text>
+          <Text style={styles.version}>Version {APP_VERSION}</Text>
+          <View style={styles.attribution}>
+            <Text style={styles.attributionTitle}>Map & data attribution</Text>
+            <Text style={styles.attributionText}>
+              Map data includes contributions from OpenStreetMap. Sources are listed in each destination guide. Check opening hours and travel conditions before leaving.
+            </Text>
+          </View>
         </View>
-      </View>
+      </Disclosure>
 
-      <View style={[styles.card, styles.resetCard]}>
-        <Text style={styles.sectionEyebrow}>SETUP</Text>
-        <Text style={styles.sectionTitle}>Restart personalization</Text>
-        <Text style={styles.aboutText}>
-          Use this if you want to choose your interests and travel pace again. The app navigation is reset too, so finishing setup always returns to Home.
-        </Text>
-        <SecondaryButton label="Restart setup" icon="refresh-outline" onPress={restartSetup} />
-      </View>
+      <Disclosure title="Advanced">
+        <View style={[styles.card, styles.resetCard]}>
+          <Text style={styles.sectionEyebrow}>SETUP</Text>
+          <Text style={styles.sectionTitle}>Restart personalization</Text>
+          <Text style={styles.aboutText}>
+            Choose your interests and travel pace again. Finishing setup returns the app to Home.
+          </Text>
+          <SecondaryButton label="Restart setup" icon="refresh-outline" onPress={restartSetup} />
+        </View>
+      </Disclosure>
     </ScrollView>;
 };
 
@@ -333,26 +312,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 10.8,
     lineHeight: 15,
-  },
-  switch: {
-    marginTop: spacing.xs,
-    width: 46,
-    height: 27,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surfaceSunken,
-    padding: 3,
-  },
-  switchOn: {
-    backgroundColor: colors.brandForest,
-  },
-  switchThumb: {
-    width: 21,
-    height: 21,
-    borderRadius: 11,
-    backgroundColor: colors.white,
-  },
-  switchThumbOn: {
-    alignSelf: 'flex-end',
   },
   aboutText: {
     color: colors.textSecondary,

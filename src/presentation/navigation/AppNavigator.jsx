@@ -318,6 +318,7 @@ const AssistantFlow = ({
     container.locationService,
     { onOpenDestination, onOpenNavigation, onPlanTrip, onBack },
     destinationId,
+    container.preferencesDeps,
   ));
   return <AssistantScreen viewModel={viewModel} />;
 };

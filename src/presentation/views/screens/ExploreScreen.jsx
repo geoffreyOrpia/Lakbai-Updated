@@ -12,7 +12,6 @@ import { LoadingState } from "../components/LoadingState.jsx";
 import { SearchField } from "../components/SearchField.jsx";
 import { Disclosure } from "../components/Disclosure.jsx";
 import { SecondaryButton } from "../components/Buttons.jsx";
-import { SmartExplorePanel } from "../components/SmartExplorePanel.jsx";
 import { ScreenIntro } from "../components/ScreenIntro.jsx";
 import { colors, layout, radius, spacing } from "../../../theme.jsx";
 const CATEGORY_OPTIONS = [{
@@ -144,8 +143,6 @@ export const ExploreScreen = ({
           viewModel.setCategory('all');
         }}
       /> : null}
-      <SmartExplorePanel viewModel={viewModel} />
-
       <Disclosure title="Search the web">
       <View style={styles.onlineCard}>
         <View style={styles.onlineHeading}>

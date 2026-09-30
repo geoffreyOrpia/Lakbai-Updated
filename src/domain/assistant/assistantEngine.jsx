@@ -4,6 +4,42 @@ import { destinationEntityFor, resolveAssistantEntity } from "./assistantKnowled
 
 const sentenceList = values => values.filter(Boolean).map(value => String(value).trim()).filter(Boolean);
 
+const SAVED_INTEREST_MAP = Object.freeze({
+  Beaches: ['beach'],
+  Waterfalls: ['nature'],
+  Hiking: ['adventure', 'nature'],
+  Wildlife: ['wildlife'],
+  Culture: ['culture'],
+  'Food trips': ['food'],
+  'City strolls': ['culture'],
+  Photography: ['photography'],
+});
+
+const savedInterestKeys = preferences => [...new Set(
+  (preferences?.interests ?? []).flatMap(interest => SAVED_INTEREST_MAP[interest] ?? []),
+)];
+
+const applySavedPreferenceDefaults = (request, preferences) => {
+  if (!['recommend', 'trip'].includes(request.intent)) return request;
+  if (request.constraints.interests.length) return request;
+  const interests = savedInterestKeys(preferences);
+  if (!interests.length) return request;
+  return {
+    ...request,
+    usedSavedInterests: true,
+    constraints: {
+      ...request.constraints,
+      interests,
+    },
+  };
+};
+
+const tripStopCountFor = preferences => {
+  if (preferences?.pace === 'chill') return 2;
+  if (preferences?.pace === 'packed') return 4;
+  return 3;
+};
+
 const previewList = (values, limit = 3) => {
   const list = sentenceList(values).slice(0, limit);
   return list.length ? list.map(value => `• ${value}`).join('\n') : '';
@@ -204,7 +240,7 @@ const recommendationResponse = ({ request, knowledge, entity, origin }) => {
     return `• ${place.name} — ${place.description}${distance}`;
   });
   return {
-    text: `Here are ${selected.length} matches from LakBai’s source-reviewed local guides:\n\n${lines.join('\n\n')}`,
+    text: `${request.usedSavedInterests ? 'Using your saved interests, here are' : 'Here are'} ${selected.length} matches from LakBai’s source-reviewed local guides:\n\n${lines.join('\n\n')}`,
     actions: selected.map(place => ({
       type: 'open-destination',
       label: `Open ${place.name}`,
@@ -215,7 +251,7 @@ const recommendationResponse = ({ request, knowledge, entity, origin }) => {
   };
 };
 
-const tripResponse = ({ request, knowledge, entity, origin, context }) => {
+const tripResponse = ({ request, knowledge, entity, origin, context, preferences }) => {
   let recommendations = recommendTourismPlaces(
     knowledge.catalog,
     request.constraints,
@@ -229,7 +265,10 @@ const tripResponse = ({ request, knowledge, entity, origin, context }) => {
   } else if (entity?.destinationId) {
     recommendations = recommendations.filter(place => place.destinationId === entity.destinationId);
   }
-  const selected = recommendations.slice(0, 3);
+  const selectedLimit = previousIds.length >= 2
+    ? Math.min(4, previousIds.length)
+    : tripStopCountFor(preferences);
+  const selected = recommendations.slice(0, selectedLimit);
   if (selected.length < 2) {
     return {
       text: 'I need at least two eligible LakBai places to build an editable trip. Try naming a broader destination or interest.',
@@ -254,8 +293,12 @@ export const respondToAssistant = ({
   knowledge,
   context = {},
   origin = null,
+  preferences = null,
 }) => {
-  const request = parseAssistantRequest(message);
+  const request = applySavedPreferenceDefaults(
+    parseAssistantRequest(message),
+    preferences,
+  );
   const entity = resolveAssistantEntity(knowledge, message, context);
   const baseContext = {
     ...context,
@@ -278,7 +321,14 @@ export const respondToAssistant = ({
       response = recommendationResponse({ request, knowledge, entity, origin });
       break;
     case 'trip':
-      response = tripResponse({ request, knowledge, entity, origin, context });
+      response = tripResponse({
+        request,
+        knowledge,
+        entity,
+        origin,
+        context,
+        preferences,
+      });
       break;
     case 'transport':
       response = transportResponse(entity);

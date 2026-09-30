@@ -172,8 +172,6 @@ export const NearbyScreen = ({ viewModel }) => {
           </Pressable>
         </View> : null}
 
-      {state.permission !== 'denied' ? <SecondaryButton label="Refresh location" icon="locate-outline" onPress={() => void viewModel.load()} /> : null}
-
       <InfoBanner tone="info" text="Tourism places come from LakBai’s bundled local catalog and work offline. Street matches use the bundled Davao del Norte OSM routing dataset; mapped coordinates are not automatically verified entrances." />
     </ScrollView>;
 };

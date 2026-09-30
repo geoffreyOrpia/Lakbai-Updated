@@ -1,6 +1,7 @@
 import { userMessage } from "../../core/errors/appError.jsx";
 import { respondToAssistant } from "../../domain/assistant/assistantEngine.jsx";
 import { destinationEntityFor, loadAssistantKnowledge } from "../../domain/assistant/assistantKnowledge.jsx";
+import { getTravelPreferences } from "../../domain/usecases/preferences.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 
 const starterSuggestions = [
@@ -11,7 +12,13 @@ const starterSuggestions = [
 ];
 
 export class AssistantViewModel extends ViewModel {
-  constructor(deps, locationService = null, nav = {}, initialDestinationId = null) {
+  constructor(
+    deps,
+    locationService = null,
+    nav = {},
+    initialDestinationId = null,
+    preferencesDeps = null,
+  ) {
     super({
       loading: true,
       busy: false,
@@ -19,6 +26,7 @@ export class AssistantViewModel extends ViewModel {
       messages: [],
       knowledge: null,
       context: {},
+      preferences: null,
       origin: null,
       locationStatus: 'idle',
       error: null,
@@ -27,6 +35,7 @@ export class AssistantViewModel extends ViewModel {
     this.locationService = locationService;
     this.nav = nav;
     this.initialDestinationId = initialDestinationId;
+    this.preferencesDeps = preferencesDeps;
     this.nextMessageId = 0;
   }
 
@@ -39,7 +48,12 @@ export class AssistantViewModel extends ViewModel {
   load = async () => {
     this.setState({ loading: true, error: null });
     try {
-      const knowledge = await loadAssistantKnowledge(this.deps);
+      const [knowledge, preferences] = await Promise.all([
+        loadAssistantKnowledge(this.deps),
+        this.preferencesDeps
+          ? getTravelPreferences(this.preferencesDeps).catch(() => null)
+          : Promise.resolve(null),
+      ]);
       const initialEntity = this.initialDestinationId
         ? destinationEntityFor(knowledge, this.initialDestinationId)
         : null;
@@ -54,6 +68,7 @@ export class AssistantViewModel extends ViewModel {
         : 'Hi, I’m Ask LakBai. I use the local guides already stored in LakBai to help you discover places, plan trips, prepare, and navigate.';
       this.setState({
         knowledge,
+        preferences,
         context,
         messages: [{
           id: this.nextId('assistant'),
@@ -124,6 +139,7 @@ export class AssistantViewModel extends ViewModel {
         knowledge: this.state.knowledge,
         context: this.state.context,
         origin: this.state.origin,
+        preferences: this.state.preferences,
       });
 
       if (response.needsLocation && !this.state.origin) {
@@ -134,6 +150,7 @@ export class AssistantViewModel extends ViewModel {
             knowledge: this.state.knowledge,
             context: this.state.context,
             origin,
+            preferences: this.state.preferences,
           });
         } else {
           response = {
