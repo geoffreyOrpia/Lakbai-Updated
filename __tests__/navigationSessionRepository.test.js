@@ -1,6 +1,7 @@
 import {
   LocalNavigationSessionRepository,
   activeNavigationSessionIsValid,
+  navigationRequestFromSession,
 } from '../src/data/repositories/navigationSessionRepository.jsx';
 
 const NOW = Date.UTC(2026, 8, 29, 12, 0, 0);
@@ -31,6 +32,36 @@ const validSession = overrides => ({
   ...overrides,
 });
 
+const validLiveSession = overrides => ({
+  version: 2,
+  sessionId: 'nav-live-1',
+  status: 'active',
+  startedAt: NOW - 5 * 60_000,
+  savedAt: NOW - 30_000,
+  request: {
+    destinationId: 'samal',
+    destinationName: 'Samal Island',
+    target: { label: 'Hagimit Falls', lat: 7.11, lng: 125.72 },
+    multiStops: [],
+    mode: 'drive',
+    preference: 'direct',
+  },
+  navigationRoute: {
+    ok: true,
+    distanceKm: 4.2,
+    durationMin: 11,
+    maneuvers: [],
+  },
+  progress: {
+    distanceAlongKm: 1.2,
+    completedStopCount: 0,
+  },
+  evidence: {},
+  voiceGuidance: true,
+  backgroundEnabled: true,
+  ...overrides,
+});
+
 const createRepository = session => {
   const dao = {
     get: jest.fn().mockResolvedValue(session),
@@ -55,7 +86,7 @@ describe('LocalNavigationSessionRepository recovery validation', () => {
   });
 
   test.each([
-    ['unsupported version', { version: 2 }],
+    ['unsupported version', { version: 99 }],
     ['missing saved time', { savedAt: null }],
     ['stale checkpoint', { savedAt: NOW - 15 * 24 * 60 * 60 * 1000 }],
     ['far-future checkpoint', { savedAt: NOW + 11 * 60 * 1000 }],
@@ -103,5 +134,37 @@ describe('LocalNavigationSessionRepository recovery validation', () => {
 
     await expect(repository.getActiveSession()).resolves.toBeNull();
     expect(dao.clear).not.toHaveBeenCalled();
+  });
+
+  test('restores a recent active background-navigation session', async () => {
+    const session = validLiveSession();
+    const { repository, dao } = createRepository(session);
+
+    await expect(repository.getActiveSession()).resolves.toBe(session);
+    expect(dao.clear).not.toHaveBeenCalled();
+    expect(navigationRequestFromSession(session)).toEqual(expect.objectContaining({
+      destinationId: 'samal',
+      resumedSession: true,
+      resumeNavigationSession: session,
+    }));
+  });
+
+  test('expires a live navigation session after the bounded recovery window', async () => {
+    const { repository, dao } = createRepository(validLiveSession({
+      startedAt: NOW - 13 * 60 * 60 * 1000,
+      savedAt: NOW - 13 * 60 * 60 * 1000,
+    }));
+
+    await expect(repository.getActiveSession()).resolves.toBeNull();
+    expect(dao.clear).toHaveBeenCalledTimes(1);
+  });
+
+  test.each([
+    ['missing route', { navigationRoute: null }],
+    ['invalid route distance', { navigationRoute: { distanceKm: -1, maneuvers: [] } }],
+    ['progress beyond the route', { progress: { distanceAlongKm: 10, completedStopCount: 0 } }],
+    ['invalid live status', { status: 'arrived' }],
+  ])('rejects live session with %s', (_label, override) => {
+    expect(activeNavigationSessionIsValid(validLiveSession(override), { now: NOW })).toBe(false);
   });
 });

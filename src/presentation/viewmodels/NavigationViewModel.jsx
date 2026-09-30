@@ -1,12 +1,6 @@
+import { AppState } from 'react-native';
 import { haversineKm } from "../../core/utils/geo.jsx";
-import {
-  bearingBetween,
-  headingDifferenceDeg,
-  nextRouteManeuver,
-  placesAlongRoute,
-  projectPositionOntoRoute,
-  remainingDurationMin,
-} from "../../core/routing/routeProgress.jsx";
+import { placesAlongRoute } from "../../core/routing/routeProgress.jsx";
 import { normalizeRoutePreference } from "../../core/routing/routingProfiles.jsx";
 import {
   calculateOfflineRoute,
@@ -15,38 +9,34 @@ import {
 } from "../../domain/usecases/offlineNavigation.jsx";
 import {
   calculateOfflineFerryJourney,
-  isOnFerryLeg,
   remainingFerryJourneyDurationMin,
 } from "../../domain/usecases/ferryJourney.jsx";
 import {
   calculateOfflineRoadTrailJourney,
-  isOnTrailLeg,
   remainingRoadTrailDurationMin,
 } from "../../domain/usecases/roadTrailJourney.jsx";
 import { calculateOfflineRouteAlternatives } from "../../domain/usecases/routeAlternatives.jsx";
 import {
   calculateOfflineMultiStopJourney,
-  completedMultiStopCount,
   remainingMultiStopDurationMin,
 } from "../../domain/usecases/multiStopJourney.jsx";
+import {
+  advanceNavigationProgress,
+  BASE_OFF_ROUTE_M,
+  createNavigationEvidence,
+  MAX_NAVIGATION_ACCURACY_M,
+} from "../../domain/navigation/navigationEngine.jsx";
+import { guidanceAnnouncement } from "../../domain/navigation/navigationGuidance.jsx";
+import {
+  createActiveNavigationSession,
+  createNavigationSessionId,
+} from "../../domain/navigation/navigationSession.jsx";
 import { routingRegionFor } from "../../data/assets/routingRegionAssets.jsx";
+import { subscribeNavigationRuntime } from "../../data/services/navigationRuntime.jsx";
 import { ViewModel } from "../viewmodel/ViewModel.jsx";
 
-const MAX_NAVIGATION_ACCURACY_M = 60;
 const MAX_ROUTE_START_ACCURACY_M = 250;
-const BASE_OFF_ROUTE_M = 45;
-const OFF_ROUTE_CONFIRM_FIXES = 3;
-const WRONG_WAY_CONFIRM_FIXES = 3;
-const WRONG_WAY_HEADING_DEG = 120;
 const REROUTE_COOLDOWN_MS = 12_000;
-const MIN_MOVEMENT_M = Object.freeze({
-  walk: 4,
-  drive: 8,
-});
-const WRONG_WAY_DISTANCE_M = Object.freeze({
-  walk: 12,
-  drive: 30,
-});
 
 const SCENIC_POI_CATEGORIES = new Set([
   'attraction',
@@ -58,37 +48,9 @@ const SCENIC_POI_CATEGORIES = new Set([
   'viewpoint',
 ]);
 
-const spokenDistance = distanceKm => {
-  if (distanceKm == null) return null;
-  if (distanceKm >= 1) {
-    const rounded = Math.round(distanceKm * 10) / 10;
-    return `${rounded} kilometer${rounded === 1 ? '' : 's'}`;
-  }
-  const meters = distanceKm * 1000;
-  const rounded = meters >= 100
-    ? Math.max(10, Math.round(meters / 10) * 10)
-    : Math.max(5, Math.round(meters / 5) * 5);
-  return `${rounded} meters`;
-};
-
-const guidanceStage = distanceKm => {
-  if (distanceKm == null) return 'preview';
-  const meters = distanceKm * 1000;
-  if (meters <= 25) return 'now';
-  if (meters <= 120) return 'near';
-  return 'preview';
-};
-
-const spokenGuidance = (maneuver, distanceKm, stage) => {
-  if (!maneuver?.instruction) return null;
-  if (maneuver.kind === 'arrive' && stage === 'now') return maneuver.instruction;
-  if (stage === 'now') return maneuver.instruction;
-  const distance = spokenDistance(distanceKm);
-  return distance ? `In ${distance}. ${maneuver.instruction}` : maneuver.instruction;
-};
-
 export class NavigationViewModel extends ViewModel {
   unwatch = null;
+  runtimeUnsubscribe = null;
   locationWatchRequest = 0;
   offRouteSamples = 0;
   wrongWaySamples = 0;
@@ -101,28 +63,39 @@ export class NavigationViewModel extends ViewModel {
   lastRerouteAtMs = null;
   gpsLost = false;
   lastConfirmedRouteDistanceKm = 0;
+  activeSessionId = null;
+  activeSessionStartedAt = null;
+  backgroundNavigationActive = false;
 
   constructor(routingDeps, destinationDeps, locationService, route, nav) {
+    const resumeSession = route.resumeNavigationSession?.status === 'active'
+      ? route.resumeNavigationSession
+      : null;
+    const resumeProgress = resumeSession?.progress ?? {};
+    const multiStops = Array.isArray(route.multiStops) ? route.multiStops : [];
+    const completedStopCount = resumeSession
+      ? resumeProgress.completedStopCount ?? 0
+      : Math.max(
+        0,
+        Math.min(
+          multiStops.length,
+          Number.isFinite(route.resumeCompletedStopCount) ? route.resumeCompletedStopCount : 0,
+        ),
+      );
     super({
       loading: true,
       calculating: false,
       rerouting: false,
-      tracking: false,
+      tracking: Boolean(resumeSession),
       graph: null,
       graphMeta: null,
       destinationId: route.destinationId,
       destinationName: route.destinationName,
       target: route.target,
-      multiStops: Array.isArray(route.multiStops) ? route.multiStops : [],
+      multiStops,
       tripId: route.tripId ?? null,
       tripTitle: route.tripTitle ?? null,
-      completedStopCount: Math.max(
-        0,
-        Math.min(
-          Array.isArray(route.multiStops) ? route.multiStops.length : 0,
-          Number.isFinite(route.resumeCompletedStopCount) ? route.resumeCompletedStopCount : 0,
-        ),
-      ),
+      completedStopCount,
       resumedSession: route.resumedSession === true,
       trailId: route.trailId ?? null,
       trailPreview: null,
@@ -136,28 +109,35 @@ export class NavigationViewModel extends ViewModel {
       coordinateStatus: route.coordinateStatus ?? null,
       previewStart: route.previewStart ?? null,
       offlineBasemapUri: null,
-      fix: null,
-      accuracyM: null,
-      route: null,
+      fix: resumeProgress.fix ?? null,
+      accuracyM: resumeProgress.accuracyM ?? null,
+      route: resumeSession?.navigationRoute ?? null,
       preview: false,
-      permission: 'unknown',
-      progressPct: 0,
-      distanceAlongKm: 0,
-      remainingKm: null,
-      remainingMin: null,
-      usingLiveEta: false,
-      offRouteM: null,
-      nextManeuver: null,
-      distanceToNextManeuverKm: null,
-      voiceGuidance: true,
-      rerouteCount: 0,
+      permission: resumeSession ? 'granted' : 'unknown',
+      backgroundPermission: resumeSession?.backgroundEnabled ? 'granted' : 'unknown',
+      notificationPermission: 'unknown',
+      backgroundNavigation: resumeSession?.backgroundEnabled === true,
+      backgroundWarning: null,
+      progressPct: resumeProgress.progressPct ?? 0,
+      distanceAlongKm: resumeProgress.distanceAlongKm ?? 0,
+      remainingKm: resumeProgress.remainingKm ?? resumeSession?.navigationRoute?.distanceKm ?? null,
+      remainingMin: resumeProgress.remainingMin ?? resumeSession?.navigationRoute?.durationMin ?? null,
+      usingLiveEta: resumeProgress.usingLiveEta === true,
+      offRouteM: resumeProgress.offRouteM ?? null,
+      nextManeuver: resumeProgress.nextManeuver
+        ?? resumeSession?.navigationRoute?.maneuvers?.[1]
+        ?? resumeSession?.navigationRoute?.maneuvers?.[0]
+        ?? null,
+      distanceToNextManeuverKm: resumeProgress.distanceToNextManeuverKm ?? null,
+      voiceGuidance: resumeSession?.voiceGuidance !== false,
+      rerouteCount: resumeProgress.rerouteCount ?? 0,
       alternativeRoutes: [],
       alternativeBaseRoute: null,
       alternativesLoading: false,
       selectedAlternativeId: null,
-      journeyPhase: null,
-      wrongWay: false,
-      arrived: false,
+      journeyPhase: resumeProgress.journeyPhase ?? null,
+      wrongWay: resumeProgress.wrongWay === true,
+      arrived: resumeProgress.arrived === true,
       gpsError: null,
       error: null,
     });
@@ -165,16 +145,225 @@ export class NavigationViewModel extends ViewModel {
     this.destinationDeps = destinationDeps;
     this.locationService = locationService;
     this.nav = nav;
+    this.activeSessionId = resumeSession?.sessionId ?? null;
+    this.activeSessionStartedAt = resumeSession?.startedAt ?? null;
+    this.backgroundNavigationActive = resumeSession?.backgroundEnabled === true;
+    if (resumeSession?.evidence) this.applyNavigationEvidence(resumeSession.evidence);
+    this.spokenManeuverId = resumeSession?.guidanceState?.maneuverId ?? null;
+    this.spokenStage = resumeSession?.guidanceState?.stage ?? null;
   }
 
   onInit = () => {
-    void this.load();
-    void this.persistMultiStopSession(this.state.completedStopCount);
+    this.runtimeUnsubscribe = subscribeNavigationRuntime(this.handleRuntimeEvent);
+    void this.load().then(() => {
+      if (this.activeSessionId) void this.resumeActiveNavigationSession();
+    });
+    if (!this.activeSessionId) {
+      void this.persistMultiStopSession(this.state.completedStopCount);
+    }
   };
 
   onDispose = () => {
+    this.runtimeUnsubscribe?.();
+    this.runtimeUnsubscribe = null;
     this.stopLocationWatch();
     this.stopSpeech();
+  };
+
+  captureNavigationEvidence = () => createNavigationEvidence({
+    offRouteSamples: this.offRouteSamples,
+    wrongWaySamples: this.wrongWaySamples,
+    wrongWayDistanceM: this.wrongWayDistanceM,
+    speedSamples: this.speedSamples,
+    lastAcceptedFix: this.lastAcceptedFix,
+    lastFixTimestamp: this.lastFixTimestamp,
+    gpsLost: this.gpsLost,
+    lastConfirmedRouteDistanceKm: this.lastConfirmedRouteDistanceKm,
+  });
+
+  applyNavigationEvidence = evidence => {
+    const normalized = createNavigationEvidence(evidence);
+    this.offRouteSamples = normalized.offRouteSamples;
+    this.wrongWaySamples = normalized.wrongWaySamples;
+    this.wrongWayDistanceM = normalized.wrongWayDistanceM;
+    this.speedSamples = normalized.speedSamples;
+    this.lastAcceptedFix = normalized.lastAcceptedFix;
+    this.lastFixTimestamp = normalized.lastFixTimestamp;
+    this.gpsLost = normalized.gpsLost;
+    this.lastConfirmedRouteDistanceKm = normalized.lastConfirmedRouteDistanceKm;
+  };
+
+  activeNavigationRequest = () => ({
+    destinationId: this.state.destinationId,
+    destinationName: this.state.destinationName,
+    target: this.state.target,
+    multiStops: this.state.multiStops,
+    tripId: this.state.tripId,
+    tripTitle: this.state.tripTitle,
+    trailId: this.state.trailId,
+    mode: this.state.mode,
+    preference: this.state.preference,
+    coverage: this.state.coverage,
+    discoveryTarget: this.state.discoveryTarget,
+    coordinateStatus: this.state.coordinateStatus,
+    previewStart: this.state.previewStart,
+  });
+
+  activeNavigationProgress = () => ({
+    fix: this.state.fix,
+    accuracyM: this.state.accuracyM,
+    progressPct: this.state.progressPct,
+    distanceAlongKm: this.state.distanceAlongKm,
+    remainingKm: this.state.remainingKm,
+    remainingMin: this.state.remainingMin,
+    usingLiveEta: this.state.usingLiveEta,
+    offRouteM: this.state.offRouteM,
+    nextManeuver: this.state.nextManeuver,
+    distanceToNextManeuverKm: this.state.distanceToNextManeuverKm,
+    completedStopCount: this.state.completedStopCount,
+    journeyPhase: this.state.journeyPhase,
+    wrongWay: this.state.wrongWay,
+    arrived: this.state.arrived,
+    rerouteCount: this.state.rerouteCount,
+  });
+
+  persistActiveNavigationSession = async () => {
+    const repository = this.routingDeps.navigationSessionRepository;
+    if (!repository || !this.state.tracking || !this.state.route || this.state.preview) return;
+    if (!this.activeSessionId) this.activeSessionId = createNavigationSessionId();
+    if (!this.activeSessionStartedAt) this.activeSessionStartedAt = Date.now();
+    try {
+      await repository.saveActiveSession(createActiveNavigationSession({
+        sessionId: this.activeSessionId,
+        startedAt: this.activeSessionStartedAt,
+        request: this.activeNavigationRequest(),
+        navigationRoute: this.state.route,
+        progress: this.activeNavigationProgress(),
+        evidence: this.captureNavigationEvidence(),
+        voiceGuidance: this.state.voiceGuidance,
+        guidanceState: {
+          maneuverId: this.spokenManeuverId,
+          stage: this.spokenStage,
+        },
+        backgroundEnabled: this.backgroundNavigationActive,
+      }));
+    } catch {
+      // Live navigation must continue if a progress checkpoint cannot be written.
+    }
+  };
+
+  clearPersistedNavigationSession = async () => {
+    try {
+      await this.routingDeps.navigationSessionRepository?.clearActiveSession();
+    } catch {
+      // Navigation cleanup must not fail because local persistence is unavailable.
+    }
+  };
+
+  handleRuntimeEvent = event => {
+    const session = event?.session;
+    if (!session || session.sessionId !== this.activeSessionId) {
+      if (event?.type === 'error' && this.state.tracking) {
+        this.setState({
+          backgroundWarning: event.message
+            || 'Background navigation is temporarily unavailable.',
+        });
+      }
+      return;
+    }
+
+    const progress = session.progress ?? {};
+    this.applyNavigationEvidence(session.evidence);
+    this.spokenManeuverId = session.guidanceState?.maneuverId ?? this.spokenManeuverId;
+    this.spokenStage = session.guidanceState?.stage ?? this.spokenStage;
+    this.backgroundNavigationActive = event.type !== 'arrived' && session.backgroundEnabled === true;
+    this.setState({
+      ...progress,
+      route: session.navigationRoute ?? this.state.route,
+      tracking: event.type !== 'arrived',
+      voiceGuidance: session.voiceGuidance !== false,
+      backgroundPermission: session.backgroundEnabled ? 'granted' : this.state.backgroundPermission,
+      backgroundNavigation: this.backgroundNavigationActive,
+      backgroundWarning: null,
+      rerouting: event.type === 'arrived' ? false : this.state.rerouting,
+    });
+
+    if (event.type === 'arrived') {
+      this.stopLocationWatch();
+      this.backgroundNavigationActive = false;
+      this.activeSessionId = null;
+      this.activeSessionStartedAt = null;
+      return;
+    }
+
+    const fix = progress.fix;
+    const eventTimeMs = Number.isFinite(fix?.timestamp) ? fix.timestamp : Date.now();
+    const cooldownElapsed = this.lastRerouteAtMs == null
+      || eventTimeMs - this.lastRerouteAtMs >= REROUTE_COOLDOWN_MS;
+    if (
+      session.needsReroute
+      && AppState.currentState === 'active'
+      && fix
+      && cooldownElapsed
+      && this.state.tracking
+      && !this.state.rerouting
+    ) {
+      this.lastRerouteAtMs = eventTimeMs;
+      void this.rerouteFrom(fix);
+    }
+  };
+
+  resumeActiveNavigationSession = async () => {
+    if (!this.activeSessionId || !this.state.route || !this.state.tracking) return;
+    try {
+      const active = await this.locationService.isBackgroundNavigationActive?.();
+      if (active) {
+        this.backgroundNavigationActive = true;
+        this.setState({
+          backgroundPermission: 'granted',
+          backgroundNavigation: true,
+          backgroundWarning: null,
+        });
+        return;
+      }
+      if (this.state.backgroundNavigation) {
+        const restarted = await this.locationService.startBackgroundNavigation?.({
+          destinationName: this.state.target?.label ?? this.state.destinationName,
+        });
+        if (restarted) {
+          this.backgroundNavigationActive = true;
+          this.setState({
+            backgroundPermission: 'granted',
+            backgroundNavigation: true,
+            backgroundWarning: null,
+          });
+          await this.persistActiveNavigationSession();
+          return;
+        }
+      }
+    } catch {
+      // Fall through to foreground-only tracking when Android cannot resume its service.
+    }
+
+    this.backgroundNavigationActive = false;
+    this.setState({
+      backgroundNavigation: false,
+      backgroundWarning: 'Background navigation stopped. Keep LakBai open or start navigation again to re-enable it.',
+    });
+    try {
+      const request = ++this.locationWatchRequest;
+      const unwatch = await this.locationService.watchFix(
+        fix => { if (request === this.locationWatchRequest) this.applyFix(fix); },
+        error => { if (request === this.locationWatchRequest) this.handleLocationError(error); },
+      );
+      if (request !== this.locationWatchRequest) unwatch?.();
+      else this.unwatch = unwatch;
+    } catch {
+      this.setState({
+        tracking: false,
+        gpsError: 'LakBai could not resume live GPS navigation.',
+      });
+    }
   };
 
   persistMultiStopSession = async completedStopCount => {
@@ -247,6 +436,9 @@ export class NavigationViewModel extends ViewModel {
         trailPreview,
         offlinePois,
         scenicPois,
+        routePois: this.state.route
+          ? placesAlongRoute(this.state.route, offlinePois, this.state.distanceAlongKm)
+          : this.state.routePois,
         offlineBasemapUri: bundle?.basemapUri ?? bundledBasemap?.uri ?? null,
         error: !graph
           ? 'Offline road routing is not available for this destination yet.'
@@ -565,6 +757,15 @@ export class NavigationViewModel extends ViewModel {
     });
   };
 
+  startForegroundLocationWatch = async request => {
+    const unwatch = await this.locationService.watchFix(
+      fix => { if (request === this.locationWatchRequest) this.applyFix(fix); },
+      error => { if (request === this.locationWatchRequest) this.handleLocationError(error); },
+    );
+    if (request !== this.locationWatchRequest) unwatch?.();
+    else this.unwatch = unwatch;
+  };
+
   startNavigation = async () => {
     if (!this.state.route || this.state.preview || this.state.tracking) return;
     const request = ++this.locationWatchRequest;
@@ -580,11 +781,14 @@ export class NavigationViewModel extends ViewModel {
       return;
     }
 
+    this.activeSessionId = createNavigationSessionId();
+    this.activeSessionStartedAt = Date.now();
     this.setState({
       permission: 'granted',
       tracking: true,
       gpsError: null,
       arrived: false,
+      backgroundWarning: null,
     });
     this.announceGuidance(
       this.state.nextManeuver,
@@ -597,17 +801,86 @@ export class NavigationViewModel extends ViewModel {
       if (request !== this.locationWatchRequest) return;
       if (currentFix) this.applyFix(currentFix);
       if (request !== this.locationWatchRequest) return;
-      const unwatch = await this.locationService.watchFix(
-        fix => { if (request === this.locationWatchRequest) this.applyFix(fix); },
-        error => { if (request === this.locationWatchRequest) this.handleLocationError(error); },
-      );
-      if (request !== this.locationWatchRequest) unwatch?.();
-      else this.unwatch = unwatch;
+
+      let backgroundGranted = false;
+      try {
+        backgroundGranted = await this.locationService.requestBackgroundNavigationPermissions?.()
+          === true;
+      } catch {
+        backgroundGranted = false;
+      }
+      if (request !== this.locationWatchRequest) return;
+
+      let notificationGranted = true;
+      if (backgroundGranted) {
+        try {
+          const notificationResult = await this.locationService
+            .requestNavigationNotificationPermission?.();
+          notificationGranted = notificationResult !== false;
+        } catch {
+          notificationGranted = false;
+        }
+      }
+      if (request !== this.locationWatchRequest) return;
+
+      this.backgroundNavigationActive = backgroundGranted;
+      this.setState({
+        backgroundPermission: backgroundGranted ? 'granted' : 'denied',
+        notificationPermission: backgroundGranted
+          ? (notificationGranted ? 'granted' : 'denied')
+          : this.state.notificationPermission,
+        backgroundNavigation: backgroundGranted,
+        backgroundWarning: backgroundGranted
+          ? notificationGranted
+            ? null
+            : 'Background navigation can continue, but Android notification permission was not allowed. The ongoing navigation status may appear only in Android’s active-apps area.'
+          : 'Background location was not allowed. Navigation still works while LakBai stays open.',
+      });
+      await this.persistActiveNavigationSession();
+      if (request !== this.locationWatchRequest) return;
+
+      if (backgroundGranted && this.locationService.startBackgroundNavigation) {
+        try {
+          const started = await this.locationService.startBackgroundNavigation({
+            destinationName: this.state.target?.label ?? this.state.destinationName,
+          });
+          if (request !== this.locationWatchRequest) {
+            if (started) void this.locationService?.stopBackgroundNavigation?.();
+            return;
+          }
+          if (started) {
+            this.backgroundNavigationActive = true;
+            this.setState({
+              backgroundNavigation: true,
+              backgroundWarning: notificationGranted
+                ? null
+                : 'Background navigation can continue, but Android notification permission was not allowed. The ongoing navigation status may appear only in Android’s active-apps area.',
+            });
+            await this.persistActiveNavigationSession();
+            return;
+          }
+        } catch {
+          this.backgroundNavigationActive = false;
+          this.setState({
+            backgroundNavigation: false,
+            backgroundWarning: 'Android background navigation could not start. Keep LakBai open for live directions.',
+          });
+          await this.persistActiveNavigationSession();
+        }
+      }
+
+      await this.startForegroundLocationWatch(request);
     } catch {
       if (request !== this.locationWatchRequest) return;
       this.stopLocationWatch();
+      this.backgroundNavigationActive = false;
+      void this.locationService?.stopBackgroundNavigation?.();
+      void this.clearPersistedNavigationSession();
+      this.activeSessionId = null;
+      this.activeSessionStartedAt = null;
       this.setState({
         tracking: false,
+        backgroundNavigation: false,
         gpsError: 'LakBai could not start live GPS navigation.',
       });
     }
@@ -617,9 +890,16 @@ export class NavigationViewModel extends ViewModel {
     this.stopLocationWatch();
     this.stopSpeech();
     this.resetNavigationEvidence();
+    this.backgroundNavigationActive = false;
+    this.activeSessionId = null;
+    this.activeSessionStartedAt = null;
+    void this.locationService?.stopBackgroundNavigation?.();
+    void this.clearPersistedNavigationSession();
     this.setState({
       tracking: false,
       rerouting: false,
+      backgroundNavigation: false,
+      backgroundWarning: null,
       usingLiveEta: false,
       wrongWay: false,
       gpsError: null,
@@ -695,18 +975,18 @@ export class NavigationViewModel extends ViewModel {
       || !this.routingDeps.speechService?.speak
     ) return;
 
-    const stage = guidanceStage(distanceKm);
-    if (
-      !force
-      && this.spokenManeuverId === maneuver.id
-      && this.spokenStage === stage
-    ) return;
-
-    const text = spokenGuidance(maneuver, distanceKm, stage);
-    if (!text) return;
-    this.spokenManeuverId = maneuver.id;
-    this.spokenStage = stage;
-    void this.routingDeps.speechService.speak(text);
+    const announcement = guidanceAnnouncement({
+      maneuver,
+      distanceKm,
+      force,
+      previousManeuverId: this.spokenManeuverId,
+      previousStage: this.spokenStage,
+    });
+    if (!announcement) return;
+    this.spokenManeuverId = announcement.maneuverId;
+    this.spokenStage = announcement.stage;
+    void this.routingDeps.speechService.speak(announcement.text);
+    void this.persistActiveNavigationSession();
   };
 
   toggleVoiceGuidance = () => {
@@ -715,6 +995,7 @@ export class NavigationViewModel extends ViewModel {
     this.resetSpokenGuidance();
     if (!voiceGuidance) {
       this.stopSpeech();
+      void this.persistActiveNavigationSession();
       return;
     }
     if (this.state.tracking) {
@@ -724,252 +1005,73 @@ export class NavigationViewModel extends ViewModel {
         true,
       );
     }
-  };
-
-  recordSpeedEstimate = speedMps => {
-    const minSpeed = this.state.mode === 'drive' ? 2 : 0.55;
-    const maxSpeed = this.state.mode === 'drive' ? 45 : 2.5;
-    if (!Number.isFinite(speedMps) || speedMps < minSpeed || speedMps > maxSpeed) {
-      this.speedSamples = [];
-      return null;
-    }
-
-    this.speedSamples.push(speedMps);
-    if (this.speedSamples.length > 5) this.speedSamples.shift();
-    return this.speedSamples.reduce((sum, speed) => sum + speed, 0) / this.speedSamples.length;
+    void this.persistActiveNavigationSession();
   };
 
   applyFix = fix => {
-    const route = this.state.route;
-    const accuracyM = fix.accuracy ?? null;
-    const fixTimestamp = Number.isFinite(fix.timestamp) ? fix.timestamp : null;
-    if (
-      fixTimestamp != null
-      && this.lastFixTimestamp != null
-      && fixTimestamp <= this.lastFixTimestamp
-    ) {
-      return;
-    }
-    if (fixTimestamp != null) this.lastFixTimestamp = fixTimestamp;
-
-    if (!route || this.state.preview) {
-      this.setState({ fix, accuracyM });
-      return;
-    }
-
-    if (accuracyM != null && accuracyM > MAX_NAVIGATION_ACCURACY_M) {
-      this.gpsLost = true;
-      this.offRouteSamples = 0;
-      this.wrongWaySamples = 0;
-      this.wrongWayDistanceM = 0;
-      this.speedSamples = [];
+    if (!this.state.route || this.state.preview) {
       this.setState({
         fix,
-        accuracyM,
-        wrongWay: false,
-        gpsError: `GPS accuracy is about ${Math.round(accuracyM)} m. Route progress and rerouting are paused until accuracy improves.`,
+        accuracyM: fix?.accuracy ?? null,
       });
       return;
     }
 
-    const recoveredFromGpsLoss = this.gpsLost;
-    const previousFix = this.lastAcceptedFix;
-    const movementDistanceM = previousFix
-      ? haversineKm(previousFix, fix) * 1000
-      : null;
-    const minimumMovementM = MIN_MOVEMENT_M[this.state.mode] ?? MIN_MOVEMENT_M.walk;
-    const previousAccuracyM = previousFix?.accuracy ?? 0;
-    const jitterThresholdM = Math.max(
-      2.5,
-      Math.min(8, Math.max(accuracyM ?? 0, previousAccuracyM) * 0.35),
-    );
-    const lowMotionSpeed = !Number.isFinite(fix.speed)
-      || fix.speed < (this.state.mode === 'drive' ? 1 : 0.3);
-    const stationaryJitter = this.state.tracking
-      && movementDistanceM != null
-      && movementDistanceM < jitterThresholdM
-      && lowMotionSpeed;
-
-    if (stationaryJitter) {
-      this.gpsLost = false;
-      this.setState({
-        fix,
-        accuracyM,
-        gpsError: null,
-      });
-      return;
-    }
-
-    const movementHeading = (
-      previousFix
-      && movementDistanceM >= minimumMovementM
-    ) ? bearingBetween(previousFix, fix) : null;
-    const reportedHeading = (
-      Number.isFinite(fix.heading)
-      && fix.heading >= 0
-      && Number.isFinite(fix.speed)
-      && fix.speed >= (this.state.mode === 'drive' ? 1 : 0.5)
-    ) ? fix.heading : null;
-    const matchingHeading = movementHeading ?? reportedHeading;
-    const maxAdvanceKm = (
-      this.state.tracking
-      && movementDistanceM != null
-    ) ? this.state.distanceAlongKm + (
-      movementDistanceM + Math.max(20, (accuracyM ?? 0) * 1.5)
-    ) / 1000 : null;
-    const projection = projectPositionOntoRoute(
-      route,
+    const result = advanceNavigationProgress({
+      route: this.state.route,
+      target: this.state.target,
+      mode: this.state.mode,
+      tracking: this.state.tracking,
+      distanceAlongKm: this.state.distanceAlongKm,
+      completedStopCount: this.state.completedStopCount,
+      evidence: this.captureNavigationEvidence(),
       fix,
-      this.state.tracking
-        ? {
-          previousDistanceAlongKm: this.state.distanceAlongKm,
-          maxBacktrackKm: 0.008,
-          maxAdvanceKm,
-          headingDeg: matchingHeading,
-        }
-        : undefined,
-    );
-    const boundedDistanceAlongKm = (
-      this.state.tracking && Number.isFinite(maxAdvanceKm)
-    ) ? Math.min(maxAdvanceKm, projection.distanceAlongKm) : projection.distanceAlongKm;
-    const stableDistanceAlongKm = this.state.tracking
-      ? Math.max(this.state.distanceAlongKm, boundedDistanceAlongKm)
-      : boundedDistanceAlongKm;
-    const stableProjection = stableDistanceAlongKm === projection.distanceAlongKm
-      ? projection
-      : {
-        ...projection,
-        distanceAlongKm: stableDistanceAlongKm,
-        remainingKm: Math.max(0, route.distanceKm - stableDistanceAlongKm),
-        progress: route.distanceKm > 0
-          ? Math.min(1, stableDistanceAlongKm / route.distanceKm)
-          : 0,
-      };
-    const next = nextRouteManeuver(route, stableProjection.distanceAlongKm);
-    const onFerryLeg = isOnFerryLeg(route, stableProjection.distanceAlongKm);
-    const onTrailLeg = isOnTrailLeg(route, stableProjection.distanceAlongKm);
-    const thresholdM = Math.max(BASE_OFF_ROUTE_M, (accuracyM ?? 0) * 1.8);
-    const offRoute = !onFerryLeg && stableProjection.distanceToRouteM > thresholdM;
-    const arrivalTarget = route.finalTarget ?? this.state.target;
-    const targetDistanceM = haversineKm(fix, arrivalTarget) * 1000;
-    const arrivalThresholdM = Math.max(35, (accuracyM ?? 0) * 1.5);
-    const routeHeadingDifference = headingDifferenceDeg(
-      movementHeading,
-      stableProjection.segmentBearingDeg,
-    );
-    const wrongWaySample = (
-      !recoveredFromGpsLoss
-      && !onFerryLeg
-      && !onTrailLeg
-      && !offRoute
-      && movementDistanceM >= minimumMovementM
-      && routeHeadingDifference != null
-      && routeHeadingDifference >= WRONG_WAY_HEADING_DEG
-    );
+    });
+    if (result.ignored) return;
 
-    if (wrongWaySample) {
-      this.wrongWaySamples += 1;
-      this.wrongWayDistanceM += movementDistanceM;
-    } else if (movementHeading != null) {
-      this.wrongWaySamples = 0;
-      this.wrongWayDistanceM = 0;
-    }
-    if (recoveredFromGpsLoss) {
-      this.offRouteSamples = 0;
-      this.wrongWaySamples = 0;
-      this.wrongWayDistanceM = 0;
-      this.speedSamples = [];
-    }
-    const wrongWay = (
-      this.wrongWaySamples >= WRONG_WAY_CONFIRM_FIXES
-      && this.wrongWayDistanceM >= (WRONG_WAY_DISTANCE_M[this.state.mode] ?? WRONG_WAY_DISTANCE_M.walk)
-    );
-    const arrived = !wrongWay
-      && stableProjection.remainingKm <= 0.08
-      && targetDistanceM <= arrivalThresholdM;
-    const liveSpeedMps = this.state.tracking && !onFerryLeg && !onTrailLeg
-      ? this.recordSpeedEstimate(fix.speed)
-      : null;
-    const completedStopCount = route.type === 'multi-stop-journey'
-      ? completedMultiStopCount(
-        route,
-        stableProjection.distanceAlongKm,
-        this.state.completedStopCount,
-      )
-      : this.state.completedStopCount;
-    const completedStopChanged = completedStopCount !== this.state.completedStopCount;
-
-    if (offRoute && this.state.tracking && !arrived) {
-      this.offRouteSamples += 1;
-    } else {
-      this.offRouteSamples = 0;
-    }
-    if (this.state.tracking && !offRoute && !wrongWay) {
-      this.lastConfirmedRouteDistanceKm = stableProjection.distanceAlongKm;
-    }
-
-    this.lastAcceptedFix = fix;
-    this.gpsLost = false;
+    this.applyNavigationEvidence(result.evidence);
     this.setState({
-      fix,
-      accuracyM,
-      progressPct: Math.round(stableProjection.progress * 100),
-      distanceAlongKm: stableProjection.distanceAlongKm,
-      remainingKm: stableProjection.remainingKm,
-      remainingMin: route.type === 'ferry-journey'
-        ? remainingFerryJourneyDurationMin(route, stableProjection.distanceAlongKm)
-        : route.type === 'road-trail-journey'
-        ? remainingRoadTrailDurationMin(route, stableProjection.distanceAlongKm, liveSpeedMps)
-        : route.type === 'multi-stop-journey'
-        ? remainingMultiStopDurationMin(route, stableProjection.distanceAlongKm)
-        : remainingDurationMin(route, stableProjection.remainingKm, liveSpeedMps),
-      usingLiveEta: (
-        route.type !== 'ferry-journey'
-        && route.type !== 'multi-stop-journey'
-        && !onTrailLeg
-        && liveSpeedMps != null
-      ),
-      offRouteM: stableProjection.distanceToRouteM,
-      nextManeuver: next.maneuver,
-      distanceToNextManeuverKm: next.distanceKm,
-      routePois: placesAlongRoute(route, this.state.offlinePois, stableProjection.distanceAlongKm),
-      completedStopCount,
-      journeyPhase: route.type === 'ferry-journey'
-        ? (onFerryLeg ? 'ferry' : 'road')
-        : route.type === 'road-trail-journey'
-        ? (onTrailLeg ? 'trail' : 'road')
-        : route.type === 'multi-stop-journey'
-        ? (onFerryLeg ? 'ferry' : 'road')
-        : null,
-      wrongWay,
-      arrived,
-      gpsError: null,
+      ...result.patch,
+      routePois: Number.isFinite(result.patch.distanceAlongKm)
+        ? placesAlongRoute(
+          this.state.route,
+          this.state.offlinePois,
+          result.patch.distanceAlongKm,
+        )
+        : this.state.routePois,
     });
 
-    if (completedStopChanged) {
-      void this.persistMultiStopSession(completedStopCount);
+    if (result.completedStopChanged) {
+      if (this.state.tracking) void this.persistActiveNavigationSession();
+      else void this.persistMultiStopSession(this.state.completedStopCount);
     }
 
-    if (this.state.tracking && !offRoute && !wrongWay) {
-      this.announceGuidance(next.maneuver, next.distanceKm);
+    if (result.guidance) {
+      this.announceGuidance(result.guidance.maneuver, result.guidance.distanceKm);
+    } else if (this.state.tracking) {
+      void this.persistActiveNavigationSession();
     }
 
-    if (arrived) {
+    if (result.arrived) {
       this.stopLocationWatch();
-      this.setState({ tracking: false, rerouting: false });
-      void this.clearPersistedMultiStopSession();
+      this.backgroundNavigationActive = false;
+      void this.locationService?.stopBackgroundNavigation?.();
+      void this.clearPersistedNavigationSession();
+      this.activeSessionId = null;
+      this.activeSessionStartedAt = null;
+      this.setState({
+        tracking: false,
+        rerouting: false,
+        backgroundNavigation: false,
+      });
       return;
     }
 
-    const rerouteConfirmed = (
-      (!onTrailLeg && offRoute && this.offRouteSamples >= OFF_ROUTE_CONFIRM_FIXES)
-      || wrongWay
-    );
-    const eventTimeMs = fixTimestamp ?? Date.now();
+    const eventTimeMs = Number.isFinite(fix?.timestamp) ? fix.timestamp : Date.now();
     const cooldownElapsed = this.lastRerouteAtMs == null
       || eventTimeMs - this.lastRerouteAtMs >= REROUTE_COOLDOWN_MS;
     if (
-      rerouteConfirmed
+      result.rerouteRecommended
       && cooldownElapsed
       && this.state.tracking
       && !this.state.rerouting
@@ -1095,8 +1197,7 @@ export class NavigationViewModel extends ViewModel {
   };
 
   clearRoute = () => {
-    this.stopLocationWatch();
-    this.stopSpeech();
+    this.stopNavigation();
     this.resetSpokenGuidance();
     this.resetNavigationEvidence();
     this.setState({
@@ -1123,6 +1224,10 @@ export class NavigationViewModel extends ViewModel {
       journeyPhase: null,
       wrongWay: false,
       arrived: false,
+      backgroundPermission: 'unknown',
+      notificationPermission: 'unknown',
+      backgroundNavigation: false,
+      backgroundWarning: null,
       gpsError: null,
       error: null,
     });
@@ -1130,14 +1235,12 @@ export class NavigationViewModel extends ViewModel {
 
   openTrail = () => {
     if (!this.state.trailId || !this.nav.onOpenTrail) return;
-    this.stopLocationWatch();
-    this.stopSpeech();
+    this.stopNavigation();
     this.nav.onOpenTrail(this.state.trailId);
   };
 
   back = () => {
-    this.stopLocationWatch();
-    this.stopSpeech();
+    this.stopNavigation();
     this.nav.onBack();
   };
 }

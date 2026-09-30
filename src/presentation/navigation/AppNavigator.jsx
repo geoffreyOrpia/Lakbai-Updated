@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, BackHandler, Image, StyleSheet, Text, View } from 'react-native';
+import { navigationRequestFromSession } from "../../data/repositories/navigationSessionRepository.jsx";
 import { colors, spacing } from "../../theme.jsx";
 import { getContainer } from "../di/container.jsx";
 import { useViewModel } from "../viewmodel/useViewModel.jsx";
@@ -42,6 +43,7 @@ export const AppNavigator = () => {
   const tripBackHandler = useRef(null);
   const [stack, setStack] = useState([]);
   const nextRouteId = useRef(0);
+  const activeNavigationRestoreChecked = useRef(false);
   const [exploreQuery, setExploreQuery] = useState('');
   const [tripDraft, setTripDraft] = useState(null);
   const restartAppSetup = async () => {
@@ -73,6 +75,29 @@ export const AppNavigator = () => {
     });
     return () => subscription.remove();
   }, [stack.length, tab]);
+  useEffect(() => {
+    if (session.state.phase !== 'main' || activeNavigationRestoreChecked.current) return undefined;
+    activeNavigationRestoreChecked.current = true;
+    let cancelled = false;
+    void container.routingDeps.navigationSessionRepository?.getActiveSession()
+      .then(saved => {
+        if (cancelled) return;
+        const navigation = navigationRequestFromSession(saved);
+        if (!navigation) return;
+        const entry = {
+          name: 'navigation',
+          ...navigation,
+          screenKey: ++nextRouteId.current,
+        };
+        setStack(current => current.length ? current : [entry]);
+      })
+      .catch(() => {
+        // A recovery failure must not block the normal Home experience.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [container.routingDeps.navigationSessionRepository, session.state.phase]);
   if (session.state.phase === 'restoring') {
     return <View
         accessibilityRole="progressbar"

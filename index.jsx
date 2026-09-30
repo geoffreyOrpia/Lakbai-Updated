@@ -1,4 +1,5 @@
 import { registerRootComponent } from 'expo';
+import "./src/data/services/backgroundNavigationTask.jsx";
 import App from "./App.jsx";
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);

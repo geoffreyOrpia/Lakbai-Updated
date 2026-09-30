@@ -13,6 +13,9 @@
       "supportsTablet": true
     },
     "android": {
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#F9E7C5",
         "foregroundImage": "./assets/lakbai-icon-foreground.png"
@@ -33,7 +36,9 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow LakBai to use your location for nearby places, offline routing, route progress, and navigation guidance."
+          "locationWhenInUsePermission": "Allow LakBai to use your location for nearby places, offline routing, route progress, and navigation guidance.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
         }
       ],
       [

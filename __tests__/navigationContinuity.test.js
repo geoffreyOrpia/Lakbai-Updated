@@ -85,7 +85,54 @@ describe('navigation continuity', () => {
     expect(tree.root.findByType('BottomNav').props.active).toBe('home');
     expect(tree.root.findAllByType('NavigationScreen')).toHaveLength(0);
     expect(tree.root.findAllByType('HomeScreen')).toHaveLength(1);
-    expect(mockGetActiveSession).not.toHaveBeenCalled();
+    expect(mockGetActiveSession).toHaveBeenCalledTimes(1);
+  });
+
+  test('reopens a valid active background-navigation session on the live route', async () => {
+    act(() => tree.unmount());
+    mockGetActiveSession.mockResolvedValueOnce({
+      version: 2,
+      sessionId: 'nav-live-1',
+      status: 'active',
+      startedAt: Date.now() - 60_000,
+      savedAt: Date.now(),
+      request: {
+        destinationId: 'samal',
+        destinationName: 'Samal Island',
+        target: { label: 'Hagimit Falls', lat: 7.11, lng: 125.72 },
+        multiStops: [],
+        mode: 'drive',
+        preference: 'direct',
+      },
+      navigationRoute: {
+        ok: true,
+        distanceKm: 4,
+        durationMin: 10,
+        maneuvers: [],
+      },
+      progress: {
+        distanceAlongKm: 1,
+        completedStopCount: 0,
+        remainingKm: 3,
+        remainingMin: 8,
+      },
+      evidence: {},
+      voiceGuidance: true,
+      backgroundEnabled: true,
+    });
+
+    await act(async () => {
+      tree = create(<AppNavigator />);
+      await Promise.resolve();
+    });
+
+    expect(tree.root.findAllByType('NavigationScreen')).toHaveLength(1);
+    expect(tree.root.findByType('NavigationScreen').props.viewModel.state).toMatchObject({
+      destinationId: 'samal',
+      tracking: true,
+      backgroundNavigation: true,
+      remainingKm: 3,
+    });
   });
 
   test('device Back returns from the trip editor before leaving Trips', () => {

@@ -118,6 +118,15 @@ export const NavigationScreen = ({ viewModel }) => {
 
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
       {state.gpsError ? <InfoBanner tone="warn" text={state.gpsError} /> : null}
+      {state.backgroundWarning ? <InfoBanner tone="warn" text={state.backgroundWarning} /> : null}
+      {state.route && !state.preview && !state.tracking && !state.arrived ? <InfoBanner
+        tone="info"
+        text="Start directions to keep LakBai navigation active when you switch apps or lock your Android phone. Android may ask for background location access."
+      /> : null}
+      {state.tracking && state.backgroundNavigation ? <InfoBanner
+        tone="info"
+        text="Background navigation is active. You can switch apps or lock your screen; LakBai will keep route progress and voice guidance running."
+      /> : null}
       {state.resumedSession && state.multiStops.length ? <InfoBanner
         tone="info"
         text={`Resumed this saved itinerary at stop ${Math.min(state.completedStopCount + 1, state.multiStops.length)} of ${state.multiStops.length}. Finding your location to continue your trip.`}

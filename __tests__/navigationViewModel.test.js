@@ -366,6 +366,83 @@ const createFerryVm = () => {
 };
 
 describe('NavigationViewModel', () => {
+  test('uses the Android background service instead of a duplicate foreground watch when permission is granted', async () => {
+    const { vm, locationService, routingDeps } = createVm();
+    const navigationSessionRepository = {
+      saveActiveSession: jest.fn().mockResolvedValue(undefined),
+      clearActiveSession: jest.fn().mockResolvedValue(undefined),
+    };
+    routingDeps.navigationSessionRepository = navigationSessionRepository;
+    locationService.requestBackgroundNavigationPermissions = jest.fn().mockResolvedValue(true);
+    locationService.requestNavigationNotificationPermission = jest.fn().mockResolvedValue(true);
+    locationService.startBackgroundNavigation = jest.fn().mockResolvedValue(true);
+    locationService.stopBackgroundNavigation = jest.fn().mockResolvedValue(undefined);
+
+    await vm.load();
+    await vm.startFromGps();
+    locationService.watchFix.mockClear();
+    await vm.startNavigation();
+
+    expect(locationService.requestBackgroundNavigationPermissions).toHaveBeenCalledTimes(1);
+    expect(locationService.requestNavigationNotificationPermission).toHaveBeenCalledTimes(1);
+    expect(locationService.startBackgroundNavigation).toHaveBeenCalledWith({
+      destinationName: 'Panabo Mangrove Park',
+    });
+    expect(locationService.watchFix).not.toHaveBeenCalled();
+    expect(vm.state.backgroundNavigation).toBe(true);
+    expect(navigationSessionRepository.saveActiveSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        version: 2,
+        status: 'active',
+        backgroundEnabled: true,
+      }),
+    );
+
+    vm.stopNavigation();
+    await Promise.resolve();
+    expect(locationService.stopBackgroundNavigation).toHaveBeenCalled();
+    expect(navigationSessionRepository.clearActiveSession).toHaveBeenCalled();
+  });
+
+  test('keeps background navigation running when Android notification permission is denied', async () => {
+    const { vm, locationService, routingDeps } = createVm();
+    routingDeps.navigationSessionRepository = {
+      saveActiveSession: jest.fn().mockResolvedValue(undefined),
+      clearActiveSession: jest.fn().mockResolvedValue(undefined),
+    };
+    locationService.requestBackgroundNavigationPermissions = jest.fn().mockResolvedValue(true);
+    locationService.requestNavigationNotificationPermission = jest.fn().mockResolvedValue(false);
+    locationService.startBackgroundNavigation = jest.fn().mockResolvedValue(true);
+
+    await vm.load();
+    await vm.startFromGps();
+    await vm.startNavigation();
+
+    expect(vm.state.backgroundNavigation).toBe(true);
+    expect(vm.state.notificationPermission).toBe('denied');
+    expect(vm.state.backgroundWarning).toContain('active-apps area');
+  });
+
+  test('falls back to the foreground GPS watch when background permission is denied', async () => {
+    const { vm, locationService, routingDeps } = createVm();
+    routingDeps.navigationSessionRepository = {
+      saveActiveSession: jest.fn().mockResolvedValue(undefined),
+      clearActiveSession: jest.fn().mockResolvedValue(undefined),
+    };
+    locationService.requestBackgroundNavigationPermissions = jest.fn().mockResolvedValue(false);
+    locationService.startBackgroundNavigation = jest.fn();
+
+    await vm.load();
+    await vm.startFromGps();
+    locationService.watchFix.mockClear();
+    await vm.startNavigation();
+
+    expect(locationService.startBackgroundNavigation).not.toHaveBeenCalled();
+    expect(locationService.watchFix).toHaveBeenCalledTimes(1);
+    expect(vm.state.backgroundNavigation).toBe(false);
+    expect(vm.state.backgroundWarning).toContain('not allowed');
+  });
+
   test.each(['permission', 'fix', 'watch'])('a stopped %s request cannot restart location tracking', async stage => {
     const { vm, locationService, speechService } = createVm();
     await vm.load();
@@ -382,7 +459,13 @@ describe('NavigationViewModel', () => {
       locationService.watchFix.mockReturnValue(waiting);
     }
     const start = vm.startNavigation();
-    await Promise.resolve();
+    if (stage === 'watch') {
+      for (let attempt = 0; attempt < 10 && !locationService.watchFix.mock.calls.length; attempt += 1) {
+        await Promise.resolve();
+      }
+    } else {
+      await Promise.resolve();
+    }
     vm.stopNavigation();
     speechService.speak.mockClear();
     finish(stage === 'permission' ? true : stage === 'fix' ? { lat: 7.3, lng: 125.68, accuracy: 8 } : removeLateWatch);
@@ -415,8 +498,12 @@ describe('NavigationViewModel', () => {
     expect(vm.state.completedStopCount).toBe(1);
     expect(navigationSessionRepository.saveActiveSession).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        completedStopCount: 1,
-        route: expect.objectContaining({
+        version: 2,
+        status: 'active',
+        progress: expect.objectContaining({
+          completedStopCount: 1,
+        }),
+        request: expect.objectContaining({
           tripId: 'trip-test',
           multiStops: expect.arrayContaining([
             expect.objectContaining({ name: 'Stop one' }),
