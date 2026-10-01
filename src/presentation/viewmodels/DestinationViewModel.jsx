@@ -1,4 +1,4 @@
-import { loadOfflineBundleStatus, loadPackForViewing, loadPackLibraryState, removePackFromLibrary, savePackToLibrary } from "../../domain/usecases/destinationPacks.jsx";
+import { loadDestinationPackState, loadOfflineBundleStatus, removePackFromLibrary, savePackToLibrary } from "../../domain/usecases/destinationPacks.jsx";
 import { userMessage } from "../../core/errors/appError.jsx";
 import { openDirectionsToPlace } from "../../domain/usecases/directions.jsx";
 import { isFavoriteDestination, toggleDestinationFavorite } from "../../domain/usecases/favorites.jsx";
@@ -33,23 +33,17 @@ export class DestinationViewModel extends ViewModel {
       error: null
     });
     try {
-      const [{
-        pack,
-        source
-      }, favorite, libraryState] = await Promise.all([
-        loadPackForViewing(this.deps, this.destinationId),
+      const [destinationState, favorite] = await Promise.all([
+        loadDestinationPackState(this.deps, this.destinationId),
         isFavoriteDestination(this.deps, this.destinationId),
-        loadPackLibraryState(this.deps, this.destinationId),
       ]);
-      const offlineBundle = libraryState.saved
-        ? await loadOfflineBundleStatus(this.deps, this.destinationId)
-        : null;
+      const { pack, source, saved, savedVersion, updateAvailable, offlineBundle } = destinationState;
       this.setState({
         pack,
         source,
-        saved: libraryState.saved,
-        savedVersion: libraryState.savedVersion,
-        updateAvailable: libraryState.updateAvailable,
+        saved,
+        savedVersion,
+        updateAvailable,
         offlineBundle,
         favorite,
         error: pack || source === 'bundled' ? null : 'This destination guide is not available in this version of LakBai yet.'

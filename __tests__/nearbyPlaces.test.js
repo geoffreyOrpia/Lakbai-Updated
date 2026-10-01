@@ -41,13 +41,13 @@ describe('Nearby Places', () => {
   test('loads only packs represented by local Library metadata', async () => {
     const packRepository = {
       listSavedMeta: jest.fn().mockResolvedValue([{ packId: 'samal' }]),
-      getSavedPack: jest.fn().mockResolvedValue(samal),
+      getBundledPack: jest.fn().mockResolvedValue(samal),
     };
 
     const places = await loadNearbySavedPlaces({ packRepository }, { lat: 7, lng: 125 });
 
-    expect(packRepository.getSavedPack).toHaveBeenCalledTimes(1);
-    expect(packRepository.getSavedPack).toHaveBeenCalledWith('samal');
+    expect(packRepository.getBundledPack).toHaveBeenCalledTimes(1);
+    expect(packRepository.getBundledPack).toHaveBeenCalledWith('samal');
     expect(places).toHaveLength(3);
     expect(places.some(place => place.kind === 'destination')).toBe(true);
   });

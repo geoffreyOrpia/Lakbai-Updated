@@ -81,12 +81,14 @@ test('existing installations receive the detailed map without reusing or removin
   const oldUri = '/documents/lakbaylokal/maps/davao-del-norte.pmtiles';
   mockFiles.set(oldUri, 'old-map');
   const store = createOfflinePackStorage();
-  const [a, b] = await Promise.all([store.getBasemapStatus(), store.getBasemapStatus()]);
+  expect(await store.getBasemapStatus()).toBeNull();
+  const [a, b] = await Promise.all([store.ensureBasemapReady(), store.ensureBasemapReady()]);
   expect(a).toEqual({ uri: '/documents/lakbaylokal/maps/davao-del-norte-detailed.pmtiles', sizeBytes: 12 });
   expect(b).toEqual(a);
+  expect(await store.getBasemapStatus()).toEqual(a);
   expect(mockFiles.get(oldUri)).toBe('old-map');
   mockDownloadFails = true;
-  expect(await store.getBasemapStatus()).toEqual(a);
+  expect(await store.ensureBasemapReady()).toEqual(a);
 });
 
 test('an incomplete map copy is repaired; a failed preparation preserves the previous archive', async () => {
@@ -97,9 +99,10 @@ test('an incomplete map copy is repaired; a failed preparation preserves the pre
   mockFiles.set(newUri, 'partial');
   const store = createOfflinePackStorage();
   mockDownloadFails = true;
-  expect(await store.getBasemapStatus()).toBeNull();
+  expect(await store.ensureBasemapReady()).toBeNull();
   expect(mockFiles.get(oldUri)).toBe('old-map');
   mockDownloadFails = false;
+  expect((await store.ensureBasemapReady()).uri).toBe(newUri);
   expect((await store.getBasemapStatus()).uri).toBe(newUri);
   expect(mockFiles.get(newUri)).toBe('detailed-map');
 });

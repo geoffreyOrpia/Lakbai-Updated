@@ -3,7 +3,15 @@ import { packs } from "./packs.jsx";
 import { routingRegionFor, ROUTING_MANIFEST } from "../../assets/routingRegionAssets.jsx";
 import { verificationForDestination } from "./contentVerification.jsx";
 const REGION_PROVINCE = 'Davao del Norte';
-const sizeInKb = value => Math.max(1, Math.round(JSON.stringify(value).length / 1024));
+// Precomputed from the packaged pack payloads. Keep this generated metadata in
+// sync when bundled content changes instead of serializing every pack at runtime.
+const PACK_SIZE_KB = {
+  samal: 5,
+  'hagimit-falls': 3,
+  'monfort-bat-sanctuary': 3,
+  tagum: 4,
+  panabo: 5,
+};
 const regionDestinations = destinations.filter(destination => destination.province === REGION_PROVINCE);
 const regionPacks = packs
   .filter(pack => regionDestinations.some(destination => destination.id === pack.id))
@@ -52,7 +60,7 @@ export const seedDestinations = regionDestinations.map(destination => {
     } } : {}),
     verification: verificationForDestination(destination.id),
     version: pack?.version ?? 0,
-    sizeKb: pack ? sizeInKb(pack) : null,
+    sizeKb: pack ? (PACK_SIZE_KB[pack.id] ?? null) : null,
     spotsCount: pack?.spots.length ?? null,
     trailsCount: pack?.trails.length ?? null,
     routeSuggestionsCount: pack?.routeSuggestions.length ?? null,
@@ -65,7 +73,7 @@ export const seedPacks = regionPacks.flatMap(pack => {
   if (!destination) return [];
   return [{
     ...pack,
-    sizeKb: sizeInKb(pack),
+    sizeKb: PACK_SIZE_KB[pack.id] ?? 1,
     destination
   }];
 });

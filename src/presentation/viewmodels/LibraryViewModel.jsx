@@ -1,6 +1,5 @@
 import {
   listDestinationsWithState,
-  loadOfflineBundleStatus,
   removePackFromLibrary,
   savePackToLibrary
 } from "../../domain/usecases/destinationPacks.jsx";
@@ -31,14 +30,6 @@ export class LibraryViewModel extends ViewModel {
   get available() {
     return this.state.items.filter(item => item.destination.status === 'available' && !item.saved);
   }
-  get totalOfflineSizeBytes() {
-    const packBytes = this.saved.reduce((total, item) => total + (item.offlineBundle?.sizeBytes ?? 0), 0);
-    const sharedBasemapBytes = this.saved.reduce(
-      (largest, item) => Math.max(largest, item.offlineBundle?.basemapSizeBytes ?? 0),
-      0,
-    );
-    return packBytes + sharedBasemapBytes;
-  }
   load = async () => {
     this.setState({
       loading: true
@@ -47,14 +38,8 @@ export class LibraryViewModel extends ViewModel {
       const {
         items
       } = await listDestinationsWithState(this.deps);
-      const enriched = await Promise.all(items.map(async item => ({
-        ...item,
-        offlineBundle: item.saved
-          ? await loadOfflineBundleStatus(this.deps, item.destination.id)
-          : null,
-      })));
       this.setState({
-        items: enriched,
+        items,
         error: null
       });
     } catch (error) {
@@ -73,12 +58,10 @@ export class LibraryViewModel extends ViewModel {
     });
     try {
       const pack = await savePackToLibrary(this.deps, packId);
-      const offlineBundle = await loadOfflineBundleStatus(this.deps, packId);
       this.patchItem(packId, {
         saved: true,
         savedVersion: pack.version,
-        updateAvailable: false,
-        offlineBundle
+        updateAvailable: false
       });
       return {
         ok: true,
@@ -101,12 +84,10 @@ export class LibraryViewModel extends ViewModel {
     });
     try {
       const pack = await savePackToLibrary(this.deps, packId);
-      const offlineBundle = await loadOfflineBundleStatus(this.deps, packId);
       this.patchItem(packId, {
         saved: true,
         savedVersion: pack.version,
-        updateAvailable: false,
-        offlineBundle
+        updateAvailable: false
       });
       return {
         ok: true,
@@ -150,8 +131,7 @@ export class LibraryViewModel extends ViewModel {
       this.patchItem(packId, {
         saved: false,
         savedVersion: null,
-        updateAvailable: false,
-        offlineBundle: null
+        updateAvailable: false
       });
       return {
         ok: true,

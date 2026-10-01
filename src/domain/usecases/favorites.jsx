@@ -1,3 +1,5 @@
+import { markDataChanged } from "../../core/state/dataInvalidation.jsx";
+
 export const listFavoriteDestinationIds = async deps => (
   deps.favoriteRepository?.listFavoriteIds?.() ?? []
 );
@@ -11,6 +13,7 @@ export const setDestinationFavorite = async (deps, destinationId, favorite) => {
     throw new Error('Favorites storage is unavailable.');
   }
   await deps.favoriteRepository.setFavorite(destinationId, favorite);
+  markDataChanged('favorites');
   return favorite;
 };
 

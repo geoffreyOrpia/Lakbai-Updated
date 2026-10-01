@@ -28,10 +28,14 @@ export class SafetyViewModel extends ViewModel {
     });
     try {
       const meta = await this.packRepository.listSavedMeta().catch(() => []);
+      const packs = await Promise.all(meta.map(entry => (
+        this.packRepository.getBundledPack(entry.packId).catch(() => null)
+      )));
       const destinations = [];
 
-      for (const entry of meta) {
-        const pack = await this.packRepository.getSavedPack(entry.packId).catch(() => null);
+      for (let index = 0; index < meta.length; index += 1) {
+        const entry = meta[index];
+        const pack = packs[index];
         const reminders = (pack?.safety?.reminders ?? [])
           .map(reminder => String(reminder).trim())
           .filter(Boolean);

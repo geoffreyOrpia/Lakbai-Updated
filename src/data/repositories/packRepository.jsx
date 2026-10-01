@@ -16,7 +16,8 @@ export class PackRepositoryImpl {
     if (!saved) return null;
     const pack = await this.content.get(id);
     if (pack && this.offlineStorage) {
-      const status = await this.offlineStorage.getStatus(id);
+      const status = await (this.offlineStorage.ensureReady?.(id)
+        ?? this.offlineStorage.getStatus(id));
       if (!status) {
         await this.offlineStorage.savePack(pack);
       }
@@ -60,7 +61,17 @@ export class PackRepositoryImpl {
   getOfflineBundleStatus = async id => {
     return this.offlineStorage?.getStatus(id) ?? null;
   };
+  ensureOfflineBundleReady = async id => {
+    return this.offlineStorage?.ensureReady?.(id)
+      ?? this.offlineStorage?.getStatus(id)
+      ?? null;
+  };
   getOfflineBasemapStatus = async () => {
     return this.offlineStorage?.getBasemapStatus?.() ?? null;
+  };
+  ensureOfflineBasemapReady = async () => {
+    return this.offlineStorage?.ensureBasemapReady?.()
+      ?? this.offlineStorage?.getBasemapStatus?.()
+      ?? null;
   };
 }

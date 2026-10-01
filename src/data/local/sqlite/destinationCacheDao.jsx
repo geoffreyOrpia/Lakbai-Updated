@@ -1,4 +1,4 @@
-import { getDatabase } from "./database.jsx";
+import { ensureBundledContent, getDatabase } from "./database.jsx";
 export const createDestinationCacheDao = () => {
   return {
     replaceAll: async destinations => {
@@ -12,12 +12,12 @@ export const createDestinationCacheDao = () => {
       });
     },
     listAll: async () => {
-      const db = await getDatabase();
+      const db = await ensureBundledContent();
       const rows = await db.getAllAsync('SELECT * FROM cached_destinations');
       return rows.map(row => parseDestination(row.payload_json)).filter(destination => destination !== null);
     },
     get: async id => {
-      const db = await getDatabase();
+      const db = await ensureBundledContent();
       const row = await db.getFirstAsync('SELECT * FROM cached_destinations WHERE id = ?', id);
       return row ? parseDestination(row.payload_json) : null;
     }

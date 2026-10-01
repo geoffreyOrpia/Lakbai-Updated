@@ -87,11 +87,12 @@ const statusFor = packId => {
   if (!mapFile.exists || !contextMapFile.exists || !manifestFile.exists) return null;
   const routingGraphFile = new File(directory, 'routing.graph.json');
   const region = routingRegionFor(packId);
-  let sharedRouting = sharedRoutingStorage.status(region);
+  let sharedRouting = sharedRoutingStorage.peek?.(region) ?? sharedRoutingStorage.status(region);
   if (!sharedRouting) {
     try {
       const reference = JSON.parse(manifestFile.textSync()).sharedRouting;
-      if (reference) sharedRouting = sharedRoutingStorage.status(region, reference);
+      if (reference) sharedRouting = sharedRoutingStorage.peek?.(region, reference)
+        ?? sharedRoutingStorage.status(region, reference);
     } catch { /* Keep legacy map files available when a manifest is damaged. */ }
   }
   const basemap = sharedBasemapStatus();
@@ -161,9 +162,9 @@ const writePackDirectory = async (pack, directory) => {
 
 export const createOfflinePackStorage = () => ({
   getBasemapStatus: async () => {
-    await ensureSharedBasemap();
     return sharedBasemapStatus();
   },
+  ensureBasemapReady: async () => ensureSharedBasemap(),
   savePack: async pack => {
     await ensureSharedBasemap();
     recoverPack(pack.id);
@@ -193,6 +194,10 @@ export const createOfflinePackStorage = () => ({
     }
   },
   getStatus: async packId => {
+    recoverPack(packId);
+    return statusFor(packId);
+  },
+  ensureReady: async packId => {
     await ensureSharedBasemap();
     recoverPack(packId);
     if (packDirectory(packId).exists && routingRegionFor(packId)) {

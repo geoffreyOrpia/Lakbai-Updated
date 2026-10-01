@@ -1,12 +1,12 @@
 import * as SQLite from 'expo-sqlite';
-import { seedDestinations, seedPacks } from "../seed/catalog.jsx";
 
 // Single SQLite connection for the whole app with versioned migrations.
 // PRAGMA user_version drives the migration ladder.
 
-const BUNDLED_CATALOG_VERSION = '2026-09-28.4';
+const BUNDLED_CATALOG_VERSION = '2026-09-28.5';
 
 let databasePromise = null;
+let bundledContentPromise = null;
 export const getDatabase = () => {
   if (!databasePromise) {
     databasePromise = openDatabase().catch(error => {
@@ -33,7 +33,21 @@ const openDatabase = async () => {
   if (currentVersion < 4) {
     await migrateToV4(db);
   }
-  await seedBundledContent(db);
+  if (currentVersion < 5) {
+    await migrateToV5(db);
+  }
+  return db;
+};
+
+export const ensureBundledContent = async () => {
+  const db = await getDatabase();
+  if (!bundledContentPromise) {
+    bundledContentPromise = seedBundledContent(db).catch(error => {
+      bundledContentPromise = null;
+      throw error;
+    });
+  }
+  await bundledContentPromise;
   return db;
 };
 const migrateToV1 = async db => {
@@ -131,10 +145,31 @@ const migrateToV4 = async db => {
     PRAGMA user_version = 4;
   `);
 };
+const migrateToV5 = async db => {
+  const columns = await db.getAllAsync('PRAGMA table_info(bundled_packs)');
+  const existing = new Set(columns.map(column => column.name));
+  const additions = [
+    ['name', "TEXT NOT NULL DEFAULT ''"],
+    ['municipality', "TEXT NOT NULL DEFAULT ''"],
+    ['category', "TEXT NOT NULL DEFAULT ''"],
+    ['trails_count', 'INTEGER NOT NULL DEFAULT 0'],
+    ['route_suggestions_count', 'INTEGER NOT NULL DEFAULT 0'],
+    ['spots_count', 'INTEGER NOT NULL DEFAULT 0'],
+    ['withheld_trails_count', 'INTEGER NOT NULL DEFAULT 0'],
+  ];
+  for (const [name, definition] of additions) {
+    if (existing.has(name)) continue;
+    await db.execAsync(`ALTER TABLE bundled_packs ADD COLUMN ${name} ${definition}`);
+  }
+  await db.execAsync('PRAGMA user_version = 5');
+};
 
 const seedBundledContent = async db => {
   const catalogVersion = await db.getFirstAsync("SELECT value FROM app_meta WHERE key = 'bundled_catalog_version'");
   if (catalogVersion?.value === BUNDLED_CATALOG_VERSION) return;
+  // Load packaged tourism content only when a catalog reader actually needs it.
+  // This keeps session/preferences restoration off the catalog-seeding critical path.
+  const { seedDestinations, seedPacks } = require("../seed/catalog.jsx");
 
   await db.withTransactionAsync(async () => {
     // Regenerate bundled catalog tables only when packaged content changes.
@@ -147,8 +182,22 @@ const seedBundledContent = async db => {
     }
     for (const pack of seedPacks) {
       await db.runAsync(`INSERT OR REPLACE INTO bundled_packs
-          (pack_id, payload_json, version, updated_at, size_kb)
-         VALUES (?, ?, ?, ?, ?)`, pack.id, JSON.stringify(pack), pack.version, pack.updatedAt, pack.sizeKb);
+          (pack_id, payload_json, version, updated_at, size_kb, name, municipality, category,
+           trails_count, route_suggestions_count, spots_count, withheld_trails_count)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        pack.id,
+        JSON.stringify(pack),
+        pack.version,
+        pack.updatedAt,
+        pack.sizeKb,
+        pack.destination.name,
+        pack.destination.municipality,
+        pack.destination.category,
+        pack.trails.length,
+        pack.routeSuggestions.length,
+        pack.spots.length,
+        pack.withheldTrailsCount,
+      );
     }
     await db.runAsync(`INSERT OR REPLACE INTO app_meta (key, value) VALUES ('bundled_catalog_version', ?)`, BUNDLED_CATALOG_VERSION);
   });

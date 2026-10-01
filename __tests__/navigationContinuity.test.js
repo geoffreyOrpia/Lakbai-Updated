@@ -60,6 +60,7 @@ for (const name of ['Destination', 'Nearby', 'Navigation', 'Explore', 'Home', 'L
 jest.mock('../src/presentation/views/components/BottomNav.jsx', () => ({ BottomNav: 'BottomNav' }));
 
 const { AppNavigator } = require('../src/presentation/navigation/AppNavigator.jsx');
+const { markDataChanged } = require('../src/core/state/dataInvalidation.jsx');
 global.IS_REACT_ACT_ENVIRONMENT = true;
 
 describe('navigation continuity', () => {
@@ -193,7 +194,14 @@ describe('navigation continuity', () => {
     act(() => guide.back());
     expect(tree.root.findByType('NearbyScreen').props.viewModel).toBe(nearby);
     expect(nearby.state.query).toBe('Babak');
+    expect(nearby.refreshSavedPlaces).not.toHaveBeenCalled();
+
+    act(() => nearby.openDestination('samal'));
+    const secondGuide = tree.root.findByType('DestinationScreen').props.viewModel;
+    act(() => markDataChanged('library'));
+    act(() => secondGuide.back());
     expect(nearby.refreshSavedPlaces).toHaveBeenCalledTimes(1);
+
     act(() => nearby.back());
     expect(tree.root.findAllByType('NearbyScreen')).toHaveLength(0);
     act(() => tree.root.findByType('HomeScreen').props.viewModel.openNearby());
@@ -217,7 +225,7 @@ describe('navigation continuity', () => {
     expect(navigation.state.route).toBe(route);
   });
 
-  test('preserves search and filters through a guide visit and tab changes, refreshing on return', () => {
+  test('preserves search and filters while refreshing only after relevant data changes', () => {
     switchTab('explore');
     const explore = tree.root.findByType('ExploreScreen').props.viewModel;
     act(() => { explore.setQuery('Samal'); explore.setCategory('island'); });
@@ -228,7 +236,14 @@ describe('navigation continuity', () => {
     switchTab('explore');
     expect(tree.root.findByType('ExploreScreen').props.viewModel).toBe(explore);
     expect(explore.state).toMatchObject({ query: 'Samal', category: 'island' });
-    expect(explore.load).toHaveBeenCalledTimes(2);
+    expect(explore.load).not.toHaveBeenCalled();
+
+    act(() => tree.root.findByType('ExploreScreen').props.onOpenDestination('samal'));
+    act(() => markDataChanged('favorites'));
+    act(() => tree.root.findByType('DestinationScreen').props.viewModel.back());
+
+    expect(explore.load).toHaveBeenCalledTimes(1);
+    expect(explore.state).toMatchObject({ query: 'Samal', category: 'island' });
   });
 
   test('preserves an unfinished trip across tabs and accepts a new suggested route on an existing Trips tab', () => {

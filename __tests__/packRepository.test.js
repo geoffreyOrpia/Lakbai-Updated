@@ -25,6 +25,9 @@ const createRepository = ({
   };
   const offlineStorage = {
     getStatus: jest.fn().mockResolvedValue(offlineStatus),
+    ensureReady: jest.fn().mockResolvedValue(offlineStatus),
+    getBasemapStatus: jest.fn().mockResolvedValue(null),
+    ensureBasemapReady: jest.fn().mockResolvedValue(null),
     savePack: jest.fn().mockResolvedValue({
       mapUri: 'file:///packs/tagum/places.geojson',
     }),
@@ -67,6 +70,7 @@ describe('PackRepositoryImpl durable offline files', () => {
 
     await expect(repository.getSavedPack('tagum')).resolves.toEqual(pack);
 
+    expect(offlineStorage.ensureReady).toHaveBeenCalledWith('tagum');
     expect(offlineStorage.savePack).toHaveBeenCalledWith(pack);
   });
 
@@ -81,7 +85,21 @@ describe('PackRepositoryImpl durable offline files', () => {
 
     await repository.getSavedPack('tagum');
 
+    expect(offlineStorage.ensureReady).toHaveBeenCalledWith('tagum');
     expect(offlineStorage.savePack).not.toHaveBeenCalled();
+  });
+
+  test('status reads do not prepare pack or basemap assets', async () => {
+    const status = { mapUri: 'file:///packs/tagum/places.geojson' };
+    const { repository, offlineStorage } = createRepository({ offlineStatus: status });
+    offlineStorage.getBasemapStatus.mockResolvedValue({ uri: 'file:///maps/map.pmtiles' });
+
+    await expect(repository.getOfflineBundleStatus('tagum')).resolves.toBe(status);
+    await expect(repository.getOfflineBasemapStatus()).resolves.toEqual({ uri: 'file:///maps/map.pmtiles' });
+
+    expect(offlineStorage.getStatus).toHaveBeenCalledWith('tagum');
+    expect(offlineStorage.ensureReady).not.toHaveBeenCalled();
+    expect(offlineStorage.ensureBasemapReady).not.toHaveBeenCalled();
   });
 
   test('removing clears both SQLite state and local files', async () => {

@@ -72,6 +72,7 @@ describe('NearbyViewModel offline discovery', () => {
     const { vm } = createVm({ permission: false });
 
     await vm.load();
+    await vm.locationPromise;
     vm.setQuery('igacos');
 
     expect(vm.state.permission).toBe('denied');
@@ -86,6 +87,7 @@ describe('NearbyViewModel offline discovery', () => {
     const { vm } = createVm({ permission: true });
 
     await vm.load();
+    await vm.locationPromise;
 
     expect(vm.state.savedPackCount).toBe(0);
     expect(vm.tourismPlaces).toEqual(expect.arrayContaining([
@@ -106,6 +108,7 @@ describe('NearbyViewModel offline discovery', () => {
     });
 
     await vm.load();
+    await vm.locationPromise;
 
     expect(vm.locationService.watchFix).toHaveBeenCalledWith(
       expect.any(Function),
@@ -113,6 +116,45 @@ describe('NearbyViewModel offline discovery', () => {
       { purpose: 'discovery' },
     );
     vm.onDispose();
+  });
+
+  test('shows discovery content before permission and GPS resolution finish', async () => {
+    const { vm } = createVm({ permission: true });
+    let resolvePermission;
+    vm.locationService.requestPermissions.mockReturnValue(new Promise(resolve => {
+      resolvePermission = resolve;
+    }));
+
+    await vm.load();
+
+    expect(vm.state.loading).toBe(false);
+    expect(vm.state.permission).toBe('unknown');
+    expect(vm.tourismPlaceCount).toBe(2);
+    expect(vm.state.basemapUri).toBe('file:///maps/davao-del-norte.pmtiles');
+
+    resolvePermission(false);
+    await vm.locationPromise;
+    expect(vm.state.permission).toBe('denied');
+  });
+
+  test('shows discovery content before a missing basemap finishes installing', async () => {
+    const { vm } = createVm({ permission: false });
+    let resolveBasemap;
+    vm.destinationDeps.packRepository.getOfflineBasemapStatus.mockResolvedValue(null);
+    vm.destinationDeps.packRepository.ensureOfflineBasemapReady = jest.fn(() => new Promise(resolve => {
+      resolveBasemap = resolve;
+    }));
+
+    await vm.load();
+
+    expect(vm.state.loading).toBe(false);
+    expect(vm.tourismPlaceCount).toBe(2);
+    expect(vm.state.basemapUri).toBeNull();
+    expect(vm.destinationDeps.packRepository.ensureOfflineBasemapReady).toHaveBeenCalledTimes(1);
+
+    resolveBasemap({ uri: 'file:///maps/davao-del-norte.pmtiles' });
+    await vm.basemapPromise;
+    expect(vm.state.basemapUri).toBe('file:///maps/davao-del-norte.pmtiles');
   });
 
   test('progressively reveals large tourism catalogs instead of rendering everything at once', () => {

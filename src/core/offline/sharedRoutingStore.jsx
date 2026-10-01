@@ -2,7 +2,7 @@
 // Failed updates do not touch earlier versions; concurrent saves share one copy.
 export const createSharedRoutingStore = ({ referenceFor, fileFor, prepareDirectory, materialize }) => {
   const inFlight = new Map();
-  const status = (region, savedReference = null) => {
+  const referenceForRead = (region, savedReference = null) => {
     const current = referenceFor(region);
     const reference = savedReference ?? current;
     // A previous pack may retain an older checked dataset after a failed update.
@@ -10,10 +10,21 @@ export const createSharedRoutingStore = ({ referenceFor, fileFor, prepareDirecto
     if (savedReference && (!current || reference.datasetId !== current.datasetId
       || reference.regionId !== region || !/^[a-zA-Z0-9_-]+$/.test(reference.version)
       || !/^[a-f0-9]{32}$/.test(reference.md5) || !(reference.bytes > 0))) return null;
+    return reference ?? null;
+  };
+  const peek = (region, savedReference = null) => {
+    const reference = referenceForRead(region, savedReference);
     if (!reference) return null;
     const file = fileFor(reference, false);
-    if (!file.exists || file.size !== reference.bytes || file.md5 !== reference.md5) return null;
+    if (!file.exists || file.size !== reference.bytes) return null;
     return { uri: file.uri, sizeBytes: file.size, reference };
+  };
+  const status = (region, savedReference = null) => {
+    const result = peek(region, savedReference);
+    if (!result) return null;
+    const file = fileFor(result.reference, false);
+    if (file.md5 !== result.reference.md5) return null;
+    return result;
   };
   const ensure = region => {
     if (inFlight.has(region)) return inFlight.get(region);
@@ -46,5 +57,5 @@ export const createSharedRoutingStore = ({ referenceFor, fileFor, prepareDirecto
     task.finally(() => inFlight.delete(region)).catch(() => {});
     return task;
   };
-  return { status, ensure };
+  return { peek, status, ensure };
 };

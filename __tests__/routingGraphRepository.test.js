@@ -12,7 +12,7 @@ describe('BundledRoutingGraphRepository', () => {
         { from: 'a', to: 'b', distanceKm: 1, walk: true },
       ],
     };
-    const readText = jest.fn().mockReturnValue(JSON.stringify(saved));
+    const readText = jest.fn().mockResolvedValue(JSON.stringify(saved));
     const repository = new BundledRoutingGraphRepository(readText);
 
     await expect(repository.getForDestination(
@@ -43,5 +43,27 @@ describe('BundledRoutingGraphRepository', () => {
       'tagum',
       'file:///packs/tagum/routing.graph.json',
     )).resolves.toBeNull();
+  });
+
+  test('deduplicates concurrent async reads of the same shared routing graph', async () => {
+    const saved = {
+      meta: { regionId: 'mainland' },
+      nodes: [{ id: 'a' }, { id: 'b' }],
+      edges: [{ from: 'a', to: 'b', distanceKm: 1, walk: true }],
+    };
+    const readText = jest.fn().mockResolvedValue(JSON.stringify(saved));
+    const sharedStorage = {
+      ensure: jest.fn().mockResolvedValue({ uri: 'file:///routing/mainland.routing' }),
+      status: jest.fn(),
+    };
+    const repository = new BundledRoutingGraphRepository(readText, sharedStorage);
+
+    const [a, b] = await Promise.all([
+      repository.getForRegion('mainland'),
+      repository.getForRegion('mainland'),
+    ]);
+
+    expect(a).toBe(b);
+    expect(readText).toHaveBeenCalledTimes(1);
   });
 });

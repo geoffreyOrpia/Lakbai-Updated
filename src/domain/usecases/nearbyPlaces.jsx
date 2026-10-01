@@ -49,6 +49,6 @@ export const rankNearbyPlaces = (packs, fix) => {
 
 export const loadNearbySavedPlaces = async (deps, fix) => {
   const meta = await deps.packRepository.listSavedMeta();
-  const packs = await Promise.all(meta.map(entry => deps.packRepository.getSavedPack(entry.packId)));
+  const packs = await Promise.all(meta.map(entry => deps.packRepository.getBundledPack(entry.packId)));
   return rankNearbyPlaces(packs, fix);
 };

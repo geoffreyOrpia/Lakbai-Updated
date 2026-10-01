@@ -9,7 +9,8 @@ const createVm = ({
 } = {}) => {
   const packRepository = {
     listSavedMeta: jest.fn().mockResolvedValue(savedMeta),
-    getSavedPack: jest.fn().mockResolvedValue(savedPack),
+    getBundledPack: jest.fn().mockResolvedValue(savedPack),
+    getSavedPack: jest.fn(),
   };
   const vm = new SafetyViewModel(
     { phoneService },
@@ -61,6 +62,8 @@ describe('SafetyViewModel', () => {
     });
 
     await vm.load();
+    expect(vm.packRepository.getBundledPack).toHaveBeenCalledWith('hagimit-falls');
+    expect(vm.packRepository.getSavedPack).not.toHaveBeenCalled();
 
     expect(vm.state.destinations).toEqual([{
       destinationId: 'hagimit-falls',

@@ -42,6 +42,26 @@ describe('shared provincial routing files',()=>{
     f.files.get('v1/samal').md5='corrupt';expect(f.store.status('samal')).toBeNull();
     await f.store.ensure('samal');expect(f.store.status('samal')).not.toBeNull();
   });
+  test('peek avoids checksum work while verified status still checks md5',()=>{
+    let md5Reads=0;
+    const reference={datasetId:'province',version:'v1',regionId:'mainland',md5:'verified',bytes:10};
+    const file={
+      uri:'v1/mainland',
+      exists:true,
+      size:10,
+      get md5(){md5Reads+=1;return 'verified';},
+    };
+    const store=createSharedRoutingStore({
+      referenceFor:()=>reference,
+      fileFor:()=>file,
+      prepareDirectory:jest.fn(),
+      materialize:jest.fn(),
+    });
+    expect(store.peek('mainland')).toEqual({uri:'v1/mainland',sizeBytes:10,reference});
+    expect(md5Reads).toBe(0);
+    expect(store.status('mainland')).not.toBeNull();
+    expect(md5Reads).toBe(1);
+  });
   test('a partial staging file from a killed process is replaced on restart',async()=>{
     const f=fixture();f.files.set('v1/mainland.staging',{size:2,md5:'partial'});
     await f.store.ensure('mainland');expect([...f.files.keys()]).toEqual(['v1/mainland']);

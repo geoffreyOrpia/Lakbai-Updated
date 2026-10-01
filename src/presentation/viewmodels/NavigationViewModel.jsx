@@ -391,10 +391,11 @@ export class NavigationViewModel extends ViewModel {
   load = async () => {
     await this.loadSwitchTargets();
     try {
-      const [bundle, bundledBasemap, savedPack, bundledPack] = await Promise.all([
+      const [bundle, bundledBasemap, bundledPack] = await Promise.all([
         this.destinationDeps.packRepository.getOfflineBundleStatus?.(this.state.destinationId) ?? null,
-        this.destinationDeps.packRepository.getOfflineBasemapStatus?.() ?? null,
-        this.destinationDeps.packRepository.getSavedPack?.(this.state.destinationId) ?? null,
+        this.destinationDeps.packRepository.ensureOfflineBasemapReady?.()
+          ?? this.destinationDeps.packRepository.getOfflineBasemapStatus?.()
+          ?? null,
         this.destinationDeps.packRepository.getBundledPack?.(this.state.destinationId) ?? null,
       ]);
       const graph = await this.routingDeps.routingGraphRepository.getForDestination(
@@ -406,7 +407,7 @@ export class NavigationViewModel extends ViewModel {
       // Prime the expensive routing index while this screen is loading so
       // Find my route only has to acquire a location and run the route search.
       prepareOfflineRoutingGraph(graph);
-      const navigationPack = savedPack ?? bundledPack;
+      const navigationPack = bundledPack;
       const trailPreview = this.state.trailId
         ? navigationPack?.trails?.find(trail => (
           trail.id === this.state.trailId && trail.routeVerified === true
@@ -544,10 +545,11 @@ export class NavigationViewModel extends ViewModel {
     });
 
     try {
-      const [bundle, bundledBasemap, savedPack, bundledPack] = await Promise.all([
+      const [bundle, bundledBasemap, bundledPack] = await Promise.all([
         this.destinationDeps.packRepository.getOfflineBundleStatus?.(option.destinationId) ?? null,
-        this.destinationDeps.packRepository.getOfflineBasemapStatus?.() ?? null,
-        this.destinationDeps.packRepository.getSavedPack?.(option.destinationId) ?? null,
+        this.destinationDeps.packRepository.ensureOfflineBasemapReady?.()
+          ?? this.destinationDeps.packRepository.getOfflineBasemapStatus?.()
+          ?? null,
         this.destinationDeps.packRepository.getBundledPack?.(option.destinationId) ?? null,
       ]);
       const graph = await this.routingDeps.routingGraphRepository.getForDestination(
@@ -559,7 +561,7 @@ export class NavigationViewModel extends ViewModel {
       if (!graph) throw new Error('Navigation data for that destination is not available on this device.');
       prepareOfflineRoutingGraph(graph);
 
-      const navigationPack = savedPack ?? bundledPack;
+      const navigationPack = bundledPack;
       const offlinePois = (navigationPack?.spots ?? []).filter(spot => (
         haversineKm(spot, option.target) > 0.08
       ));

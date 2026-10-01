@@ -28,12 +28,13 @@ const createDeps = () => ({
   },
   packRepository: {
     listSavedMeta: jest.fn().mockResolvedValue([{ packId: 'samal', version: 1 }]),
+    getSavedMeta: jest.fn().mockResolvedValue(null),
     listManifests: jest.fn().mockResolvedValue([
       { id: 'samal', version: 2 },
       { id: 'tagum', version: 1 },
     ]),
-    getSavedPack: jest.fn(),
     getBundledPack: jest.fn(),
+    getOfflineBundleStatus: jest.fn().mockResolvedValue(null),
   },
   favoriteRepository: {
     listFavoriteIds: jest.fn().mockResolvedValue(['samal']),
@@ -80,15 +81,15 @@ describe('destination pack use cases', () => {
   test('prefers a saved pack, then falls back to bundled content', async () => {
     const deps = createDeps();
     const saved = { id: 'samal', version: 2 };
-    deps.packRepository.getSavedPack.mockResolvedValue(saved);
+    deps.packRepository.getSavedMeta.mockResolvedValue({ packId: 'samal', version: 2 });
+    deps.packRepository.getBundledPack.mockResolvedValue(saved);
 
     await expect(loadPackForViewing(deps, 'samal')).resolves.toEqual({
       pack: saved,
       source: 'library',
     });
-    expect(deps.packRepository.getBundledPack).not.toHaveBeenCalled();
 
-    deps.packRepository.getSavedPack.mockResolvedValue(null);
+    deps.packRepository.getSavedMeta.mockResolvedValue(null);
     const bundled = { id: 'tagum', version: 1 };
     deps.packRepository.getBundledPack.mockResolvedValue(bundled);
 
@@ -100,7 +101,7 @@ describe('destination pack use cases', () => {
 
   test('returns none when a pack does not exist', async () => {
     const deps = createDeps();
-    deps.packRepository.getSavedPack.mockResolvedValue(null);
+    deps.packRepository.getSavedMeta.mockResolvedValue(null);
     deps.packRepository.getBundledPack.mockResolvedValue(null);
 
     await expect(loadPackForViewing(deps, 'missing')).resolves.toEqual({

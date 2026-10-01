@@ -19,6 +19,8 @@ export class NearbyViewModel extends ViewModel {
   unwatch = null;
   refinementTimer = null;
   refinementRequest = 0;
+  locationPromise = null;
+  basemapPromise = null;
 
   constructor(destinationDeps, locationService, nav) {
     super({
@@ -173,7 +175,31 @@ export class NearbyViewModel extends ViewModel {
         savedPackIds: savedMeta.map(entry => entry.packId),
         savedPackCount: savedMeta.length,
       });
+      this.locationPromise = this.loadLocation();
+      if (!basemap?.uri) this.basemapPromise = this.loadBasemap();
+    } catch (error) {
+      this.setState({
+        error: userMessage(error, 'Nearby places could not load. Try again.'),
+      });
+    } finally {
+      this.setState({ loading: false });
+    }
+  };
 
+  loadBasemap = async () => {
+    try {
+      const basemap = await (this.destinationDeps.packRepository.ensureOfflineBasemapReady?.()
+        ?? this.destinationDeps.packRepository.getOfflineBasemapStatus?.()
+        ?? null);
+      if (basemap?.uri) this.setState({ basemapUri: basemap.uri });
+      return basemap ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  loadLocation = async () => {
+    try {
       const granted = await this.locationService.requestPermissions();
       if (!granted) {
         this.setState({
@@ -200,6 +226,7 @@ export class NearbyViewModel extends ViewModel {
       this.setState({
         permission: 'granted',
         fix,
+        error: null,
       });
       const fixAgeMs = Number.isFinite(fix.timestamp)
         ? Math.max(0, Date.now() - fix.timestamp)
@@ -213,10 +240,13 @@ export class NearbyViewModel extends ViewModel {
       }
     } catch (error) {
       this.setState({
-        error: userMessage(error, 'Nearby places could not load. Try again.'),
+        permission: 'unknown',
+        fix: null,
+        error: userMessage(
+          error,
+          'Your location is unavailable. Search still works, but nearby places cannot be sorted by distance.',
+        ),
       });
-    } finally {
-      this.setState({ loading: false });
     }
   };
 

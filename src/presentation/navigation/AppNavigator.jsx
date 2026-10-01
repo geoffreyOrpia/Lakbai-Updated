@@ -1,39 +1,76 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { ActivityIndicator, BackHandler, Image, StyleSheet, Text, View } from 'react-native';
+import { getDataRevision, subscribeDataChanges } from "../../core/state/dataInvalidation.jsx";
 import { navigationRequestFromSession } from "../../data/repositories/navigationSessionRepository.jsx";
 import { colors, layout, spacing } from "../../theme.jsx";
 import { getContainer } from "../di/container.jsx";
 import { useViewModel } from "../viewmodel/useViewModel.jsx";
 import { AssistantViewModel } from "../viewmodels/AssistantViewModel.jsx";
-import { DestinationViewModel } from "../viewmodels/DestinationViewModel.jsx";
 import { LibraryViewModel } from "../viewmodels/LibraryViewModel.jsx";
-import { NearbyViewModel } from "../viewmodels/NearbyViewModel.jsx";
-import { NavigationViewModel } from "../viewmodels/NavigationViewModel.jsx";
 import { ExploreViewModel } from "../viewmodels/ExploreViewModel.jsx";
 import { HomeViewModel } from "../viewmodels/HomeViewModel.jsx";
 import { OnboardingViewModel } from "../viewmodels/OnboardingViewModel.jsx";
 import { SafetyViewModel } from "../viewmodels/SafetyViewModel.jsx";
 import { SessionViewModel } from "../viewmodels/SessionViewModel.jsx";
 import { SettingsViewModel } from "../viewmodels/SettingsViewModel.jsx";
-import { TrailViewModel } from "../viewmodels/TrailViewModel.jsx";
 import { TripsViewModel } from "../viewmodels/TripsViewModel.jsx";
 import { AssistantScreen } from "../views/screens/AssistantScreen.jsx";
-import { DestinationScreen } from "../views/screens/DestinationScreen.jsx";
 import { LibraryScreen } from "../views/screens/LibraryScreen.jsx";
-import { NearbyScreen } from "../views/screens/NearbyScreen.jsx";
-import { NavigationScreen } from "../views/screens/NavigationScreen.jsx";
 import { ExploreScreen } from "../views/screens/ExploreScreen.jsx";
 import { HomeScreen } from "../views/screens/HomeScreen.jsx";
 import { LandingScreen } from "../views/screens/LandingScreen.jsx";
 import { OnboardingScreen } from "../views/screens/OnboardingScreen.jsx";
 import { SafetyScreen } from "../views/screens/SafetyScreen.jsx";
 import { SettingsScreen } from "../views/screens/SettingsScreen.jsx";
-import { TrailScreen } from "../views/screens/TrailScreen.jsx";
 import { TripsScreen } from "../views/screens/TripsScreen.jsx";
 import { ScreenActiveContext } from "../views/components/ScreenScrollView.jsx";
 import { BottomNav } from "../views/components/BottomNav.jsx";
 import { FloatingAssistantGuide } from "../views/components/FloatingAssistantGuide.jsx";
 
+let destinationOverlayModule = null;
+let nearbyOverlayModule = null;
+let navigationOverlayModule = null;
+let trailOverlayModule = null;
+
+const getDestinationOverlayModule = () => {
+  if (!destinationOverlayModule) {
+    destinationOverlayModule = {
+      ViewModel: require("../viewmodels/DestinationViewModel.jsx").DestinationViewModel,
+      Screen: require("../views/screens/DestinationScreen.jsx").DestinationScreen,
+    };
+  }
+  return destinationOverlayModule;
+};
+
+const getNearbyOverlayModule = () => {
+  if (!nearbyOverlayModule) {
+    nearbyOverlayModule = {
+      ViewModel: require("../viewmodels/NearbyViewModel.jsx").NearbyViewModel,
+      Screen: require("../views/screens/NearbyScreen.jsx").NearbyScreen,
+    };
+  }
+  return nearbyOverlayModule;
+};
+
+const getNavigationOverlayModule = () => {
+  if (!navigationOverlayModule) {
+    navigationOverlayModule = {
+      ViewModel: require("../viewmodels/NavigationViewModel.jsx").NavigationViewModel,
+      Screen: require("../views/screens/NavigationScreen.jsx").NavigationScreen,
+    };
+  }
+  return navigationOverlayModule;
+};
+
+const getTrailOverlayModule = () => {
+  if (!trailOverlayModule) {
+    trailOverlayModule = {
+      ViewModel: require("../viewmodels/TrailViewModel.jsx").TrailViewModel,
+      Screen: require("../views/screens/TrailScreen.jsx").TrailScreen,
+    };
+  }
+  return trailOverlayModule;
+};
 
 /**
  * App shell: device-local setup phases (landing -> onboarding -> main),
@@ -210,11 +247,6 @@ export const AppNavigator = () => {
             name: 'destination',
             destinationId
           })}
-          onPlanTrip={draft => {
-            setTripDraft(draft);
-            setExploreQuery('');
-            setTab('trips');
-          }}
         /></RetainedTab>
         <RetainedTab visible={tab === 'trips' && !hasOverlay}><TripsTab active={tab === 'trips' && !hasOverlay} backHandlerRef={tripBackHandler}
           onOpenSettings={() => push({ name: 'settings' })}
@@ -275,13 +307,31 @@ const RetainedTab = ({ visible, children }) => {
     </View>;
 };
 
-const useRefreshOnReturn = (viewModel, active) => {
+const useRefreshOnReturn = (viewModel, active, domains, methodName = 'load') => {
+  const revision = useSyncExternalStore(
+    subscribeDataChanges,
+    () => getDataRevision(domains),
+    () => 0,
+  );
   const visited = useRef(false);
+  const wasActive = useRef(false);
+  const lastSeenRevision = useRef(revision);
   useEffect(() => {
-    if (!active) return;
-    if (visited.current) void viewModel.load();
+    if (!active) {
+      wasActive.current = false;
+      return;
+    }
+    if (wasActive.current) {
+      lastSeenRevision.current = revision;
+      return;
+    }
+    wasActive.current = true;
+    if (visited.current && revision > lastSeenRevision.current) {
+      void viewModel[methodName]?.();
+    }
     visited.current = true;
-  }, [active, viewModel]);
+    lastSeenRevision.current = revision;
+  }, [active, methodName, revision, viewModel]);
 };
 
 const OnboardingFlow = ({
@@ -300,6 +350,7 @@ const DestinationFlow = ({
   onPlanRoute,
   onBack
 }) => {
+  const { ViewModel: DestinationViewModel, Screen: DestinationScreen } = getDestinationOverlayModule();
   const container = getContainer();
   const viewModel = useViewModel(() => new DestinationViewModel(container.destinationDeps, destinationId, {
     onOpenTrail,
@@ -332,6 +383,7 @@ const NavigationFlow = ({
   onOpenTrail,
   onBack
 }) => {
+  const { ViewModel: NavigationViewModel, Screen: NavigationScreen } = getNavigationOverlayModule();
   const container = getContainer();
   const viewModel = useViewModel(() => new NavigationViewModel(
     container.routingDeps,
@@ -351,6 +403,7 @@ const TrailFlow = ({
   trailId,
   onBack
 }) => {
+  const { ViewModel: TrailViewModel, Screen: TrailScreen } = getTrailOverlayModule();
   const container = getContainer();
   const viewModel = useViewModel(() => new TrailViewModel(container.destinationDeps, container.locationService, destinationId, trailId, {
     onBack
@@ -372,7 +425,7 @@ const HomeTab = ({
     onOpenDestination,
     onOpenNearby
   }));
-  useRefreshOnReturn(viewModel, active);
+  useRefreshOnReturn(viewModel, active, ['library', 'favorites']);
   return <HomeScreen viewModel={viewModel} onOpenSettings={onOpenSettings} />;
 };
 const NearbyFlow = ({
@@ -382,6 +435,7 @@ const NearbyFlow = ({
   onOpenLibrary,
   onBack
 }) => {
+  const { ViewModel: NearbyViewModel, Screen: NearbyScreen } = getNearbyOverlayModule();
   const container = getContainer();
   const viewModel = useViewModel(() => new NearbyViewModel(container.destinationDeps, container.locationService, {
     onOpenDestination,
@@ -389,30 +443,21 @@ const NearbyFlow = ({
     onOpenLibrary,
     onBack
   }));
-  const visited = useRef(false);
-  useEffect(() => {
-    if (!active) return;
-    if (visited.current) void viewModel.refreshSavedPlaces();
-    visited.current = true;
-  }, [active, viewModel]);
+  useRefreshOnReturn(viewModel, active, ['library'], 'refreshSavedPlaces');
   return <NearbyScreen viewModel={viewModel} />;
 };
 const ExploreTab = ({
   active,
   initialQuery,
   onOpenDestination,
-  onPlanTrip,
   onOpenSettings,
 }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new ExploreViewModel(
     container.destinationDeps,
     container.onlineResearchDeps,
-    container.routingDeps,
-    container.locationService,
-    { onOpenDestination, onPlanTrip },
   ));
-  useRefreshOnReturn(viewModel, active);
+  useRefreshOnReturn(viewModel, active, ['library', 'favorites']);
   return <ExploreScreen viewModel={viewModel} initialQuery={initialQuery} onOpenDestination={onOpenDestination} onOpenSettings={onOpenSettings} />;
 };
 const LibraryTab = ({
@@ -422,7 +467,7 @@ const LibraryTab = ({
 }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new LibraryViewModel(container.destinationDeps));
-  useRefreshOnReturn(viewModel, active);
+  useRefreshOnReturn(viewModel, active, ['library', 'favorites']);
   return <LibraryScreen viewModel={viewModel} onOpenDestination={onOpenDestination} onOpenSettings={onOpenSettings} />;
 };
 const TripsTab = ({
@@ -449,13 +494,13 @@ const TripsTab = ({
       onDraftConsumed?.();
     }
   }, [initialRouteDraft, onDraftConsumed, viewModel]);
-  useRefreshOnReturn(viewModel, active);
+  useRefreshOnReturn(viewModel, active, ['library', 'trips']);
   return <TripsScreen viewModel={viewModel} onOpenSettings={onOpenSettings} />;
 };
 const SafetyTab = ({ active, onOpenSettings, onOpenDestination }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new SafetyViewModel(container.safetyDeps, container.destinationDeps.packRepository));
-  useRefreshOnReturn(viewModel, active);
+  useRefreshOnReturn(viewModel, active, ['library']);
   return <SafetyScreen
     viewModel={viewModel}
     onOpenSettings={onOpenSettings}
