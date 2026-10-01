@@ -7,7 +7,6 @@ import { createNavigationSessionDao } from "../../data/local/sqlite/navigationSe
 import { createPackContentDao } from "../../data/local/sqlite/packContentDao.jsx";
 import { createPackMetaDao } from "../../data/local/sqlite/packMetaDao.jsx";
 import { createPreferencesDao } from "../../data/local/sqlite/preferencesDao.jsx";
-import { createSafetyDao } from "../../data/local/sqlite/safetyDao.jsx";
 import { LocalDestinationRepository } from "../../data/repositories/destinationRepository.jsx";
 import { LocalDiscoveryRepository } from "../../data/repositories/discoveryRepository.jsx";
 import { LocalFavoriteRepository } from "../../data/repositories/favoriteRepository.jsx";
@@ -15,7 +14,6 @@ import { LocalItineraryRepository } from "../../data/repositories/itineraryRepos
 import { LocalNavigationSessionRepository } from "../../data/repositories/navigationSessionRepository.jsx";
 import { PackRepositoryImpl } from "../../data/repositories/packRepository.jsx";
 import { LocalPreferencesRepository } from "../../data/repositories/preferencesRepository.jsx";
-import { LocalSafetyRepository } from "../../data/repositories/safetyRepository.jsx";
 import { BundledRoutingGraphRepository } from "../../data/repositories/routingGraphRepository.jsx";
 import { ExpoLocationService } from "../../data/services/locationService.jsx";
 import { createOnlineResearchService } from "../../data/services/onlineResearchService.jsx";
@@ -37,7 +35,6 @@ const buildContainer = () => {
   const itineraryDao = createItineraryDao();
   const locationSnapshotDao = createLocationSnapshotDao();
   const navigationSessionDao = createNavigationSessionDao();
-  const safetyDao = createSafetyDao();
   const offlinePackStorage = createOfflinePackStorage();
 
   // Repositories
@@ -48,7 +45,6 @@ const buildContainer = () => {
   const preferencesRepository = new LocalPreferencesRepository(preferencesDao);
   const itineraryRepository = new LocalItineraryRepository(itineraryDao);
   const navigationSessionRepository = new LocalNavigationSessionRepository(navigationSessionDao);
-  const safetyRepository = new LocalSafetyRepository(safetyDao);
   const routingGraphRepository = new BundledRoutingGraphRepository();
 
   // Platform services
@@ -71,7 +67,6 @@ const buildContainer = () => {
     itineraryRepository
   };
   const safetyDeps = {
-    safetyRepository,
     phoneService
   };
   const onlineResearchDeps = {

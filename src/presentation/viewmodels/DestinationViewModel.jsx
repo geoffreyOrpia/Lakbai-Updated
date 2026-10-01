@@ -62,7 +62,7 @@ export class DestinationViewModel extends ViewModel {
         savedVersion: null,
         updateAvailable: false,
         offlineBundle: null,
-        error: userMessage(error, 'This destination could not be loaded from local storage.')
+        error: userMessage(error, 'This destination guide could not be loaded.')
       });
     } finally {
       this.setState({
@@ -138,7 +138,7 @@ export class DestinationViewModel extends ViewModel {
     } catch (error) {
       return {
         ok: false,
-        message: userMessage(error, 'The offline guide could not be removed.')
+        message: userMessage(error, 'The downloaded guide could not be removed.')
       };
     } finally {
       this.setState({

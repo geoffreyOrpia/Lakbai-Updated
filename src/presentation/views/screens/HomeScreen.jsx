@@ -21,7 +21,7 @@ export const HomeScreen = ({
   if (state.loading && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AppHeader onOpenSettings={onOpenSettings} />
-        <LoadingState title="Preparing your local guides" text="Opening your places and saved guides." />
+        <LoadingState title="Loading places" />
       </ScrollView>;
   }
   if (state.error && !state.items.length) {
@@ -35,13 +35,13 @@ export const HomeScreen = ({
 
       <ScreenIntro
         eyebrow="DAVAO DEL NORTE"
-        title="Explore confidently, even beyond the signal."
-        subtitle="Find places, plan a trip, and take your saved maps with you."
+        title="Find your next destination"
+        subtitle="Discover places across Davao del Norte, plan a trip, and navigate with saved maps."
       />
 
       <SearchField value={searchQuery} onChangeText={setSearchQuery} placeholder="Search places" onSubmit={value => viewModel.openExplore(value)} />
 
-      <Pressable accessibilityRole="button" accessibilityLabel="Open offline discovery" style={({
+      <Pressable accessibilityRole="button" accessibilityLabel="Open nearby places" style={({
       pressed
     }) => [styles.nearby, shadows.card, pressed && styles.pressed]} onPress={() => viewModel.openNearby()}>
         <View style={styles.nearbyIcon}>
@@ -49,9 +49,7 @@ export const HomeScreen = ({
         </View>
         <View style={styles.readinessCopy}>
           <Text style={styles.nearbyTitle}>Nearby places</Text>
-          <Text style={styles.readinessText}>
-            Find places and streets near you. {state.savedCount ? `${state.savedCount} offline ${state.savedCount === 1 ? 'guide' : 'guides'} ready.` : 'Works offline.'}
-          </Text>
+          <Text style={styles.readinessText}>Search tourism places and streets around you.</Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color={colors.accent} />
       </Pressable>

@@ -1,19 +1,26 @@
 import { SafetyViewModel } from '../src/presentation/viewmodels/SafetyViewModel.jsx';
 
-describe('SafetyViewModel emergency calling', () => {
+const createVm = ({
+  savedMeta = [],
+  savedPack = null,
+  phoneService = {
+    call: jest.fn().mockResolvedValue(undefined),
+  },
+} = {}) => {
+  const packRepository = {
+    listSavedMeta: jest.fn().mockResolvedValue(savedMeta),
+    getSavedPack: jest.fn().mockResolvedValue(savedPack),
+  };
+  const vm = new SafetyViewModel(
+    { phoneService },
+    packRepository,
+  );
+  return { vm, packRepository, phoneService };
+};
+
+describe('SafetyViewModel', () => {
   test('Dial 911 works without requiring a saved destination guide', async () => {
-    const phoneService = {
-      call: jest.fn().mockResolvedValue(undefined),
-    };
-    const vm = new SafetyViewModel(
-      {
-        safetyRepository: {},
-        phoneService,
-      },
-      {
-        listSavedMeta: jest.fn().mockResolvedValue([]),
-      },
-    );
+    const { vm, phoneService } = createVm();
 
     const result = await vm.call911();
 
@@ -26,15 +33,7 @@ describe('SafetyViewModel emergency calling', () => {
     const phoneService = {
       call: jest.fn().mockRejectedValue(new Error('Calling is not available on this device.')),
     };
-    const vm = new SafetyViewModel(
-      {
-        safetyRepository: {},
-        phoneService,
-      },
-      {
-        listSavedMeta: jest.fn().mockResolvedValue([]),
-      },
-    );
+    const { vm } = createVm({ phoneService });
 
     const result = await vm.call911();
 
@@ -42,47 +41,49 @@ describe('SafetyViewModel emergency calling', () => {
     expect(result.message).toContain('Calling is not available');
   });
 
-  test('does not repeat nationwide 911 inside saved guide contacts', async () => {
-    const phoneService = {
-      call: jest.fn().mockResolvedValue(undefined),
-    };
-    const vm = new SafetyViewModel(
-      {
-        safetyRepository: {
-          listChecklist: jest.fn().mockResolvedValue([]),
-          listCompletedKeys: jest.fn().mockResolvedValue([]),
+  test('loads destination-specific safety reminders from saved guides', async () => {
+    const { vm } = createVm({
+      savedMeta: [{ packId: 'hagimit-falls' }],
+      savedPack: {
+        destination: {
+          id: 'hagimit-falls',
+          name: 'Hagimit Falls',
+          area: 'Samal Island',
         },
-        phoneService,
+        safety: {
+          reminders: [
+            'Avoid entering the water when current conditions are unsafe.',
+            'Keep children closely supervised around moving water.',
+          ],
+          emergencyContacts: [{ label: 'National Emergency Hotline', phone: '911' }],
+        },
       },
-      {
-        listSavedMeta: jest.fn().mockResolvedValue([{ packId: 'samal' }]),
-        getSavedPack: jest.fn().mockResolvedValue({
-          destination: { name: 'Samal Island' },
-          safety: {
-            emergencyContacts: [
-              {
-                label: 'National Emergency Hotline',
-                phone: '911',
-                verified: true,
-              },
-              {
-                label: 'Verified local tourism office',
-                phone: '1234',
-                verified: true,
-              },
-            ],
-          },
-        }),
-      },
-    );
+    });
 
     await vm.load();
 
-    expect(vm.state.contacts).toEqual([
-      expect.objectContaining({
-        label: 'Verified local tourism office',
-        phone: '1234',
-      }),
-    ]);
+    expect(vm.state.destinations).toEqual([{
+      destinationId: 'hagimit-falls',
+      name: 'Hagimit Falls',
+      area: 'Samal Island',
+      reminders: [
+        'Avoid entering the water when current conditions are unsafe.',
+        'Keep children closely supervised around moving water.',
+      ],
+    }]);
+  });
+
+  test('does not create empty destination-safety cards for guides without reminders', async () => {
+    const { vm } = createVm({
+      savedMeta: [{ packId: 'samal' }],
+      savedPack: {
+        destination: { id: 'samal', name: 'Samal Island' },
+        safety: { reminders: [], emergencyContacts: [] },
+      },
+    });
+
+    await vm.load();
+
+    expect(vm.state.destinations).toEqual([]);
   });
 });

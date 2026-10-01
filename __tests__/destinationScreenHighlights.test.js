@@ -36,7 +36,21 @@ const viewModel = {
       version: 6,
       updatedAt: '2026-09-29T00:00:00.000Z',
       sizeKb: 128,
-      spots: [],
+      spots: [{
+        id: 'spot-hag-pool',
+        name: 'First Falls Pool',
+        category: 'waterfall',
+        lat: 7.1164,
+        lng: 125.6988,
+        description: 'Freshwater pool below one of the falls.',
+      }, {
+        id: 'spot-hag-junction',
+        name: 'Hagimit Road Junction',
+        category: 'transport',
+        lat: 7.118,
+        lng: 125.695,
+        description: 'Road junction near the falls.',
+      }],
       trails: [],
       routeSuggestions: [],
       withheldTrailsCount: 0,
@@ -56,11 +70,11 @@ const viewModel = {
         area: 'Peñaplata, Samal',
         category: 'nature',
         status: 'available',
-        summary: 'A Samal waterfall attraction with offline orientation and source-aware planning notes.',
-        description: 'Detailed destination context for Hagimit Falls.',
+        summary: 'Freshwater cascades and pools in Peñaplata.',
+        description: 'Hagimit Falls has freshwater cascades and pools in a natural setting.',
         highlights: [
-          'Waterfall destination in the Samal tourism area',
-          'Offline entrance and orientation references',
+          'Freshwater cascades and pools',
+          'Natural waterfall setting',
         ],
         photos: [],
         coverTheme: {},
@@ -86,21 +100,27 @@ describe('DestinationScreen highlights', () => {
     if (tree) act(() => tree.unmount());
   });
 
-  test('puts a concise destination summary and highlights before routing controls', () => {
+  test('puts useful destination information immediately before directions without duplicating it later', () => {
     act(() => {
       tree = create(<DestinationScreen viewModel={viewModel} />);
     });
 
     const rendered = JSON.stringify(tree.toJSON());
-    const summaryIndex = rendered.indexOf('A Samal waterfall attraction');
-    const routeIndex = rendered.indexOf('LOCATION & ROUTE');
+    const discoverIndex = rendered.indexOf('What you’ll find here');
+    const descriptionIndex = rendered.indexOf('Hagimit Falls has freshwater cascades and pools in a natural setting.');
+    const directionsIndex = rendered.indexOf('DIRECTIONS');
 
-    expect(rendered).toContain('What you’ll find');
-    expect(rendered).toContain('Waterfall destination in the Samal tourism area');
-    expect(rendered).toContain('Offline entrance and orientation references');
-    expect(summaryIndex).toBeGreaterThan(-1);
-    expect(routeIndex).toBeGreaterThan(-1);
-    expect(summaryIndex).toBeLessThan(routeIndex);
-    expect(rendered).toContain('More about this destination');
+    expect(rendered).toContain('What you’ll find here');
+    expect(rendered).toContain('First Falls Pool');
+    expect(rendered).toContain('Freshwater pool below one of the falls.');
+    const placesIndex = rendered.indexOf('Places to visit');
+    const transportNotesIndex = rendered.indexOf('Transport notes', placesIndex);
+    const placesSection = rendered.slice(placesIndex, transportNotesIndex > placesIndex ? transportNotesIndex : undefined);
+    expect(placesSection).not.toContain('Hagimit Road Junction');
+    expect(discoverIndex).toBeGreaterThan(-1);
+    expect(descriptionIndex).toBeGreaterThan(discoverIndex);
+    expect(directionsIndex).toBeGreaterThan(descriptionIndex);
+    expect(rendered).not.toContain('LOCATION & ROUTE');
+    expect(rendered).not.toContain('More about this destination');
   });
 });

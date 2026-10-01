@@ -42,7 +42,7 @@ const createViewModel = () => {
 };
 
 describe('TripsViewModel itinerary editing', () => {
-  test('converts a suggested route into an editable planning-only trip draft', () => {
+  test('converts a suggested route into an editable trip draft without implementation metadata', () => {
     const form = routeDraftToTripForm({
       destinationId: 'tagum',
       destinationName: 'Tagum City',
@@ -53,8 +53,9 @@ describe('TripsViewModel itinerary editing', () => {
 
     expect(form.title).toBe('Tagum City: Heritage Walk');
     expect(form.travelDate).toBe('');
-    expect(form.notes).toContain('Planning only');
+    expect(form.notes).toContain('Trip plan only');
     expect(form.notes).toContain('Cathedral → City Hall');
+    expect(form.notes).not.toMatch(/source-reviewed|Smart Explore|generated offline/i);
     expect(form.stops).toEqual([
       expect.objectContaining({
         destinationId: 'tagum',
@@ -94,6 +95,7 @@ describe('TripsViewModel itinerary editing', () => {
     });
 
     expect(form.navigationMode).toBe('drive');
+    expect(form.notes).toBe('Generated offline.');
     expect(form.stops).toHaveLength(2);
     expect(form.stops[0]).toEqual(expect.objectContaining({
       destinationId: 'tagum',
@@ -104,6 +106,25 @@ describe('TripsViewModel itinerary editing', () => {
         lng: 125.8071,
       },
     }));
+  });
+
+  test('uses clean defaults when an assisted trip draft has no title or notes', () => {
+    const form = routeDraftToTripForm({
+      kind: 'smart-explore',
+      travelMode: 'walk',
+      stops: [{
+        destinationId: 'tagum',
+        destinationName: 'Freedom Park',
+        municipality: 'Tagum',
+        placeId: 'spot-tag-freedom',
+        target: { label: 'Freedom Park', lat: 7.45, lng: 125.81 },
+        note: 'Central public park and event space.',
+      }],
+    });
+
+    expect(form.title).toBe('Suggested trip');
+    expect(form.notes).toBe('');
+    expect(form.stops[0].note).toBe('Central public park and event space.');
   });
 
   test('loads an existing itinerary into the shared editor', () => {

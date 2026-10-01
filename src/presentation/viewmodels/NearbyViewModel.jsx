@@ -186,13 +186,13 @@ export class NearbyViewModel extends ViewModel {
       const fix = await this.locationService.getCurrentFix({ purpose: 'discovery' });
       if (!fix) {
         const message = await this.locationService.locationFailureMessage?.(
-          'LakBai could not get a location estimate yet. All tourism places and offline search still work; distance ordering is unavailable.',
+          'Your location is unavailable. Search still works, but nearby places cannot be sorted by distance.',
         );
         this.setState({
           permission: 'granted',
           fix: null,
           error: message
-            ?? 'LakBai could not get a location estimate yet. All tourism places and offline search still work; distance ordering is unavailable.',
+            ?? 'Your location is unavailable. Search still works, but nearby places cannot be sorted by distance.',
         });
         return;
       }
@@ -213,7 +213,7 @@ export class NearbyViewModel extends ViewModel {
       }
     } catch (error) {
       this.setState({
-        error: userMessage(error, 'Offline discovery could not be prepared from local data.'),
+        error: userMessage(error, 'Nearby places could not load. Try again.'),
       });
     } finally {
       this.setState({ loading: false });
@@ -242,14 +242,14 @@ export class NearbyViewModel extends ViewModel {
     if (!Number.isFinite(entry?.lat) || !Number.isFinite(entry?.lng)) return false;
     if (!offlineContextContainsPosition(entry)) {
       this.setState({
-        error: 'That point is outside Davao del Norte’s current offline discovery coverage.',
+        error: 'That point is outside the current Davao del Norte map coverage.',
       });
       return false;
     }
     const region = routingRegionFor(entry.destinationId, entry);
     if (!region) {
       this.setState({
-        error: 'That point is outside LakBai’s current Davao del Norte offline routing coverage.',
+        error: 'Directions are not available for that point within the current map coverage.',
       });
       return false;
     }
@@ -276,7 +276,7 @@ export class NearbyViewModel extends ViewModel {
   dropPin = async point => {
     try {
       if (!offlineContextContainsPosition(point) || !routingRegionFor(null, point)) {
-        const message = 'Drop pins inside Davao del Norte’s current offline routing coverage.';
+        const message = 'Drop pins inside the current Davao del Norte map coverage.';
         this.setState({ error: message });
         return { ok: false, message };
       }

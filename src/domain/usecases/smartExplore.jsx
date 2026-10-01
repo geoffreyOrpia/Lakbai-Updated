@@ -191,15 +191,13 @@ export const buildSmartTripDraft = ({
   const areaLabel = municipalities.length === 1 ? municipalities[0] : 'Davao del Norte';
   return {
     kind: 'smart-explore',
-    title: `Smart ${areaLabel} trip`,
+    title: `${areaLabel} trip`,
     travelMode,
     notes: [
-      'Generated offline by LakBai Smart Explore from curated local knowledge in source-reviewed destination packs.',
       `Travel mode: ${travelMode === 'drive' ? 'Driving' : 'Walking'}.`,
       origin
-        ? 'Stop order is proximity-aware from the current GPS position.'
-        : 'Stop order follows recommendation priority; you can reorder it before saving.',
-      'Fees, opening hours, and visit duration are not assumed when LakBai does not have structured sourced values.',
+        ? 'Stops are ordered from your current location.'
+        : 'Stops follow recommendation order; reorder them if needed.',
     ].join('\n'),
     stops: ordered.map(place => ({
       destinationId: place.destinationId,
@@ -208,7 +206,7 @@ export const buildSmartTripDraft = ({
       municipality: place.municipality,
       placeId: place.placeId,
       target: { ...place.target },
-      note: place.reasons.slice(0, 2).join(' · '),
+      note: place.description ?? '',
       sourceReview: {
         label: place.sourceReview.label,
         reviewedAt: place.sourceReview.reviewedAt,

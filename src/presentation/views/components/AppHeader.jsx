@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { colors, radius, spacing } from "../../../theme.jsx";
 
 export const AppHeader = ({ onOpenSettings }) => {
@@ -12,13 +12,6 @@ export const AppHeader = ({ onOpenSettings }) => {
       />
 
       <View style={styles.actions}>
-        <View
-          accessibilityLabel="Offline-first app. Saved travel data stays on this device."
-          style={[styles.pill, styles.pillOffline]}
-        >
-          <Ionicons name="cloud-offline-outline" size={13} color={colors.primary} />
-          <Text style={[styles.pillText, styles.pillTextOffline]}>Offline</Text>
-        </View>
         {onOpenSettings ? <Pressable
           accessibilityRole="button"
           accessibilityLabel="Open settings and about"
@@ -47,26 +40,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-  },
-  pill: {
-    minHeight: 32,
-    paddingHorizontal: 10,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  pillOffline: {
-    backgroundColor: colors.primarySofter,
-    borderColor: '#CBE6D5',
-  },
-  pillText: {
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  pillTextOffline: {
-    color: colors.primary,
   },
   settingsButton: {
     width: 38,

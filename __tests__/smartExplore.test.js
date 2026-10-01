@@ -136,7 +136,8 @@ describe('Smart Explore recommendation rules', () => {
       lng: expect.any(Number),
       label: expect.any(String),
     }));
-    expect(draft.notes).toContain('Fees, opening hours, and visit duration are not assumed');
+    expect(draft.notes).toContain('Travel mode: Driving.');
+    expect(draft.notes).not.toMatch(/source-reviewed|generated offline|destination pack/i);
     expect(draft).not.toHaveProperty('budget');
   });
 });

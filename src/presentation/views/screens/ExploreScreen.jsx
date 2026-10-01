@@ -51,7 +51,7 @@ export const ExploreScreen = ({
   if (state.loading && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AppHeader onOpenSettings={onOpenSettings} />
-        <LoadingState title="Finding places" text="Finding places to visit." />
+        <LoadingState title="Loading places" />
       </ScrollView>;
   }
   if (state.error && !state.items.length) {
@@ -86,9 +86,9 @@ export const ExploreScreen = ({
       <AppHeader onOpenSettings={onOpenSettings} />
 
       <ScreenIntro
-        eyebrow="LOCAL DISCOVERY"
+        eyebrow="DESTINATIONS"
         title="Explore"
-        subtitle="Find a place to visit. Save its guide and map for your trip."
+        subtitle="Browse destinations by category and open a guide for places, routes, and local information."
       />
 
       <SearchField value={state.query} onChangeText={value => viewModel.setQuery(value)} onSubmit={() => undefined} />
@@ -98,7 +98,7 @@ export const ExploreScreen = ({
         <Text style={styles.resultCount}>
           {results.length} {results.length === 1 ? 'result' : 'results'}
         </Text>
-        <Text style={styles.helper}>Showing {visibleResults.length}</Text>
+        {viewModel.hasMoreResults ? <Text style={styles.helper}>Showing {visibleResults.length}</Text> : null}
       </View>
 
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
@@ -150,10 +150,8 @@ export const ExploreScreen = ({
             <Ionicons name="globe-outline" size={20} color={colors.primary} />
           </View>
           <View style={styles.onlineCopy}>
-            <Text style={styles.onlineTitle}>Look beyond LakBai</Text>
-            <Text style={styles.onlineText}>
-              Opens Google in your browser. These results have not been checked by LakBai.
-            </Text>
+            <Text style={styles.onlineTitle}>Google search</Text>
+            <Text style={styles.onlineText}>Opens current web results that are not verified by LakBai.</Text>
           </View>
         </View>
         <SecondaryButton
@@ -162,11 +160,6 @@ export const ExploreScreen = ({
           disabled={state.onlineSearching}
           onPress={() => void runWebSearch()}
         />
-        <Text style={styles.onlineHint}>
-          {state.query.trim()
-            ? `Search: “${state.query.trim()}” + Davao del Norte tourism`
-            : 'No search term entered · opens a general Davao del Norte tourism search.'}
-        </Text>
       </View>
 
       </Disclosure>
@@ -243,10 +236,4 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     lineHeight: 17
   },
-  onlineHint: {
-    color: colors.muted,
-    fontSize: 10.5,
-    lineHeight: 15,
-    textAlign: 'center'
-  }
 });

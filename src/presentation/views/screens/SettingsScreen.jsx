@@ -88,7 +88,7 @@ export const SettingsScreen = ({ viewModel }) => {
 
   if (state.loading) {
     return <View style={styles.center}>
-        <LoadingState title="Opening Settings" text="Reading preferences and local storage state." />
+        <LoadingState title="Loading settings" />
       </View>;
   }
 
@@ -96,9 +96,9 @@ export const SettingsScreen = ({ viewModel }) => {
       <BackAction label="Back" onPress={() => viewModel.back()} />
 
       <ScreenIntro
-        eyebrow="DEVICE-LOCAL"
+        eyebrow="PREFERENCES & STORAGE"
         title="Settings & About"
-        subtitle="Manage travel preferences, offline storage, and app details."
+        subtitle="Manage travel preferences, downloaded guides, and app data."
       />
 
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
@@ -156,8 +156,8 @@ export const SettingsScreen = ({ viewModel }) => {
           icon="navigate-outline"
           title="Navigation recovery"
           text={state.navigationRecoveryAvailable
-            ? 'A resumable multi-stop navigation checkpoint is currently saved.'
-            : 'No resumable navigation checkpoint is currently saved.'}
+            ? 'A paused itinerary can be resumed.'
+            : 'No paused navigation is saved.'}
         >
           {state.navigationRecoveryAvailable ? <SecondaryButton
             label="Clear recovery"
@@ -168,14 +168,14 @@ export const SettingsScreen = ({ viewModel }) => {
 
         <InfoBanner
           tone="info"
-          text="Removing or reinstalling the app can erase device-local Trips, favorites, preferences, and downloaded guides. LakBai does not currently sync these to an account."
+          text="Uninstalling LakBai can remove Trips, favorites, preferences, and downloaded guides because they are not synced to an account."
         />
       </View>
 
       <Disclosure title="Privacy & about LakBai">
         <View style={[styles.card, shadows.card]}>
           <Text style={styles.sectionEyebrow}>PRIVACY & DATA</Text>
-          <Text style={styles.sectionTitle}>Device-local by design</Text>
+          <Text style={styles.sectionTitle}>Your data</Text>
           <SettingRow
             icon="person-outline"
             title="No sign-in required"
@@ -189,13 +189,13 @@ export const SettingsScreen = ({ viewModel }) => {
           <Text style={styles.sectionEyebrow}>ABOUT</Text>
           <Text style={styles.sectionTitle}>LakBai</Text>
           <Text style={styles.aboutText}>
-            An offline-first tourism and navigation experience for Davao del Norte. Ask LakBai and recommendations use the app’s local tourism data and routing context.
+            A tourism and navigation app for Davao del Norte. Ask LakBai uses destination information stored in the app.
           </Text>
           <Text style={styles.version}>Version {APP_VERSION}</Text>
           <View style={styles.attribution}>
             <Text style={styles.attributionTitle}>Map & data attribution</Text>
             <Text style={styles.attributionText}>
-              Map data includes contributions from OpenStreetMap. Sources are listed in each destination guide. Check opening hours and travel conditions before leaving.
+              Map data includes contributions from OpenStreetMap. Destination information sources are listed in each guide.
             </Text>
           </View>
         </View>

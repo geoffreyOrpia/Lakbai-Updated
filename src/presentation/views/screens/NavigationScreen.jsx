@@ -1,5 +1,6 @@
 import { ScreenScrollView as ScrollView } from "../components/ScreenScrollView.jsx";
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { upcomingRouteManeuvers } from "../../../core/routing/routeProgress.jsx";
 import { formatKm, formatDurationMinutes } from "../../../core/utils/format.jsx";
@@ -28,6 +29,14 @@ const formatAhead = km => {
   if (km == null) return '';
   if (km < 1) return `${Math.max(1, Math.round(km * 1000))} m`;
   return formatKm(km);
+};
+
+const formatArrivalTime = minutes => {
+  if (!Number.isFinite(minutes) || minutes < 0) return null;
+  return new Date(Date.now() + minutes * 60_000).toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 };
 
 const routePreferences = Object.freeze([
@@ -68,6 +77,7 @@ const preferenceDescription = preference => (
 
 export const NavigationScreen = ({ viewModel }) => {
   const state = viewModel.state;
+  const [showDestinationSwitcher, setShowDestinationSwitcher] = useState(false);
 
   if (state.loading) {
     return <View style={styles.center}>
@@ -116,6 +126,8 @@ export const NavigationScreen = ({ viewModel }) => {
             ? { tone: 'success', text: `GPS ready · about ${Math.round(state.accuracyM)} m accuracy.` }
             : { tone: 'success', text: 'GPS ready.' }
     : null;
+  const estimatedArrival = state.tracking ? formatArrivalTime(shownDurationMin) : null;
+  const switchTargets = viewModel.availableSwitchTargets ?? [];
 
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <BackAction label={state.destinationName || 'Destination'} onPress={() => viewModel.back()} />
@@ -128,7 +140,7 @@ export const NavigationScreen = ({ viewModel }) => {
           <Text style={styles.eyebrow}>DIRECTIONS</Text>
           <Text style={styles.title}>{multiStopJourney ? state.destinationName : state.target?.label ?? state.destinationName}</Text>
           <Text style={styles.subtitle}>
-            {state.mode === 'drive' ? 'Driving' : 'Walking'} · Works offline
+            {state.mode === 'drive' ? 'Driving' : 'Walking'}
             {state.mode === 'walk' ? ' · ' + preferenceLabel(state.preference) : ''}
           </Text>
         </View>
@@ -140,17 +152,9 @@ export const NavigationScreen = ({ viewModel }) => {
       {state.route && !state.tracking && !state.preview && recentGpsSource ? <InfoBanner
         tone="info"
         icon="locate-outline"
-        text={`This route starts from a recent location${gpsAgeSeconds != null ? ` from ${gpsAgeSeconds} seconds ago` : ''}. Start directions to let LakBai refine your live position before route progress begins.`}
+        text={`Route starts from a recent location${gpsAgeSeconds != null ? ` from ${gpsAgeSeconds} seconds ago` : ''}. Starting directions will refresh your position.`}
       /> : null}
       {state.backgroundWarning ? <InfoBanner tone="warn" text={state.backgroundWarning} /> : null}
-      {state.route && !state.preview && !state.tracking && !state.arrived ? <InfoBanner
-        tone="info"
-        text="Start directions to keep LakBai navigation active when you switch apps or lock your Android phone. Android may ask for background location access."
-      /> : null}
-      {state.tracking && state.backgroundNavigation ? <InfoBanner
-        tone="info"
-        text="Background navigation is active. You can switch apps or lock your screen; LakBai will keep route progress and voice guidance running."
-      /> : null}
       {state.resumedSession && state.multiStops.length ? <InfoBanner
         tone="info"
         text={`Resumed this saved itinerary at stop ${Math.min(state.completedStopCount + 1, state.multiStops.length)} of ${state.multiStops.length}. Finding your location to continue your trip.`}
@@ -175,7 +179,7 @@ export const NavigationScreen = ({ viewModel }) => {
         tone="warn"
         text="No nearby scenic detour was found. Showing the direct route."
       /> : null}
-      {state.rerouting ? <InfoBanner tone="info" text="Finding a new route from your location." /> : null}
+      {state.switchingDestination ? <InfoBanner tone="info" text="Changing destination and calculating from your current location." /> : state.rerouting ? <InfoBanner tone="info" text="Finding a new route from your location." /> : null}
       {state.wrongWay && state.tracking && !state.rerouting ? <InfoBanner
         tone="warn"
         text="You may be heading the wrong way. Check your direction when safe."
@@ -199,10 +203,15 @@ export const NavigationScreen = ({ viewModel }) => {
               value={formatDurationMinutes(shownDurationMin ?? 0)}
               label={hasFerryLeg
                 ? 'Travel time + ferry wait'
-                : state.tracking && state.usingLiveEta ? 'Arrival estimate' : state.tracking || state.arrived ? 'Arrival estimate' : 'Travel time'}
+                : state.tracking || state.arrived ? 'Time remaining' : 'Travel time'}
             />
-
           </View>
+          {estimatedArrival ? <View style={styles.arrivalRow}>
+              <Ionicons name="time-outline" size={15} color={colors.primary} />
+              <Text style={styles.etaText}>
+                Estimated arrival {estimatedArrival}{hasFerryLeg ? ' · ferry waits can change this' : ''}
+              </Text>
+            </View> : null}
 
           {state.preview ? <>
             <PrimaryButton label="Use my location" icon="locate-outline" onPress={() => void viewModel.startFromGps()} disabled={state.calculating} />
@@ -238,11 +247,19 @@ export const NavigationScreen = ({ viewModel }) => {
                 icon="navigate-outline"
                 disabled={state.rerouting}
                 onPress={() => void viewModel.startNavigation()}
-              /> : <SecondaryButton
-                label="Stop directions"
-                icon="stop-circle-outline"
-                onPress={() => viewModel.stopNavigation()}
-              />}
+              /> : <>
+                <SecondaryButton
+                  label={state.switchingDestination ? 'Changing destination…' : 'Change destination'}
+                  icon="swap-horizontal-outline"
+                  disabled={state.switchingDestination}
+                  onPress={() => setShowDestinationSwitcher(value => !value)}
+                />
+                <SecondaryButton
+                  label="Stop directions"
+                  icon="stop-circle-outline"
+                  onPress={() => viewModel.stopNavigation()}
+                />
+              </>}
               <SecondaryButton
                 label={state.voiceGuidance ? 'Mute voice guidance' : 'Enable voice guidance'}
                 icon={state.voiceGuidance ? 'volume-high-outline' : 'volume-mute-outline'}
@@ -250,8 +267,40 @@ export const NavigationScreen = ({ viewModel }) => {
               />
             </View> : null}
 
-          <NavigationMap
-            onStop={() => viewModel.stopNavigation()}
+          {state.tracking && showDestinationSwitcher ? <View style={[styles.destinationSwitcher, shadows.card]}>
+              <View style={styles.destinationSwitcherHeader}>
+                <View style={styles.destinationSwitcherIcon}>
+                  <Ionicons name="swap-horizontal-outline" size={18} color={colors.primary} />
+                </View>
+                <View style={styles.destinationSwitcherCopy}>
+                  <Text style={styles.destinationSwitcherTitle}>Change destination</Text>
+                  <Text style={styles.destinationSwitcherText}>Your new route starts from your current GPS position.</Text>
+                </View>
+              </View>
+              {switchTargets.length ? <View style={styles.destinationSwitcherList}>
+                  {switchTargets.map(option => <Pressable
+                    key={option.destinationId}
+                    accessibilityRole="button"
+                    accessibilityLabel={'Change destination to ' + option.destinationName}
+                    disabled={state.switchingDestination}
+                    onPress={() => void viewModel.switchDestination(option).then(result => {
+                      if (result.ok) setShowDestinationSwitcher(false);
+                    })}
+                    style={({ pressed }) => [
+                      styles.destinationSwitchOption,
+                      pressed && !state.switchingDestination && styles.preferenceOptionPressed,
+                    ]}
+                  >
+                    <View style={styles.destinationSwitchCopy}>
+                      <Text style={styles.destinationSwitchName}>{option.destinationName}</Text>
+                      <Text style={styles.destinationSwitchArea}>{option.area ?? option.target.label}</Text>
+                    </View>
+                    <Ionicons name="navigate-outline" size={17} color={colors.primary} />
+                  </Pressable>)}
+                </View> : <Text style={styles.destinationSwitcherEmpty}>No other offline destinations are available yet.</Text>}
+            </View> : null}
+
+          <NavigationMap            onStop={() => viewModel.stopNavigation()}
             onToggleVoice={() => viewModel.toggleVoiceGuidance()}
             route={state.route}
             target={state.route.finalTarget ?? state.target}
@@ -317,14 +366,14 @@ export const NavigationScreen = ({ viewModel }) => {
                   <Ionicons name="trail-sign-outline" size={19} color={colors.primary} />
                 </View>
                 <View style={styles.journeyCopy}>
-                  <Text style={styles.journeyEyebrow}>ROAD → VERIFIED TRAIL</Text>
+                  <Text style={styles.journeyEyebrow}>ROAD → TRAIL</Text>
                   <Text style={styles.journeyTitle}>Continue onto the walking trail</Text>
                 </View>
               </View>
               <View style={styles.journeySteps}>
                 <JourneyStep
                   icon="navigate-outline"
-                  label="Offline road route"
+                  label="Road route"
                   detail={formatKm(roadTrailJourney.legs?.find(leg => leg.kind === 'road')?.route?.distanceKm ?? 0)}
                 />
                 <Ionicons name="chevron-forward" size={15} color={colors.muted} />
@@ -336,7 +385,7 @@ export const NavigationScreen = ({ viewModel }) => {
                 <Ionicons name="chevron-forward" size={15} color={colors.muted} />
                 <JourneyStep
                   icon="footsteps-outline"
-                  label="Verified trail"
+                  label="Mapped trail"
                   detail={formatKm(roadTrailJourney.trailLeg?.distanceKm ?? 0)}
                 />
               </View>
@@ -351,7 +400,7 @@ export const NavigationScreen = ({ viewModel }) => {
                   <Ionicons name="git-commit-outline" size={19} color={colors.primary} />
                 </View>
                 <View style={styles.journeyCopy}>
-                  <Text style={styles.journeyEyebrow}>MULTI-STOP OFFLINE JOURNEY</Text>
+                  <Text style={styles.journeyEyebrow}>MULTI-STOP ROUTE</Text>
                   <Text style={styles.journeyTitle}>
                     {state.completedStopCount} of {state.multiStops.length} stops completed
                   </Text>
@@ -510,7 +559,7 @@ export const NavigationScreen = ({ viewModel }) => {
               {roadTrailJourney ? <View style={styles.arrivalTrailMeta}>
                   <Ionicons name="shield-checkmark-outline" size={17} color={colors.primary} />
                   <Text style={styles.arrivalTrailMetaText}>
-                    {formatKm(roadTrailJourney.trailLeg.distanceKm)} mapped trail · {formatDurationMinutes(roadTrailJourney.trailLeg.durationMin)} · works offline
+                    {formatKm(roadTrailJourney.trailLeg.distanceKm)} mapped trail · {formatDurationMinutes(roadTrailJourney.trailLeg.durationMin)}
                   </Text>
                 </View> : null}
               {!roadTrailJourney && state.trailId ? <PrimaryButton
@@ -601,7 +650,7 @@ export const NavigationScreen = ({ viewModel }) => {
                 {preferenceDescription(state.preference)}
               </Text>
             </View></Disclosure> : <Text style={styles.drivePilotNote}>
-              Driving directions are still being tested. Travel times are estimates. Follow road signs, closures, and access rules.
+              Travel times are estimates. Follow road signs, closures, and access rules.
             </Text>}
           <PrimaryButton
             label={state.calculating ? 'Calculating…' : 'Find my route'}
@@ -851,6 +900,90 @@ const styles = StyleSheet.create({
   summaryRow: {
     flexDirection: 'row',
     gap: spacing.xs,
+  },
+  arrivalRow: {
+    minHeight: 34,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySofter,
+    paddingHorizontal: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  etaText: {
+    flex: 1,
+    color: colors.primaryDark,
+    fontSize: 10.5,
+    lineHeight: 15,
+    fontWeight: '800',
+  },
+  destinationSwitcher: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    backgroundColor: colors.white,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  destinationSwitcherHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  destinationSwitcherIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySofter,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  destinationSwitcherCopy: {
+    flex: 1,
+  },
+  destinationSwitcherTitle: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  destinationSwitcherText: {
+    marginTop: 2,
+    color: colors.muted,
+    fontSize: 10,
+    lineHeight: 14,
+  },
+  destinationSwitcherList: {
+    gap: spacing.xs,
+  },
+  destinationSwitchOption: {
+    minHeight: 52,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceMuted,
+    paddingHorizontal: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  destinationSwitchCopy: {
+    flex: 1,
+  },
+  destinationSwitchName: {
+    color: colors.text,
+    fontSize: 11.5,
+    fontWeight: '900',
+  },
+  destinationSwitchArea: {
+    marginTop: 1,
+    color: colors.muted,
+    fontSize: 9.8,
+    lineHeight: 13,
+  },
+  destinationSwitcherEmpty: {
+    color: colors.muted,
+    fontSize: 10.5,
+    lineHeight: 15,
   },
   journeyCard: {
     borderWidth: 1,

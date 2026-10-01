@@ -3,7 +3,7 @@ const reviewedAt = '2026-09-29';
 const SOURCE_REVIEW = Object.freeze({
   reviewMethod: 'online-source-review',
   fieldVerified: false,
-  operationalNote: 'LakBai reviewed public online sources. This is not a field inspection. Reconfirm time-sensitive hours, fees, transport, access conditions, and closures before travel.',
+  operationalNote: 'Sources were reviewed online, not checked on site. Confirm current hours, fees, transport, access conditions, and closures before travel.',
 });
 
 const reviewed = entry => ({
@@ -15,7 +15,7 @@ const reviewed = entry => ({
 export const destinationVerification = Object.freeze({
   samal: reviewed({
     status: 'partial',
-    summary: 'Destination identity and tourism context were checked against official Samal tourism and city-government sources. LakBai does not treat ferry schedules, fares, opening hours, road condition, or facility availability as verified by this review.',
+    summary: 'Official Samal tourism and city-government sources confirm the destination and tourism context. Ferry schedules, fares, opening hours, road conditions, and facility availability can change and are not confirmed by this review.',
     sources: [
       {
         label: 'Samal Turismo — City Tourism Office',
@@ -33,7 +33,7 @@ export const destinationVerification = Object.freeze({
   }),
   'hagimit-falls': reviewed({
     status: 'partial',
-    summary: 'Hagimit Falls is represented in official Samal tourism material. Exact visitor procedures, prices, opening conditions, transport availability, walking conditions, and suggested route timing remain unverified operational details.',
+    summary: 'Official Samal tourism material identifies Hagimit Falls as a local attraction. Current visitor procedures, prices, opening conditions, transport availability, walking conditions, and route timing still require local confirmation.',
     sources: [
       {
         label: 'Samal Turismo — City Tourism Office',
@@ -45,7 +45,7 @@ export const destinationVerification = Object.freeze({
   }),
   'monfort-bat-sanctuary': reviewed({
     status: 'partial',
-    summary: 'The Monfort colony identity, Samal location, and Guinness record for Geoffrey’s rousette fruit bats were source-reviewed. Current visitor procedures, schedules, fees, accessibility, and path conditions still require local confirmation.',
+    summary: 'Guinness World Records and Samal tourism sources confirm the colony identity, Samal location, and record for Geoffrey’s rousette fruit bats. Current visitor procedures, schedules, fees, accessibility, and path conditions still require local confirmation.',
     sources: [
       {
         label: 'Guinness World Records — Monfort Bat Colony',
@@ -63,7 +63,7 @@ export const destinationVerification = Object.freeze({
   }),
   tagum: reviewed({
     status: 'partial',
-    summary: 'Tagum tourism-office information and current city/cultural references were checked against the city-government website. LakBai does not treat transport schedules, market operating details, attraction hours, or facility availability as verified.',
+    summary: 'Tagum tourism-office and city cultural information were checked against the city-government website. Transport schedules, market operating details, attraction hours, and facility availability can change and are not confirmed by this review.',
     sources: [
       {
         label: 'Tagum City Official Website — City Tourism and Cultural Office directory',
@@ -81,7 +81,7 @@ export const destinationVerification = Object.freeze({
   }),
   panabo: reviewed({
     status: 'partial',
-    summary: 'Panabo City sources confirm the J.P. Laurel mangrove attraction, while historical official pages report differing boardwalk lengths. LakBai therefore navigates only the independently source-matched OpenStreetMap segment and does not infer current total boardwalk length, opening hours, fees, or access conditions.',
+    summary: 'Panabo City sources confirm the J.P. Laurel mangrove attraction, while historical official pages report different boardwalk lengths. Navigation therefore covers only the mapped OpenStreetMap segment; the current total boardwalk length, hours, fees, and access conditions are not confirmed.',
     sources: [
       {
         label: 'City Government of Panabo — J.P. Laurel Mangrove Reforestation Area',
@@ -105,12 +105,12 @@ export const destinationVerification = Object.freeze({
   }),
   kapalong: reviewed({
     status: 'prototype',
-    summary: 'Coming-soon content is still a prototype and is not presented as source-reviewed visitor guidance.',
+    summary: 'Visitor information is still under review and is not yet available as a destination guide.',
     sources: [],
   }),
   'san-isidro': reviewed({
     status: 'prototype',
-    summary: 'Coming-soon content is still a prototype and is not presented as source-reviewed visitor guidance.',
+    summary: 'Visitor information is still under review and is not yet available as a destination guide.',
     sources: [],
   }),
 });
@@ -118,7 +118,7 @@ export const destinationVerification = Object.freeze({
 export const verificationForDestination = destinationId => (
   destinationVerification[destinationId] ?? reviewed({
     status: 'prototype',
-    summary: 'This content has not yet completed source review.',
+    summary: 'Visitor information for this destination is still under review.',
     sources: [],
   })
 );

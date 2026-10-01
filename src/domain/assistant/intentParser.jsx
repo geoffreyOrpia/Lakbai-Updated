@@ -40,7 +40,7 @@ export const parseAssistantRequest = message => {
   else if (includesAny(text, ['ferry', 'transport', 'getting around', 'get around', 'getting there', 'travel to'])) intent = 'transport';
   else if (
     interests.length
-    || includesAny(text, ['recommend', 'suggest', 'find me', 'where should', 'what can i do', 'places to visit', 'where can i go'])
+    || includesAny(text, ['recommend', 'suggest', 'find me', 'where should', 'places to visit', 'where can i go'])
   ) intent = 'recommend';
 
   return { text, intent, constraints };

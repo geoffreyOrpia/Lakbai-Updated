@@ -64,8 +64,8 @@ export class AssistantViewModel extends ViewModel {
         }
         : {};
       const welcome = initialEntity
-        ? `Ask me about ${initialEntity.destination.name}. I can use its LakBai guide for places, directions, transport, safety, offline use, and trip planning.`
-        : 'Hi, I’m Ask LakBai. I use the local guides already stored in LakBai to help you discover places, plan trips, prepare, and navigate.';
+        ? `Ask me about ${initialEntity.destination.name}—places, directions, transport, safety, or trip ideas.`
+        : 'Hi, I’m Ask LakBai. Ask me about places, directions, safety, or trip ideas in Davao del Norte.';
       this.setState({
         knowledge,
         preferences,
@@ -82,7 +82,7 @@ export class AssistantViewModel extends ViewModel {
       });
     } catch (error) {
       this.setState({
-        error: userMessage(error, 'Ask LakBai could not open the local travel knowledge.'),
+        error: userMessage(error, 'Ask LakBai could not load destination information.'),
       });
     } finally {
       this.setState({ loading: false });
@@ -177,7 +177,7 @@ export class AssistantViewModel extends ViewModel {
       this.appendMessage({
         id: this.nextId('assistant'),
         role: 'assistant',
-        text: userMessage(error, 'I could not answer that from the local LakBai guides.'),
+        text: userMessage(error, 'I could not answer that from the available destination information.'),
         suggestions: starterSuggestions,
         actions: [],
       });

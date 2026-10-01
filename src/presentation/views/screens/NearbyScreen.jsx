@@ -24,7 +24,7 @@ export const NearbyScreen = ({ viewModel }) => {
       : 'Current device location';
   if (state.loading) {
     return <View style={styles.centerScreen}>
-        <LoadingState title="Finding nearby places" text="Opening places, streets, and your saved map spots." />
+        <LoadingState title="Loading nearby places" />
       </View>;
   }
 
@@ -32,9 +32,9 @@ export const NearbyScreen = ({ viewModel }) => {
       <BackAction label="Home" onPress={() => viewModel.back()} />
 
       <View style={styles.header}>
-        <Text style={styles.eyebrow}>DAVAO DEL NORTE · OFFLINE</Text>
+        <Text style={styles.eyebrow}>MAP & PLACES</Text>
         <Text style={styles.title}>Nearby places</Text>
-        <Text style={styles.subtitle}>Browse tourism places across Davao del Norte, search streets, or hold the map to save a spot.</Text>
+        <Text style={styles.subtitle}>Search tourism places and streets, or long-press the map to save a pin.</Text>
       </View>
 
       <SearchField
@@ -53,7 +53,7 @@ export const NearbyScreen = ({ viewModel }) => {
 
       {state.permission === 'denied' ? <EmptyState
         icon="location-outline"
-        title="Your location is off"
+        title="Location access is off"
         text="You can still search and use the map. Allow location access to see which places are closest."
         actionLabel="Try again"
         onAction={() => void viewModel.load()}
@@ -67,7 +67,7 @@ export const NearbyScreen = ({ viewModel }) => {
 
       {state.query.trim() ? <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Offline search results</Text>
+            <Text style={styles.sectionTitle}>Search results</Text>
             <Text style={styles.sectionMeta}>{searchResults.length} shown</Text>
           </View>
           {searchResults.length ? <View style={styles.list}>
@@ -86,14 +86,14 @@ export const NearbyScreen = ({ viewModel }) => {
               /> : null}
             </View> : <EmptyState
               icon="search-outline"
-              title="No offline match"
+              title="No match"
               text="Try another place or street name."
             />}
         </View> : <>
           {state.recents.length ? <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Recent destinations</Text>
-                <Text style={styles.sectionMeta}>Saved on your phone</Text>
+                <Text style={styles.sectionMeta}>Recently opened</Text>
               </View>
               <View style={styles.compactList}>
                 {state.recents.slice(0, 5).map(entry => <DiscoveryEntry
@@ -148,8 +148,7 @@ export const NearbyScreen = ({ viewModel }) => {
                 /> : null}
               </View> : <EmptyState
                 icon="map-outline"
-                title="No tourism places available"
-                text="The bundled tourism catalog could not provide mapped places."
+                title="No mapped tourism places"
               />}
           </View>
         </>}
@@ -172,7 +171,6 @@ export const NearbyScreen = ({ viewModel }) => {
           </Pressable>
         </View> : null}
 
-      <InfoBanner tone="info" text="Tourism places come from LakBai’s bundled local catalog and work offline. Street matches use the bundled Davao del Norte OSM routing dataset; mapped coordinates are not automatically verified entrances." />
     </ScrollView>;
 };
 

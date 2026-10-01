@@ -155,7 +155,7 @@ export const TrailMap = ({
 
         <View pointerEvents="none" style={styles.offlineBadge}>
           <View style={styles.offlineDot} />
-          <Text style={styles.offlineText}>{detailedOffline ? 'OFFLINE · LOCAL MAP' : 'OFFLINE · TRAIL ONLY'}</Text>
+          <Text style={styles.offlineText}>{detailedOffline ? 'SAVED MAP' : 'TRAIL ONLY'}</Text>
         </View>
 
         {tracking ? <Pressable
@@ -171,11 +171,7 @@ export const TrailMap = ({
           </Pressable> : null}
       </View>
 
-      <Text style={styles.caption}>
-        {detailedOffline
-          ? 'This saved map and walking trail work without internet.'
-          : 'Map details could not load. Your trail and location are still available.'}
-      </Text>
+      {!detailedOffline ? <Text style={styles.caption}>Map details could not load. Your trail and location are still available.</Text> : null}
     </View>;
 };
 

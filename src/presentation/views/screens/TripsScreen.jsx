@@ -35,7 +35,7 @@ const TripList = ({
   if (state.loading && !state.trips.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AppHeader onOpenSettings={onOpenSettings} />
-        <LoadingState title="Loading your itineraries" text="Reading trips saved on this device." />
+        <LoadingState title="Loading trips" />
       </ScrollView>;
   }
   if (state.error && !state.trips.length) {
@@ -50,7 +50,7 @@ const TripList = ({
       <ScreenIntro
         eyebrow="MY TRIPS"
         title="Your trips"
-        subtitle="Plan, save, and review personal trips stored only on this device."
+        subtitle="Plan destinations, dates, notes, and route order."
       />
 
       <Pressable accessibilityRole="button" accessibilityLabel="Create a trip" style={({
@@ -68,13 +68,7 @@ const TripList = ({
 
       {state.error ? <InfoBanner tone="danger" text={state.error} /> : null}
 
-      {!state.loading && state.trips.length === 0 ? <EmptyState icon="map-outline" title="No trips yet" text="Create your first trip to organize destinations, times, and notes before you go." /> : <View style={styles.tripSection}>
-          <View style={styles.sectionHeadingRow}>
-            <View>
-              <Text style={styles.sectionKicker}>SAVED ITINERARIES</Text>
-              <Text style={styles.sectionTitle}>Your trips</Text>
-            </View>
-          </View>
+      {!state.loading && state.trips.length === 0 ? <EmptyState icon="map-outline" title="No trips yet" text="Create a trip to organize destinations, times, and notes before you go." /> : <View style={styles.tripSection}>
           <View style={styles.tripList}>
             {state.trips.slice(0, tripLimit).map(trip => <TripCard key={trip.id} trip={trip} readiness={viewModel.tripReadiness(trip)} onPress={() => viewModel.openDetails(trip)} />)}
             {state.trips.length > tripLimit ? <SecondaryButton
@@ -115,10 +109,6 @@ const TripCard = ({
             <Text style={styles.tripMetaChipText}>
               {trip.stops.length} {trip.stops.length === 1 ? 'stop' : 'stops'}
             </Text>
-          </View>
-          <View style={styles.tripMetaChip}>
-            <Ionicons name="cloud-done-outline" size={14} color={colors.primary} />
-            <Text style={[styles.tripMetaChipText, styles.tripMetaChipReady]}>{readiness.ready} offline-ready</Text>
           </View>
         </View>
 
@@ -183,7 +173,7 @@ const TripEditor = ({
       </View>
 
       <View style={[styles.formCard, shadows.card]}>
-        <SectionBadge step={2} title="Choose destinations" text="Choose places for your trip." />
+        <SectionBadge step={2} title="Choose destinations" text="Add the places you want to visit." />
         <View style={styles.destinationList}>
           {available.slice(0, destinationLimit).map(item => {
           const added = viewModel.isStopAdded(item.destination.id);
@@ -207,7 +197,7 @@ const TripEditor = ({
                 </Pressable>
               </View>;
         })}
-          {!available.length ? <Text style={styles.emptyText}>No destinations available yet. Connect once to load the catalog.</Text> : null}
+          {!available.length ? <Text style={styles.emptyText}>No destinations are available in this version of LakBai.</Text> : null}
           {available.length > destinationLimit ? <SecondaryButton
             label="Show more destinations"
             icon="chevron-down-outline"
@@ -371,10 +361,6 @@ const TripDetails = ({
             </Text>
           </View>
         </View>
-        <View style={styles.localDetailPill}>
-          <Ionicons name="phone-portrait-outline" size={13} color={colors.primary} />
-          <Text style={styles.localDetailText}>Saved locally · {readiness.ready}/{readiness.total} stops offline-ready</Text>
-        </View>
       </View>
 
       {readiness.missingStops.length ? <View style={[styles.missingCard, shadows.soft]}>
@@ -403,7 +389,7 @@ const TripDetails = ({
                 </View>
               </Pressable>)}
           </View>
-        </View> : <InfoBanner tone="info" text="Every stop in this itinerary is saved to Saved places and ready for offline use." />}
+        </View> : null}
 
       {trip.notes ? <View style={[styles.noteCard, shadows.soft]}>
           <Text style={styles.noteLabel}>TRIP NOTES</Text>
@@ -913,21 +899,6 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 11.2,
     fontWeight: '700'
-  },
-  localDetailPill: {
-    alignSelf: 'flex-start',
-    minHeight: 28,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primarySofter,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xxs
-  },
-  localDetailText: {
-    color: colors.primary,
-    fontSize: 10,
-    fontWeight: '800'
   },
   missingCard: {
     borderWidth: 1,

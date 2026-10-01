@@ -16,7 +16,7 @@ export const EmptyState = ({
         <Ionicons name={icon} size={24} color={colors.primary} />
       </View>
       <Text style={styles.title}>{title}</Text>
-      <Text style={styles.text}>{text}</Text>
+      {text ? <Text style={styles.text}>{text}</Text> : null}
       {actionLabel && onAction ? <View style={styles.action}>
           <SecondaryButton label={actionLabel} icon={resolvedActionIcon} onPress={onAction} />
         </View> : null}

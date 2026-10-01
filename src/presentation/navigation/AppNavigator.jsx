@@ -104,7 +104,7 @@ export const AppNavigator = () => {
   if (session.state.phase === 'restoring') {
     return <View
         accessibilityRole="progressbar"
-        accessibilityLabel="Preparing LakBai and your offline travel data"
+        accessibilityLabel="Preparing LakBai"
         accessibilityLiveRegion="polite"
         style={styles.splash}
       >
@@ -118,11 +118,8 @@ export const AppNavigator = () => {
           <ActivityIndicator size="small" color={colors.primary} />
           <View style={styles.splashCopy}>
             <Text style={styles.splashTitle}>Preparing LakBai</Text>
-            <Text style={styles.splashText}>Opening your saved maps and local travel data…</Text>
+            <Text style={styles.splashText}>Loading your places, trips, and saved maps…</Text>
           </View>
-        </View>
-        <View style={styles.splashOfflinePill}>
-          <Text style={styles.splashOfflineText}>OFFLINE-READY TRAVEL GUIDE</Text>
         </View>
       </View>;
   }
@@ -192,8 +189,7 @@ export const AppNavigator = () => {
   };
   const hasOverlay = stack.length > 0;
   const topRoute = hasOverlay ? stack[stack.length - 1] : null;
-  const showAssistantGuide = !hasOverlay
-    || ['destination', 'trail', 'nearby'].includes(topRoute?.name);
+  const showAssistantGuide = !['assistant', 'navigation'].includes(topRoute?.name);
   const assistantDestinationId = topRoute?.destinationId ?? null;
   return <View style={styles.screen}>
     <View style={[styles.content, hasOverlay && styles.hidden]} accessibilityElementsHidden={hasOverlay} importantForAccessibility={hasOverlay ? 'no-hide-descendants' : 'auto'}>
@@ -237,7 +233,14 @@ export const AppNavigator = () => {
         name: 'destination',
         destinationId
       })} /></RetainedTab>
-        <RetainedTab visible={tab === 'safety' && !hasOverlay}><SafetyTab active={tab === 'safety' && !hasOverlay} onOpenSettings={() => push({ name: 'settings' })} /></RetainedTab>
+        <RetainedTab visible={tab === 'safety' && !hasOverlay}><SafetyTab
+          active={tab === 'safety' && !hasOverlay}
+          onOpenSettings={() => push({ name: 'settings' })}
+          onOpenDestination={destinationId => push({
+            name: 'destination',
+            destinationId,
+          })}
+        /></RetainedTab>
       </View>
       <BottomNav active={tab} onChange={setTab} />
     </View>
@@ -253,13 +256,14 @@ export const AppNavigator = () => {
           <ScreenActiveContext.Provider value={active}>{renderRoute(route, active)}</ScreenActiveContext.Provider>
         </View>;
     })}
-    {showAssistantGuide ? <FloatingAssistantGuide
+    <FloatingAssistantGuide
+      visible={showAssistantGuide}
       bottomOffset={hasOverlay ? spacing.md : layout.tabBarHeight + spacing.lg}
       onPress={() => push({
         name: 'assistant',
         ...(assistantDestinationId ? { destinationId: assistantDestinationId } : {}),
       })}
-    /> : null}
+    />
   </View>;
 };
 // Keep visited tabs mounted so search, scroll, and unfinished forms survive a detour.
@@ -448,11 +452,15 @@ const TripsTab = ({
   useRefreshOnReturn(viewModel, active);
   return <TripsScreen viewModel={viewModel} onOpenSettings={onOpenSettings} />;
 };
-const SafetyTab = ({ active, onOpenSettings }) => {
+const SafetyTab = ({ active, onOpenSettings, onOpenDestination }) => {
   const container = getContainer();
   const viewModel = useViewModel(() => new SafetyViewModel(container.safetyDeps, container.destinationDeps.packRepository));
   useRefreshOnReturn(viewModel, active);
-  return <SafetyScreen viewModel={viewModel} onOpenSettings={onOpenSettings} />;
+  return <SafetyScreen
+    viewModel={viewModel}
+    onOpenSettings={onOpenSettings}
+    onOpenDestination={onOpenDestination}
+  />;
 };
 const SettingsFlow = ({ onBack, onRestartSetup }) => {
   const container = getContainer();
@@ -518,16 +526,4 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     fontWeight: '700'
   },
-  splashOfflinePill: {
-    borderRadius: 999,
-    backgroundColor: colors.primarySofter,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 7
-  },
-  splashOfflineText: {
-    color: colors.primary,
-    fontSize: 8.5,
-    letterSpacing: 0.7,
-    fontWeight: '900'
-  }
 });

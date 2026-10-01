@@ -21,7 +21,7 @@ export const packs = [{
     distanceKm: 2.4,
     durationMin: 55,
     elevationGainM: 40,
-    description: 'Planning-only shoreline route suggestion near Kaputian. LakBai has not field-verified this line, surface conditions, access continuity, or walking time; use local signs and current advice on site.',
+    description: 'Suggested shoreline walk near Kaputian. This path is not verified for turn-by-turn navigation; follow local signs and current access conditions on site.',
     start: {
       name: 'Kaputian Wharf',
       lat: 6.9888,
@@ -101,15 +101,15 @@ export const packs = [{
     category: 'transport',
     lat: 7.1216,
     lng: 125.6849,
-    description: 'Mapped road junction included as a local orientation point in the Samal pack.',
-    tip: 'Local transport availability and fares are not verified by LakBai; confirm them at the time of travel.'
+    description: 'Road junction near Babak used as an orientation point for local connections.',
+    tip: 'Confirm current transport availability and fares at the time of travel.'
   }, {
     id: 'spot-samal-resort',
     name: 'Isla Reta Beach Area',
     category: 'beach',
     lat: 6.9561,
     lng: 125.6753,
-    description: 'Beach-area destination on Talikud Island included for trip planning.',
+    description: 'Beach area on Talikud Island associated with coastal recreation and overnight stays.',
     tip: 'Confirm current access, accommodation, fees, and overnight policies directly with the operator.'
   }, {
     id: 'spot-samal-viewdeck',
@@ -117,13 +117,13 @@ export const packs = [{
     category: 'viewpoint',
     lat: 7.1203,
     lng: 125.6699,
-    description: 'Mapped coastal viewpoint included as a short scenic stop in the Samal pack.',
+    description: 'Coastal viewpoint near Babak suited to a short scenic stop.',
     tip: 'Treat roadside access and stopping safety as conditions to confirm on site.'
   }],
   transport: {
     gettingThere: ['Samal is reached from the Davao side through ferry/boat connections serving the island.', 'Vehicle and passenger arrangements, terminal use, fares, and schedules can change; confirm the current crossing at the port before travel.', 'Local road transport options vary by area and time of day.'],
-    gettingAround: ['Use the local road network and confirm current public-transport or hired-vehicle availability for the part of the island you plan to visit.', 'Allow extra time for weather, ferry queues, road works, and local access conditions that LakBai cannot verify live.'],
-    localTips: ['Download the Samal pack before crossing if you expect limited connectivity.', 'Carry an offline copy of important booking and operator details.', 'Confirm return-crossing arrangements before traveling far from the port area.']
+    gettingAround: ['Use the local road network and confirm current public-transport or hired-vehicle availability for the part of the island you plan to visit.', 'Allow extra time for weather, ferry queues, road works, and local access conditions.'],
+    localTips: ['Confirm return-crossing arrangements before traveling far from your arrival port.']
   },
   safety: {
     reminders: ['Confirm current return-crossing arrangements before traveling far from your arrival port.', 'Use sun protection and footwear suitable for the conditions you actually encounter.', 'Share your day plan with someone you trust when visiting less-connected areas.', 'Follow current marine-weather and boat-operator safety guidance.'],
@@ -141,7 +141,7 @@ export const packs = [{
     distanceKm: 1.4,
     durationMin: 40,
     elevationGainM: 60,
-    description: 'Planning-only route suggestion around the Hagimit Falls area. LakBai has not field-verified this geometry, path condition, barriers, or walking time, so follow current site guidance rather than this line when conditions differ.',
+    description: 'Suggested walking loop around the Hagimit Falls area. The path is not verified for turn-by-turn navigation; follow current site paths, barriers, and staff guidance.',
     start: {
       name: 'Trailhead Entrance',
       lat: 7.1172,
@@ -157,21 +157,21 @@ export const packs = [{
       type: 'start',
       lat: 7.1172,
       lng: 125.6965,
-      note: 'Approximate planning start. Confirm the current visitor entrance and registration procedure on arrival.'
+      note: 'Approximate starting point. Confirm the current visitor entrance and registration procedure on arrival.'
     }, {
       id: 'wp-hag-first',
       name: 'First Falls Pool',
       type: 'poi',
       lat: 7.1164,
       lng: 125.6987,
-      note: 'Planning waypoint only. Water depth and safe swimming conditions are not verified by LakBai.'
+      note: 'Check current water depth, current, and posted swimming guidance before entering the pool.'
     }, {
       id: 'wp-hag-second',
       name: 'Second Falls',
       type: 'poi',
       lat: 7.1181,
       lng: 125.7004,
-      note: 'Planning waypoint only. Follow current barriers, staff instructions, and posted water-safety guidance.'
+      note: 'Follow current barriers, staff instructions, and posted water-safety guidance.'
     }, {
       id: 'wp-hag-deck',
       name: 'Upper View Deck',
@@ -187,7 +187,7 @@ export const packs = [{
     category: 'facility',
     lat: 7.1172,
     lng: 125.6965,
-    description: 'Approximate visitor-entry point included for orientation in the Hagimit pack.',
+    description: 'Approximate visitor entrance for Hagimit Falls Nature Park.',
     tip: 'Confirm current ticketing, hours, fees, cottage availability, and entrance procedure locally.'
   }, {
     id: 'spot-hag-store',
@@ -195,20 +195,20 @@ export const packs = [{
     category: 'town',
     lat: 7.1201,
     lng: 125.6921,
-    description: 'Mapped roadside cluster included as a planning landmark near the falls approach.',
-    tip: 'LakBai does not verify current vendors, supplies, rentals, or operating hours.'
+    description: 'Roadside cluster near the approach to Hagimit Falls.',
+    tip: 'Vendors, supplies, rentals, and opening times can change; confirm what is available on arrival.'
   }, {
     id: 'spot-hag-habal',
     name: 'Habal-habal Waiting Shed',
     category: 'transport',
     lat: 7.1152,
     lng: 125.7008,
-    description: 'Mapped roadside point included as an orientation landmark near the falls area.',
+    description: 'Roadside waiting-shed location near the Hagimit Falls area.',
     tip: 'Do not rely on transport being available here; arrange and confirm current pickup options separately.'
   }],
   transport: {
-    gettingThere: ['Reach Samal using the current ferry/boat arrangement, then confirm the present local road transport and visitor entrance for Hagimit Falls.', 'LakBai does not verify live fares, schedules, road condition, or final access procedure.'],
-    gettingAround: ['Follow posted site paths, barriers, and staff instructions. The LakBai route suggestion is planning-only and is not released as verified trail navigation.'],
+    gettingThere: ['Reach Samal using the current ferry or boat arrangement, then confirm the local road connection and visitor entrance for Hagimit Falls.', 'Fares, schedules, road conditions, and final access procedures can change.'],
+    gettingAround: ['Follow posted site paths, barriers, and staff instructions.'],
     localTips: ['Check weather and local access conditions before the visit.', 'Protect phones and valuables from water and humidity around the falls.']
   },
   safety: {
@@ -227,7 +227,7 @@ export const packs = [{
     distanceKm: 0.8,
     durationMin: 25,
     elevationGainM: 15,
-    description: 'Planning-only path suggestion around the sanctuary area. LakBai does not claim the route, guide procedure, accessibility, surface, or timing is field-verified.',
+    description: 'Suggested walking path around the sanctuary area. It is not verified for turn-by-turn navigation; follow sanctuary staff, barriers, and current visitor procedures.',
     start: {
       name: 'Visitor Center',
       lat: 7.1259,
@@ -243,7 +243,7 @@ export const packs = [{
       type: 'start',
       lat: 7.1259,
       lng: 125.6776,
-      note: 'Planning start only. Confirm the current registration, fee, briefing, and visitor procedure with sanctuary staff.'
+      note: 'Approximate starting point. Confirm registration, fees, briefing, and visitor procedures with sanctuary staff.'
     }, {
       id: 'wp-mon-deck',
       name: 'Main Cave Viewdeck',
@@ -266,7 +266,7 @@ export const packs = [{
     category: 'facility',
     lat: 7.1259,
     lng: 125.6776,
-    description: 'Visitor-area point included for orientation at the sanctuary.',
+    description: 'Visitor-center area used for arrival, registration, and orientation at the sanctuary.',
     tip: 'Confirm current registration, viewing rules, fees, schedules, and group procedures directly with sanctuary staff.'
   }, {
     id: 'spot-mon-cave',
@@ -282,12 +282,12 @@ export const packs = [{
     category: 'transport',
     lat: 7.1236,
     lng: 125.6752,
-    description: 'Mapped road-junction point included as an orientation landmark near the sanctuary.',
-    tip: 'Local transport availability and pickup arrangements are not verified by LakBai.'
+    description: 'Road junction near the sanctuary entrance.',
+    tip: 'Confirm current transport availability and pickup arrangements before relying on this point.'
   }],
   transport: {
-    gettingThere: ['Use the Samal road network from your arrival area and confirm the current route, drop-off, and local transport arrangement to the sanctuary.', 'LakBai does not verify live transport fares, visitor schedules, or same-day access.'],
-    gettingAround: ['Follow sanctuary staff, signs, barriers, and current visitor rules. The LakBai path suggestion is not released as verified trail navigation.'],
+    gettingThere: ['Use the Samal road network from your arrival area and confirm the current route, drop-off, and local transport arrangement to the sanctuary.', 'Transport fares, visitor schedules, and same-day access can change.'],
+    gettingAround: ['Follow sanctuary staff, signs, barriers, and current visitor rules.'],
     localTips: ['Keep wildlife disturbance low and follow current sanctuary instructions.', 'Bring suitable sun/rain protection for outdoor portions of the visit.']
   },
   safety: {
@@ -306,7 +306,7 @@ export const packs = [{
     distanceKm: 2.1,
     durationMin: 50,
     elevationGainM: 10,
-    description: 'Planning-only city-center route suggestion connecting catalog landmarks. LakBai has not field-verified the full pedestrian path, crossings, temporary closures, accessibility, or walking time.',
+    description: 'Suggested city-center walk connecting major Tagum landmarks. The full pedestrian path, crossings, temporary closures, accessibility, and walking time are not verified for turn-by-turn navigation.',
     start: {
       name: 'Christ the King Cathedral',
       lat: 7.4477,
@@ -385,7 +385,7 @@ export const packs = [{
     category: 'transport',
     lat: 7.4436,
     lng: 125.8038,
-    description: 'Transport-terminal point included for regional trip planning in the Tagum pack.',
+    description: 'Regional transport terminal serving trips to and from Tagum.',
     tip: 'Routes, operators, loading areas, and departure times can change; verify them at the terminal.'
   }, {
     id: 'spot-tag-museum',
@@ -394,12 +394,12 @@ export const packs = [{
     lat: 7.4489,
     lng: 125.8045,
     description: 'Compact city museum covering Tagum history and festival memorabilia.',
-    tip: 'LakBai does not currently have source-reviewed operating hours; confirm opening directly before visiting.'
+    tip: 'Confirm current opening hours before visiting.'
   }],
   transport: {
     gettingThere: ['Tagum is served by regional road transport from Davao del Norte and neighboring areas.', 'Confirm the current operator, terminal, route, fare, and departure arrangement before travel.'],
     gettingAround: ['Use current local transport information and pedestrian conditions for the city area you plan to visit.', 'Temporary traffic management and event closures can affect routes around major city venues.'],
-    localTips: ['Keep the offline pack available for destination notes and navigation context.', 'Check current city advisories when traveling during major civic or cultural events.']
+    localTips: ['Check current city advisories when traveling during major civic or cultural events.']
   },
   safety: {
     reminders: ['Keep personal belongings secure in crowded public areas.', 'Use marked pedestrian crossings and follow current traffic controls.', 'Confirm your return transport directly with the current operator or terminal before relying on a departure.'],
@@ -418,20 +418,20 @@ export const packs = [{
     durationMin: 12,
     elevationGainM: null,
     routeVerified: true,
-    description: 'A source-matched pedestrian segment inside Panabo Mangrove Park. Historical Panabo City pages report differing total boardwalk lengths, so LakBai makes no claim about the current total length and navigates only the approximately 214-meter OpenStreetMap segment matched to the attraction.',
+    description: 'An approximately 214-meter mapped pedestrian segment inside Panabo Mangrove Park. It does not represent the full current boardwalk, whose published historical lengths differ.',
     start: {
       name: 'Mapped boardwalk segment start',
       lat: 7.2723324,
       lng: 125.6808807
     },
     verification: {
-      label: 'Source-matched Panabo Mangrove Park segment',
+      label: 'Mapped Panabo Mangrove Park segment',
       verifiedAt: '2026-09-28',
       geometrySource: 'OpenStreetMap way 641690678 v2',
       geometryUrl: 'https://www.openstreetmap.org/way/641690678',
       officialSource: 'https://panabocity.gov.ph/panabo-mangrove-park-ecotourism-project-inaugurated/',
       license: 'OpenStreetMap data © OpenStreetMap contributors, ODbL 1.0',
-      summary: 'Panabo City sources confirm the mangrove attraction in Barangay J.P. Laurel but historical official pages report different boardwalk lengths. The LakBai navigation line is therefore limited to OpenStreetMap way 641690678, an approximately 214-meter mapped segment matched to the attraction; it does not represent the full current facility.'
+      summary: 'This approximately 214-meter mapped segment matches the mangrove attraction in Panabo City sources and OpenStreetMap. It does not represent the full current boardwalk.'
     },
     geometry: {
       type: 'LineString',
@@ -450,7 +450,7 @@ export const packs = [{
       type: 'end',
       lat: 7.2710674,
       lng: 125.6810269,
-      note: 'LakBai navigation stops here because the remaining boardwalk geometry has not been source-verified.'
+      note: 'Mapped navigation ends here. Follow current local signs if you continue beyond this segment.'
     }]
   }],
   spots: [{
@@ -460,28 +460,28 @@ export const packs = [{
     category: 'park',
     lat: 7.272383,
     lng: 125.680829,
-    description: 'Barangay J.P. Laurel mangrove park location cross-checked against published field research and Panabo City tourism material.',
-    tip: 'The in-app trail navigator covers only the source-verified mapped segment; follow local signs for the rest of the facility.'
+    description: 'Mangrove park in Barangay J.P. Laurel with a boardwalk area through the coastal mangrove environment.',
+    tip: 'The trail navigator covers only the mapped 214-meter segment; follow local signs for the rest of the facility.'
   }, {
     id: 'spot-pan-park',
     name: 'Panabo City Park',
     category: 'park',
     lat: 7.3058,
     lng: 125.6809,
-    description: 'Mapped central-city park included as an orientation point in the Panabo pack.',
-    tip: 'LakBai does not verify current public-transport loading points or availability here.'
+    description: 'Public park in central Panabo used as a city landmark and meeting point.',
+    tip: 'Confirm current public-transport loading points and availability locally.'
   }, {
     id: 'spot-pan-market',
     name: 'Panabo Public Market',
     category: 'market',
     lat: 7.3048,
     lng: 125.6789,
-    description: 'Mapped public-market point included for city orientation and trip planning.',
+    description: 'Panabo public market for local produce, goods, and everyday city activity.',
     tip: 'Vendor hours, supplies, and coastal-facility availability can change; confirm current conditions locally.'
   }],
   transport: {
-    gettingThere: ['Panabo is served by the provincial road network; confirm the current local connection from the city area to Barangay J.P. Laurel before travel.', 'LakBai does not verify live transport operators, fares, schedules, or final approach conditions.'],
-    gettingAround: ['At the mangrove attraction, follow current signs, barriers, caretaker instructions, and locally open sections of the boardwalk.', 'Do not assume the mapped LakBai segment represents every currently accessible part of the facility.'],
+    gettingThere: ['Panabo is served by the provincial road network; confirm the current local connection from the city area to Barangay J.P. Laurel before travel.', 'Transport operators, fares, schedules, and final approach conditions can change.'],
+    gettingAround: ['At the mangrove attraction, follow current signs, barriers, caretaker instructions, and locally open sections of the boardwalk.', 'The mapped route covers only part of the facility; use local signs for areas beyond it.'],
     localTips: ['Tide, weather, maintenance, and temporary access conditions can change the experience.', 'Check current local conditions before traveling to the coastal site.']
   },
   safety: {

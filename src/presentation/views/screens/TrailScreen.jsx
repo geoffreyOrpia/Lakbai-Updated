@@ -20,7 +20,7 @@ export const TrailScreen = ({
   if (!state.hasPack || !trail) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <BackAction label="Back" onPress={() => viewModel.back()} />
-        <InfoBanner tone="warn" text={state.error ?? 'This trail is unavailable offline.'} />
+        <InfoBanner tone="warn" text={state.error ?? 'This trail is unavailable.'} />
       </ScrollView>;
   }
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -31,7 +31,6 @@ export const TrailScreen = ({
         <View style={styles.statRow}>
           <Stat icon="footsteps-outline" value={formatKm(state.routeDistanceKm || trail.distanceKm)} label="Mapped route" />
           <Stat icon="time-outline" value={formatDurationMinutes(trail.durationMin)} label="Est. time" />
-          <Stat icon="cloud-offline-outline" value="Local" label="Map" />
           <Stat icon="barbell-outline" value={trail.difficulty} label="Level" />
         </View>
       </View>
@@ -47,13 +46,13 @@ export const TrailScreen = ({
           <View style={styles.verificationHeader}>
             <Ionicons name="shield-checkmark-outline" size={18} color={colors.primary} />
             <View style={styles.verificationCopy}>
-              <Text style={styles.verificationEyebrow}>VERIFIED TRAIL GEOMETRY</Text>
+              <Text style={styles.verificationEyebrow}>TRAIL STATUS</Text>
               <Text style={styles.verificationTitle}>{trail.verification.label}</Text>
             </View>
           </View>
           <Text style={styles.verificationText}>{trail.verification.summary}</Text>
           <Text style={styles.verificationMeta}>
-            Checked {trail.verification.verifiedAt} · {trail.verification.geometrySource}
+            Checked {trail.verification.verifiedAt}
           </Text>
         </View> : null}
 
@@ -87,7 +86,7 @@ export const TrailScreen = ({
             <Text style={styles.nextEyebrow}>NEXT STOP</Text>
             <Text style={styles.nextName}>{state.nextWaypoint.name}</Text>
             <Text style={styles.nextDistance}>
-              {state.distanceToNextWaypointKm != null ? `${Math.max(1, Math.round(state.distanceToNextWaypointKm * 1000))} m along trail` : 'Ahead on the verified route'}
+              {state.distanceToNextWaypointKm != null ? `${Math.max(1, Math.round(state.distanceToNextWaypointKm * 1000))} m along trail` : 'Ahead on the mapped trail'}
             </Text>
             {state.nextWaypoint.note ? <Text style={styles.nextNote}>{state.nextWaypoint.note}</Text> : null}
           </View>
@@ -98,11 +97,11 @@ export const TrailScreen = ({
         text="You have reached the end of this mapped trail."
       /> : null}
 
-      {state.tracking && state.accuracyM != null ? <InfoBanner tone={viewModel.lowAccuracy ? "warn" : "info"} text={viewModel.lowAccuracy ? `GPS accuracy is about ${Math.round(state.accuracyM)} m. Trail progress and off-route warnings are paused until accuracy improves.` : `GPS accuracy is about ${Math.round(state.accuracyM)} m.`} /> : null}
+      {state.tracking && state.accuracyM != null && viewModel.lowAccuracy ? <InfoBanner tone="warn" text={`GPS accuracy is about ${Math.round(state.accuracyM)} m. Trail progress and off-route warnings are paused until accuracy improves.`} /> : null}
 
       {viewModel.offTrail && state.tracking ? <InfoBanner
         tone="warn"
-        text={`You are about ${Math.round(state.offTrailM ?? 0)} m from the verified trail line. Move back toward the mapped route and confirm nearby signs before continuing.`}
+        text={`You are about ${Math.round(state.offTrailM ?? 0)} m from the mapped trail. Move back toward the route and confirm nearby signs before continuing.`}
       /> : null}
 
       {state.permission === 'denied' ? <InfoBanner tone="danger" text="Location permission was declined. Enable it in system settings to follow the trail with GPS." /> : null}
@@ -132,7 +131,7 @@ export const TrailScreen = ({
       <View style={styles.trailNote}>
         <Ionicons name="navigate-outline" size={17} color={colors.primary} />
         <Text style={styles.trailNoteText}>
-          Trail navigation is fully in-app and works from saved map data plus foreground GPS. Phone location can still drift under canopy or near structures, so follow posted signs and local instructions and do not rely on LakBai as an emergency navigation device.
+          GPS can drift under tree cover or near structures. Follow posted signs and local instructions.
         </Text>
       </View>
     </ScrollView>;

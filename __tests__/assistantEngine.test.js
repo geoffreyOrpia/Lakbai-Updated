@@ -44,6 +44,28 @@ describe('Ask LakBai grounded assistant engine', () => {
     ]));
   });
 
+  test('keeps destination context for "what can I do there?" instead of replacing it with saved interests', () => {
+    const knowledge = knowledgeFixture();
+    const first = respondToAssistant({
+      message: 'Tell me about Samal',
+      knowledge,
+    });
+    const response = respondToAssistant({
+      message: 'What can I do there?',
+      knowledge,
+      context: first.context,
+      preferences: {
+        interests: ['Wildlife'],
+        pace: 'balanced',
+      },
+    });
+
+    expect(response.text).toContain('Kaputian Beach Park');
+    expect(response.text).not.toContain('Based on your saved interests');
+    expect(response.recommendationIds).toBeUndefined();
+    expect(response.context.activeDestinationId).toBe('samal');
+  });
+
   test('does not bypass the existing save-before-offline-navigation flow', () => {
     const knowledge = knowledgeFixture();
     const response = respondToAssistant({
@@ -51,7 +73,7 @@ describe('Ask LakBai grounded assistant engine', () => {
       knowledge,
     });
 
-    expect(response.text).toContain('needs to be saved');
+    expect(response.text).toContain('prepare the offline guide automatically');
     expect(response.actions).toEqual([
       expect.objectContaining({
         type: 'open-destination',
@@ -68,8 +90,8 @@ describe('Ask LakBai grounded assistant engine', () => {
       knowledge,
     });
 
-    expect(response.text).toContain('does not currently have a source-reviewed live value');
-    expect(response.text).toContain('will not guess');
+    expect(response.text).toContain('do not have a verified live value');
+    expect(response.text).toContain('current details');
     expect(response.text).not.toMatch(/₱\s?\d|PHP\s?\d/i);
   });
 
@@ -80,7 +102,7 @@ describe('Ask LakBai grounded assistant engine', () => {
       knowledge,
     });
 
-    expect(response.text).toContain('source-reviewed');
+    expect(response.text).toContain('I found');
     expect(response.recommendationIds.length).toBeGreaterThan(0);
     expect(response.recommendationIds.some(id => id.startsWith('monfort-bat-sanctuary:'))).toBe(true);
   });
@@ -96,7 +118,7 @@ describe('Ask LakBai grounded assistant engine', () => {
       },
     });
 
-    expect(response.text).toContain('Using your saved interests');
+    expect(response.text).toContain('Based on your saved interests');
     expect(response.recommendationIds.length).toBeGreaterThan(0);
     expect(response.recommendationIds.some(id => id.startsWith('monfort-bat-sanctuary:'))).toBe(true);
   });
@@ -112,7 +134,7 @@ describe('Ask LakBai grounded assistant engine', () => {
       },
     });
 
-    expect(response.text).not.toContain('Using your saved interests');
+    expect(response.text).not.toContain('Based on your saved interests');
     expect(response.recommendationIds.some(id => id.startsWith('monfort-bat-sanctuary:'))).toBe(false);
   });
 
@@ -177,7 +199,7 @@ describe('Ask LakBai grounded assistant engine', () => {
     });
 
     expect(response.text).toContain('911');
-    expect(response.text).toContain('verified National Emergency Hotline');
+    expect(response.text).toContain('dial 911');
   });
 
   test('requests location before claiming a nearby or ferry-avoid recommendation', () => {

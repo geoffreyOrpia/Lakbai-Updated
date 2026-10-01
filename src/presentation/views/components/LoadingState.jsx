@@ -3,18 +3,18 @@ import { colors, radius, spacing } from "../../../theme.jsx";
 
 export const LoadingState = ({
   title = 'Loading…',
-  text = 'Reading saved data from this device.'
+  text = null
 }) => {
   return <View
       accessibilityRole="progressbar"
-      accessibilityLabel={`${title}. ${text}`}
+      accessibilityLabel={text ? `${title}. ${text}` : title}
       accessibilityLiveRegion="polite"
       style={styles.card}
     >
       <ActivityIndicator size="small" color={colors.primary} />
       <View style={styles.copy}>
         <Text style={styles.title}>{title}</Text>
-        <Text style={styles.text}>{text}</Text>
+        {text ? <Text style={styles.text}>{text}</Text> : null}
       </View>
     </View>;
 };

@@ -11,8 +11,7 @@ import { LoadingState } from "../components/LoadingState.jsx";
 import { SectionHeader } from "../components/SectionHeader.jsx";
 import { SecondaryButton } from "../components/Buttons.jsx";
 import { ScreenIntro } from "../components/ScreenIntro.jsx";
-import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
-import { formatSizeKb } from "../../../core/utils/format.jsx";
+import { colors, layout, radius, spacing } from "../../../theme.jsx";
 export const LibraryScreen = ({
   viewModel,
   onOpenDestination,
@@ -29,7 +28,7 @@ export const LibraryScreen = ({
   if (state.loading && !state.items.length) {
     return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AppHeader onOpenSettings={onOpenSettings} />
-        <LoadingState title="Opening Saved places" text="Opening your saved places." />
+        <LoadingState title="Loading saved places" />
       </ScrollView>;
   }
   if (state.error && !state.items.length) {
@@ -57,24 +56,8 @@ export const LibraryScreen = ({
       <ScreenIntro
         eyebrow="ON THIS DEVICE"
         title="Saved places"
-        subtitle="Favorites bookmark places you like. Save a guide and map for offline use."
+        subtitle="Favorites mark places you like; downloaded guides keep maps and destination information available without internet."
       />
-
-      <View style={[styles.summaryCard, shadows.card]}>
-        <View style={styles.summaryIcon}>
-          <Ionicons name="phone-portrait-outline" size={22} color={colors.primary} />
-        </View>
-        <View style={styles.summaryCopy}>
-          <Text style={styles.summaryTitle}>Offline saved places</Text>
-          <Text style={styles.summaryText}>
-            {saved.length} {saved.length === 1 ? 'guide' : 'guides'} · {formatSizeKb(viewModel.totalOfflineSizeBytes / 1024)} on your phone
-          </Text>
-        </View>
-        <View style={styles.readyPill}>
-          <View style={styles.readyDot} />
-          <Text style={styles.readyText}>Ready offline</Text>
-        </View>
-      </View>
 
       {state.error ? <InfoBanner tone="warn" text={state.error} /> : null}
 
@@ -123,7 +106,7 @@ export const LibraryScreen = ({
       <View style={styles.note}>
         <Ionicons name="information-circle-outline" size={17} color={colors.muted} />
         <Text style={styles.noteText}>
-          Saved guides and maps work without internet. Removing an offline copy keeps your favorites and trips.
+          Removing a downloaded guide does not remove it from Favorites or Trips.
         </Text>
       </View>
     </ScrollView>;
@@ -145,59 +128,6 @@ const styles = StyleSheet.create({
     marginTop: 3,
     color: colors.muted,
     fontSize: 12.5
-  },
-  summaryCard: {
-    minHeight: 74,
-    padding: spacing.md,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: '#CBE6D5',
-    backgroundColor: colors.primarySofter,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm
-  },
-  summaryIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: radius.md,
-    backgroundColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  summaryCopy: {
-    flex: 1
-  },
-  summaryTitle: {
-    color: colors.primaryDark,
-    fontSize: 13.5,
-    fontWeight: '800'
-  },
-  summaryText: {
-    marginTop: 2,
-    color: colors.muted,
-    fontSize: 11.3
-  },
-  readyPill: {
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: radius.pill,
-    backgroundColor: colors.white,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4
-  },
-  readyDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.primary
-  },
-  readyText: {
-    color: colors.primary,
-    fontSize: 9.5,
-    fontWeight: '900',
-    textTransform: 'uppercase'
   },
   section: {
     gap: spacing.sm

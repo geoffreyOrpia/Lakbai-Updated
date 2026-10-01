@@ -18,12 +18,6 @@ const MessageBubble = ({ message, onSuggestion, onAction }) => {
   const assistant = message.role === 'assistant';
   return <View style={[styles.messageRow, !assistant && styles.messageRowUser]}>
       <View style={[styles.bubble, assistant ? styles.assistantBubble : styles.userBubble]}>
-        {assistant ? <View style={styles.assistantLabelRow}>
-            <View style={styles.assistantIcon}>
-              <Ionicons name="sparkles" size={13} color={colors.primary} />
-            </View>
-            <Text style={styles.assistantLabel}>ASK LAKBAI</Text>
-          </View> : null}
         <Text style={[styles.messageText, !assistant && styles.userMessageText]}>{message.text}</Text>
         {(message.actions ?? []).length ? <View style={styles.actionList}>
             {message.actions.map((action, index) => <Pressable
@@ -38,7 +32,7 @@ const MessageBubble = ({ message, onSuggestion, onAction }) => {
             </Pressable>)}
           </View> : null}
         {(message.suggestions ?? []).length ? <View style={styles.suggestions}>
-            {message.suggestions.map(suggestion => <Pressable
+            {message.suggestions.slice(0, 2).map(suggestion => <Pressable
               key={suggestion}
               accessibilityRole="button"
               accessibilityLabel={suggestion}
@@ -65,7 +59,7 @@ export const AssistantScreen = ({ viewModel }) => {
     return <View style={styles.loadingScreen}>
         <ActivityIndicator size="small" color={colors.primary} />
         <Text style={styles.loadingTitle}>Opening Ask LakBai</Text>
-        <Text style={styles.loadingText}>Preparing local travel knowledge from this device.</Text>
+        <Text style={styles.loadingText}>Loading local destination information.</Text>
       </View>;
   }
 
@@ -82,7 +76,6 @@ export const AssistantScreen = ({ viewModel }) => {
           <View style={styles.titleCopy}>
             <Text style={styles.eyebrow}>LOCAL TRAVEL ASSISTANT</Text>
             <Text style={styles.title}>Ask LakBai</Text>
-            <Text style={styles.subtitle}>Grounded in LakBai’s saved and bundled Davao del Norte guides.</Text>
           </View>
         </View>
       </View>
@@ -135,9 +128,6 @@ export const AssistantScreen = ({ viewModel }) => {
             : <Ionicons name="arrow-up" size={19} color={colors.onPrimary} />}
         </Pressable>
       </View>
-      <Text style={styles.disclaimer}>
-        Ask LakBai does not guess live fees, schedules, hours, weather, or access conditions.
-      </Text>
     </KeyboardAvoidingView>;
 };
 
@@ -181,12 +171,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '900',
   },
-  subtitle: {
-    marginTop: 2,
-    color: colors.muted,
-    fontSize: 10.5,
-    lineHeight: 15,
-  },
   messages: {
     paddingHorizontal: layout.screenGutter,
     paddingVertical: spacing.md,
@@ -211,25 +195,6 @@ const styles = StyleSheet.create({
   },
   userBubble: {
     backgroundColor: colors.text,
-  },
-  assistantLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  assistantIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: radius.pill,
-    backgroundColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  assistantLabel: {
-    color: colors.primary,
-    fontSize: 8.5,
-    fontWeight: '900',
-    letterSpacing: 0.8,
   },
   messageText: {
     color: colors.textSecondary,
@@ -309,15 +274,6 @@ const styles = StyleSheet.create({
   },
   sendDisabled: {
     opacity: 0.4,
-  },
-  disclaimer: {
-    paddingHorizontal: layout.screenGutter,
-    paddingTop: 7,
-    paddingBottom: spacing.sm,
-    color: colors.muted,
-    fontSize: 9,
-    lineHeight: 13,
-    textAlign: 'center',
   },
   loadingScreen: {
     flex: 1,

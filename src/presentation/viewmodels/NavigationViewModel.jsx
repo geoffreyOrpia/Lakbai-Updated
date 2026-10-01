@@ -135,6 +135,8 @@ export class NavigationViewModel extends ViewModel {
       alternativeBaseRoute: null,
       alternativesLoading: false,
       selectedAlternativeId: null,
+      switchTargets: [],
+      switchingDestination: false,
       journeyPhase: resumeProgress.journeyPhase ?? null,
       wrongWay: resumeProgress.wrongWay === true,
       arrived: resumeProgress.arrived === true,
@@ -347,7 +349,7 @@ export class NavigationViewModel extends ViewModel {
         tracking: backgroundActive,
         gpsError: backgroundActive
           ? 'Foreground GPS is reconnecting. Background navigation is still active.'
-          : 'LakBai could not resume live GPS navigation.',
+          : 'Live navigation could not resume.',
       });
     }
   };
@@ -387,6 +389,7 @@ export class NavigationViewModel extends ViewModel {
   };
 
   load = async () => {
+    await this.loadSwitchTargets();
     try {
       const [bundle, bundledBasemap, savedPack, bundledPack] = await Promise.all([
         this.destinationDeps.packRepository.getOfflineBundleStatus?.(this.state.destinationId) ?? null,
@@ -427,7 +430,7 @@ export class NavigationViewModel extends ViewModel {
           : this.state.routePois,
         offlineBasemapUri: bundle?.basemapUri ?? bundledBasemap?.uri ?? null,
         error: !graph
-          ? 'Offline road routing is not available for this destination yet.'
+          ? 'Directions are not available for this destination yet.'
           : !(bundle?.basemapUri ?? bundledBasemap?.uri)
           ? 'The saved map could not open. Please try again.'
           : null,
@@ -438,6 +441,218 @@ export class NavigationViewModel extends ViewModel {
       });
     } finally {
       this.setState({ loading: false });
+    }
+  };
+
+  loadSwitchTargets = async () => {
+    try {
+      const [result, savedMeta] = await Promise.all([
+        this.destinationDeps.destinationRepository?.getDestinations?.({}),
+        this.destinationDeps.packRepository.listSavedMeta?.() ?? [],
+      ]);
+      const destinations = result?.items ?? [];
+      const savedIds = new Set((savedMeta ?? []).map(meta => meta.packId));
+      const switchTargets = destinations
+        .filter(destination => (
+          savedIds.has(destination.id)
+          && destination.status === 'available'
+          && destination.offlineNavigation?.target
+          && Number.isFinite(destination.offlineNavigation.target.lat)
+          && Number.isFinite(destination.offlineNavigation.target.lng)
+        ))
+        .map(destination => ({
+          destinationId: destination.id,
+          destinationName: destination.name,
+          area: destination.area,
+          target: destination.offlineNavigation.target,
+          coverage: destination.offlineNavigation.coverage ?? null,
+        }));
+      this.setState({ switchTargets });
+    } catch {
+      this.setState({ switchTargets: [] });
+    }
+  };
+
+  get availableSwitchTargets() {
+    return (this.state.switchTargets ?? []).filter(option => (
+      option.destinationId !== this.state.destinationId
+    ));
+  }
+
+  switchDestination = async option => {
+    if (
+      !this.state.tracking
+      || this.state.switchingDestination
+      || !option?.destinationId
+      || !Number.isFinite(option?.target?.lat)
+      || !Number.isFinite(option?.target?.lng)
+    ) {
+      return { ok: false, message: 'A live route is required before changing destination.' };
+    }
+
+    const origin = this.state.fix
+      ?? await this.locationService.getCurrentFix({ purpose: 'navigation' });
+    if (!origin) {
+      const message = await this.locationService.locationFailureMessage?.(
+        'LakBai needs your current location before changing destination.',
+      );
+      this.setState({
+        gpsError: message ?? 'LakBai needs your current location before changing destination.',
+      });
+      return { ok: false, message };
+    }
+
+    const previous = {
+      destinationId: this.state.destinationId,
+      destinationName: this.state.destinationName,
+      target: this.state.target,
+      multiStops: this.state.multiStops,
+      tripId: this.state.tripId,
+      tripTitle: this.state.tripTitle,
+      completedStopCount: this.state.completedStopCount,
+      trailId: this.state.trailId,
+      trailPreview: this.state.trailPreview,
+      graph: this.state.graph,
+      graphMeta: this.state.graphMeta,
+      offlineBasemapUri: this.state.offlineBasemapUri,
+      offlinePois: this.state.offlinePois,
+      scenicPois: this.state.scenicPois,
+      route: this.state.route,
+      routePois: this.state.routePois,
+      coverage: this.state.coverage,
+      discoveryTarget: this.state.discoveryTarget,
+      coordinateStatus: this.state.coordinateStatus,
+      previewStart: this.state.previewStart,
+      progressPct: this.state.progressPct,
+      distanceAlongKm: this.state.distanceAlongKm,
+      remainingKm: this.state.remainingKm,
+      remainingMin: this.state.remainingMin,
+      usingLiveEta: this.state.usingLiveEta,
+      offRouteM: this.state.offRouteM,
+      nextManeuver: this.state.nextManeuver,
+      distanceToNextManeuverKm: this.state.distanceToNextManeuverKm,
+      journeyPhase: this.state.journeyPhase,
+      wrongWay: this.state.wrongWay,
+      arrived: this.state.arrived,
+    };
+
+    this.setState({
+      switchingDestination: true,
+      rerouting: true,
+      gpsError: null,
+      error: null,
+    });
+
+    try {
+      const [bundle, bundledBasemap, savedPack, bundledPack] = await Promise.all([
+        this.destinationDeps.packRepository.getOfflineBundleStatus?.(option.destinationId) ?? null,
+        this.destinationDeps.packRepository.getOfflineBasemapStatus?.() ?? null,
+        this.destinationDeps.packRepository.getSavedPack?.(option.destinationId) ?? null,
+        this.destinationDeps.packRepository.getBundledPack?.(option.destinationId) ?? null,
+      ]);
+      const graph = await this.routingDeps.routingGraphRepository.getForDestination(
+        option.destinationId,
+        bundle?.routingGraphUri ?? null,
+        option.target,
+        bundle?.sharedRouting ?? null,
+      );
+      if (!graph) throw new Error('Navigation data for that destination is not available on this device.');
+      prepareOfflineRoutingGraph(graph);
+
+      const navigationPack = savedPack ?? bundledPack;
+      const offlinePois = (navigationPack?.spots ?? []).filter(spot => (
+        haversineKm(spot, option.target) > 0.08
+      ));
+      const scenicPois = offlinePois.filter(spot => (
+        SCENIC_POI_CATEGORIES.has(String(spot.category ?? '').toLowerCase())
+      ));
+
+      this.setState({
+        destinationId: option.destinationId,
+        destinationName: option.destinationName,
+        target: option.target,
+        multiStops: [],
+        tripId: null,
+        tripTitle: null,
+        completedStopCount: 0,
+        trailId: null,
+        trailPreview: null,
+        graph,
+        graphMeta: graph?.meta ?? null,
+        offlinePois,
+        scenicPois,
+        coverage: graph?.meta?.name ?? option.coverage ?? this.state.coverage,
+        discoveryTarget: false,
+        coordinateStatus: null,
+        previewStart: null,
+        offlineBasemapUri: bundle?.basemapUri
+          ?? bundledBasemap?.uri
+          ?? this.state.offlineBasemapUri,
+      });
+
+      const result = await this.calculateRouteResult(origin);
+      if (!result.ok) throw new Error('No route could be found from your current location to that destination.');
+
+      this.stopSpeech();
+      this.resetSpokenGuidance();
+      this.resetNavigationEvidence();
+      this.setState({
+        route: result,
+        alternativeRoutes: [],
+        alternativeBaseRoute: null,
+        selectedAlternativeId: null,
+        progressPct: 0,
+        distanceAlongKm: 0,
+        remainingKm: result.distanceKm,
+        remainingMin: result.type === 'ferry-journey'
+          ? remainingFerryJourneyDurationMin(result, 0)
+          : result.type === 'road-trail-journey'
+          ? remainingRoadTrailDurationMin(result, 0)
+          : result.type === 'multi-stop-journey'
+          ? remainingMultiStopDurationMin(result, 0)
+          : result.durationMin,
+        usingLiveEta: false,
+        offRouteM: 0,
+        nextManeuver: result.maneuvers?.[1] ?? result.maneuvers?.[0] ?? null,
+        distanceToNextManeuverKm: result.maneuvers?.[1]?.distanceAlongKm ?? null,
+        routePois: placesAlongRoute(result, offlinePois),
+        journeyPhase: (
+          result.type === 'ferry-journey'
+          || result.type === 'road-trail-journey'
+          || result.type === 'multi-stop-journey'
+        ) ? 'road' : null,
+        wrongWay: false,
+        arrived: false,
+      });
+      this.applyFix(origin);
+
+      if (this.backgroundNavigationActive && this.locationService.startBackgroundNavigation) {
+        try {
+          await this.locationService.stopBackgroundNavigation?.();
+          const restarted = await this.locationService.startBackgroundNavigation({
+            destinationName: option.target.label ?? option.destinationName,
+          });
+          this.backgroundNavigationActive = restarted === true;
+          this.setState({ backgroundNavigation: restarted === true });
+        } catch {
+          this.backgroundNavigationActive = false;
+          this.setState({
+            backgroundNavigation: false,
+            backgroundWarning: 'Background navigation stopped after changing destination. Keep LakBai open for live directions.',
+          });
+        }
+      }
+
+      if (this.activeSessionId) await this.persistActiveNavigationSession();
+      return { ok: true };
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : 'The destination could not be changed.';
+      this.setState({ ...previous, gpsError: message });
+      return { ok: false, message };
+    } finally {
+      this.setState({ switchingDestination: false, rerouting: false });
     }
   };
 
@@ -605,8 +820,8 @@ export class NavigationViewModel extends ViewModel {
           : result.reason === 'ferry-destination-route-failed'
           ? 'No route was found from the ferry terminal to your destination.'
           : result.reason === 'outside-coverage'
-          ? `Your position is outside the current ${this.state.coverage ?? 'offline-routing coverage'}.`
-          : 'No connected offline route could be found from this position.',
+          ? `Your position is outside the current ${this.state.coverage ?? 'map coverage'}.`
+          : 'No route could be found from this position.',
       });
       return null;
     }
@@ -620,7 +835,7 @@ export class NavigationViewModel extends ViewModel {
       alternativeBaseRoute: null,
       selectedAlternativeId: null,
       coverage: result.type === 'ferry-journey'
-        ? 'Davao del Norte ↔ Samal via source-reviewed ferry link'
+        ? 'Davao del Norte ↔ Samal ferry route'
         : this.state.coverage,
       preview,
       progressPct: 0,
@@ -766,7 +981,7 @@ export class NavigationViewModel extends ViewModel {
     if (!granted) {
       this.setState({
         permission: 'denied',
-        gpsError: 'Location permission is required for live LakBai navigation.',
+        gpsError: 'Location permission is required for live navigation.',
       });
       return;
     }
@@ -823,7 +1038,7 @@ export class NavigationViewModel extends ViewModel {
         backgroundWarning: backgroundGranted
           ? notificationGranted
             ? null
-            : 'Background navigation can continue, but Android notification permission was not allowed. The ongoing navigation status may appear only in Android’s active-apps area.'
+            : 'Background navigation is on, but notifications are blocked. Android may hide the ongoing navigation status.'
           : 'Background location was not allowed. Navigation still works while LakBai stays open.',
       });
       await this.persistActiveNavigationSession();
@@ -844,7 +1059,7 @@ export class NavigationViewModel extends ViewModel {
               backgroundNavigation: true,
               backgroundWarning: notificationGranted
                 ? null
-                : 'Background navigation can continue, but Android notification permission was not allowed. The ongoing navigation status may appear only in Android’s active-apps area.',
+                : 'Background navigation is on, but notifications are blocked. Android may hide the ongoing navigation status.',
             });
             await this.persistActiveNavigationSession();
           }
@@ -881,7 +1096,7 @@ export class NavigationViewModel extends ViewModel {
       this.setState({
         tracking: false,
         backgroundNavigation: false,
-        gpsError: 'LakBai could not start live GPS navigation.',
+        gpsError: 'Live navigation could not start.',
       });
     }
   };

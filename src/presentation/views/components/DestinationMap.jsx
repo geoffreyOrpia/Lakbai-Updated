@@ -174,13 +174,11 @@ export const DestinationMap = ({
             </Text>
           </View> : null}
       </View>
-      <Text style={styles.caption}>
-        {detailedOffline
-          ? 'This saved map works without internet.'
-          : offline
-          ? 'Showing your saved places. Some map details are unavailable.'
+      {!detailedOffline ? <Text style={styles.caption}>
+        {offline
+          ? 'Some map details are unavailable.'
           : 'Online map · © OpenStreetMap contributors'}
-      </Text>
+      </Text> : null}
     </View>;
 };
 

@@ -138,7 +138,7 @@ const seedBundledContent = async db => {
 
   await db.withTransactionAsync(async () => {
     // Regenerate bundled catalog tables only when packaged content changes.
-    // Personal trips, settings, checklists, and library state remain untouched.
+    // Personal trips, settings, and library state remain untouched.
     await db.runAsync('DELETE FROM cached_destinations');
     await db.runAsync('DELETE FROM bundled_packs');
     for (const destination of seedDestinations) {

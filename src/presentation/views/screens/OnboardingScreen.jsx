@@ -15,12 +15,12 @@ export const OnboardingScreen = ({
         </View>
         <Text style={styles.eyebrow}>TRAVEL SETUP · {state.step + 1}/2</Text>
         <Text style={styles.title}>{STEP_TITLES[state.step]}</Text>
-        <Text style={styles.subtitle}>Personalize LakBai so recommendations and preparation fit how you travel.</Text>
+        <Text style={styles.subtitle}>Set defaults for Ask LakBai recommendations and trip drafts.</Text>
       </View>
 
       {state.step === 0 ? <View style={[styles.card, shadows.card]}>
           <Text style={styles.cardTitle}>What draws you to travel?</Text>
-          <Text style={styles.cardText}>Pick one or more. These shape the destinations we highlight first.</Text>
+          <Text style={styles.cardText}>Ask LakBai uses these when your request does not name a specific interest.</Text>
           <View style={styles.interestGrid}>
             {INTEREST_OPTIONS.map(interest => {
           const selected = state.interests.includes(interest);
@@ -38,7 +38,7 @@ export const OnboardingScreen = ({
 
       {state.step === 1 ? <View style={[styles.card, shadows.card]}>
           <Text style={styles.cardTitle}>How do you like to move?</Text>
-          <Text style={styles.cardText}>Your pace guides how we suggest arranging stops in an itinerary.</Text>
+          <Text style={styles.cardText}>Ask LakBai uses this to choose how many stops to include in a trip draft.</Text>
           <View style={styles.paceList}>
             {PACE_OPTIONS.map(option => {
           const selected = state.pace === option.key;

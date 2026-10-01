@@ -13,6 +13,21 @@ import { SectionHeader } from "../components/SectionHeader.jsx";
 import { TrailMiniMap } from "../components/TrailMiniMap.jsx";
 import { colors, layout, radius, shadows, spacing } from "../../../theme.jsx";
 import { formatRelativeTime, formatSizeKb } from "../../../core/utils/format.jsx";
+
+const firstSentence = value => {
+  const text = String(value ?? '').trim();
+  if (!text) return '';
+  const period = text.indexOf('. ');
+  return period >= 0 ? text.slice(0, period + 1) : text;
+};
+
+const durationRangeText = values => {
+  const durations = values.filter(Number.isFinite).sort((a, b) => a - b);
+  if (!durations.length) return null;
+  const min = Math.round(durations[0]);
+  const max = Math.round(durations.at(-1));
+  return min === max ? `~${min} min` : `~${min}–${max} min`;
+};
 export const DestinationScreen = ({
   viewModel
 }) => {
@@ -70,6 +85,17 @@ export const DestinationScreen = ({
   }
   const destination = pack.destination;
   const firstPhoto = destination.photos?.[0];
+  const visitorSpots = (pack.spots ?? []).filter(spot => (
+    !['transport', 'facility', 'town'].includes(String(spot.category ?? '').toLowerCase())
+  ));
+  const featuredSpots = visitorSpots.slice(0, 4);
+  const routeTime = durationRangeText(
+    (pack.routeSuggestions ?? []).map(route => route.estimatedDurationMin),
+  );
+  const trailTime = durationRangeText(
+    (pack.trails ?? []).map(trail => trail.durationMin),
+  );
+  const destinationIntro = firstSentence(destination.description) || destination.summary;
   const runDirections = async place => {
     const result = await viewModel.openDirections(place);
     showSnackbar({
@@ -90,11 +116,26 @@ export const DestinationScreen = ({
       {firstPhoto ? <Text style={styles.photoCredit}>Photo: {firstPhoto.credit}</Text> : null}
 
       <View style={[styles.atAGlanceCard, shadows.soft]}>
-        <Text style={styles.atAGlanceEyebrow}>AT A GLANCE</Text>
-        <Text style={styles.atAGlanceTitle}>What you’ll find</Text>
-        <Text style={styles.atAGlanceSummary}>{destination.summary}</Text>
-        {(destination.highlights ?? []).length ? <View style={styles.atAGlanceHighlights}>
-            {(destination.highlights ?? []).map(highlight => <View key={highlight} style={styles.atAGlanceHighlight}>
+        <Text style={styles.atAGlanceEyebrow}>DISCOVER</Text>
+        <Text style={styles.atAGlanceTitle}>What you’ll find here</Text>
+        <Text style={styles.atAGlanceSummary}>{destinationIntro}</Text>
+        <View style={styles.atAGlanceMeta}>
+          {visitorSpots.length ? <Pill icon="location-outline" text={`${visitorSpots.length} ${visitorSpots.length === 1 ? 'place' : 'places'} to visit`} /> : null}
+          {routeTime ? <Pill icon="time-outline" text={`Route ideas ${routeTime}`} /> : null}
+          {trailTime ? <Pill icon="footsteps-outline" text={`Trail ${trailTime}`} tone="accent" /> : null}
+        </View>
+        {featuredSpots.length ? <View style={styles.atAGlanceSpots}>
+            {featuredSpots.map(spot => <View key={spot.id} style={styles.atAGlanceSpot}>
+                <View style={styles.atAGlanceSpotIcon}>
+                  <Ionicons name="location-outline" size={14} color={colors.primary} />
+                </View>
+                <View style={styles.atAGlanceSpotCopy}>
+                  <Text style={styles.atAGlanceSpotName}>{spot.name}</Text>
+                  <Text style={styles.atAGlanceSpotText} numberOfLines={2}>{spot.description}</Text>
+                </View>
+              </View>)}
+          </View> : (destination.highlights ?? []).length ? <View style={styles.atAGlanceHighlights}>
+            {(destination.highlights ?? []).slice(0, 3).map(highlight => <View key={highlight} style={styles.atAGlanceHighlight}>
                 <View style={styles.atAGlanceDot} />
                 <Text style={styles.atAGlanceHighlightText}>{highlight}</Text>
               </View>)}
@@ -116,25 +157,18 @@ export const DestinationScreen = ({
 
       {state.updateAvailable ? <InfoBanner tone="info" text={`An updated guide is available. Your favorites and trips will stay.`} /> : null}
 
-      <InfoBanner tone="warn" text="Travel conditions, access rules, transport schedules, and local facilities can change. Confirm time-sensitive details with the destination or local authorities before traveling." />
-
       {destination.navigation ? <View style={[styles.locationCard, shadows.card]}>
           <View style={styles.locationHeading}>
             <View style={styles.locationIcon}>
               <Ionicons name="navigate" size={19} color={colors.primary} />
             </View>
             <View style={styles.locationCopy}>
-              <Text style={styles.locationEyebrow}>LOCATION & ROUTE</Text>
+              <Text style={styles.locationEyebrow}>DIRECTIONS</Text>
               <Text style={styles.locationName}>{destination.navigation.label}</Text>
               <Text style={styles.locationArea}>{destination.area}, Davao del Norte</Text>
             </View>
           </View>
-          <Text style={styles.locationNote}>{destination.navigation.note}</Text>
           {destination.offlineNavigation ? <>
-              <View style={styles.routingPilotBadge}>
-                <Ionicons name="cloud-offline-outline" size={13} color={colors.primary} />
-                <Text style={styles.routingPilotText}>WORKS OFFLINE</Text>
-              </View>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Navigate to ${destination.name} with LakBai`}
@@ -146,7 +180,6 @@ export const DestinationScreen = ({
                 <Ionicons name={state.busy ? 'hourglass-outline' : 'navigate'} size={17} color={colors.onPrimary} />
                 <Text style={styles.directionsButtonText}>{state.busy ? 'Preparing…' : 'Get directions'}</Text>
               </Pressable>
-              {!state.saved ? <Text style={styles.connectionHint}>LakBai prepares the offline guide automatically before navigation starts.</Text> : null}
               <Disclosure title="Other navigation options">
                 <Pressable
                   accessibilityRole="button"
@@ -172,7 +205,6 @@ export const DestinationScreen = ({
                 <Ionicons name={state.directionsBusyId === destination.id ? 'hourglass-outline' : 'map-outline'} size={17} color={colors.onPrimary} />
                 <Text style={styles.directionsButtonText}>{state.directionsBusyId === destination.id ? 'Opening Maps…' : 'Open directions'}</Text>
               </Pressable>
-              <Text style={styles.connectionHint}>Requires internet. In Maps, choose “Your location” as the starting point.</Text>
             </>}
         </View> : null}
 
@@ -186,20 +218,12 @@ export const DestinationScreen = ({
           />
         </View> : null}
 
-      <Disclosure title="More about this destination">
-        <View style={[styles.card, shadows.card]}>
-          <Text style={styles.bodyText}>{destination.description}</Text>
-        </View>
-      </Disclosure>
-
       <Disclosure title="Guide & offline details">
       <View style={styles.pillRow}>
         <Pill icon="ellipse" text={`v${pack.version}`} />
         <Pill icon="time-outline" text={formatRelativeTime(pack.updatedAt)} />
         <Pill icon="archive-outline" text={formatSizeKb(pack.sizeKb)} />
         {state.saved ? <Pill icon="checkmark-circle" text="Offline ready" tone="primary" /> : null}
-        {state.offlineBundle?.contextMapUri ? <Pill icon="map-outline" text="Regional map saved" /> : null}
-        {state.offlineBundle?.basemapUri ? <Pill icon="trail-sign-outline" text="Offline roads & water" tone="primary" /> : null}
       </View>
       <Pressable
         accessibilityRole="button"
@@ -272,10 +296,6 @@ export const DestinationScreen = ({
 
       {pack.routeSuggestions?.length ? <View style={styles.section}>
           <SectionHeader eyebrow="Suggested tourist routes" title="Suggested stops" />
-          <InfoBanner
-            tone="info"
-            text="These stops are trip ideas, not turn-by-turn directions. Available walking trails are listed below."
-          />
           <View style={styles.list}>
             {pack.routeSuggestions.map(route => <View key={route.id} style={[styles.routeCard, shadows.card]}>
                 <View style={styles.routeHeader}>
@@ -318,13 +338,9 @@ export const DestinationScreen = ({
           </View>
         </View> : null}
 
-      {pack.trails.length || pack.withheldTrailsCount ? <View style={styles.section}>
+      {pack.trails.length ? <View style={styles.section}>
           <SectionHeader eyebrow="Walking trails" title="Explore a trail" />
-          {pack.withheldTrailsCount ? <InfoBanner
-            tone="warn"
-            text={`${pack.withheldTrailsCount} ${pack.withheldTrailsCount === 1 ? 'trail is' : 'trails are'} still being checked and unavailable for directions.`}
-          /> : null}
-          {pack.trails.length ? <View style={styles.list}>
+          <View style={styles.list}>
             {pack.trails.map(trail => <Pressable
               key={trail.id}
               accessibilityRole="button"
@@ -353,13 +369,13 @@ export const DestinationScreen = ({
                   </View>
                 </View>
               </Pressable>)}
-          </View> : null}
+          </View>
         </View> : null}
 
-      {pack.spots.length ? <View style={styles.section}>
-          <SectionHeader eyebrow="Places to visit" title={`${pack.spots.length} places`} />
+      {visitorSpots.length ? <View style={styles.section}>
+          <SectionHeader eyebrow="Places to visit" title={`${visitorSpots.length} ${visitorSpots.length === 1 ? 'place' : 'places'}`} />
           <View style={[styles.card, shadows.card]}>
-            {pack.spots.map((spot, index) => <View key={spot.id} style={[styles.spotRow, index < pack.spots.length - 1 && styles.spotRowBorder]}>
+            {visitorSpots.map((spot, index) => <View key={spot.id} style={[styles.spotRow, index < visitorSpots.length - 1 && styles.spotRowBorder]}>
                 <View style={styles.spotIcon}>
                   <Ionicons name="location-outline" size={16} color={colors.primary} />
                 </View>
@@ -410,22 +426,11 @@ export const DestinationScreen = ({
         </View>
       </Disclosure>
 
-      <Disclosure title="Safety & local contacts">
+      {pack.safety.reminders?.length ? <Disclosure title="Safety notes">
         <View style={[styles.card, shadows.card]}>
-          <NoteGroup title="Reminders" icon="shield-checkmark-outline" items={pack.safety.reminders} />
-          {pack.safety.emergencyContacts.length ? <View style={styles.contactBlock}>
-              <Text style={styles.noteGroupTitle}>Emergency contacts</Text>
-              {pack.safety.emergencyContacts.map(contact => <View key={contact.label} style={styles.contactRow}>
-                  <Ionicons name="call-outline" size={15} color={colors.danger} />
-                  <View style={styles.contactCopy}>
-                    <Text style={styles.contactLabel}>{contact.label}</Text>
-                    <Text style={styles.contactPhone}>{contact.phone}</Text>
-                  </View>
-                </View>)}
-            </View> : null}
-          {pack.safety.facilities.length ? <Text style={styles.facilities}>Nearby: {pack.safety.facilities.join(' · ')}</Text> : null}
+          <NoteGroup title="For this destination" icon="shield-checkmark-outline" items={pack.safety.reminders} />
         </View>
-      </Disclosure>
+      </Disclosure> : null}
     </ScrollView>;
 };
 const Pill = ({
@@ -526,6 +531,43 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 12.2,
     lineHeight: 18
+  },
+  atAGlanceMeta: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: 2,
+  },
+  atAGlanceSpots: {
+    marginTop: spacing.xs,
+    gap: spacing.sm,
+  },
+  atAGlanceSpot: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  atAGlanceSpotIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.sm,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  atAGlanceSpotCopy: {
+    flex: 1,
+  },
+  atAGlanceSpotName: {
+    color: colors.text,
+    fontSize: 11.8,
+    fontWeight: '900',
+  },
+  atAGlanceSpotText: {
+    marginTop: 1,
+    color: colors.textSecondary,
+    fontSize: 10.4,
+    lineHeight: 14,
   },
   atAGlanceHighlights: {
     gap: 6,
@@ -759,11 +801,6 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     lineHeight: 15
   },
-  locationNote: {
-    color: colors.textSecondary,
-    fontSize: 11.5,
-    lineHeight: 17
-  },
   directionsButton: {
     minHeight: 44,
     borderRadius: radius.md,
@@ -777,24 +814,6 @@ const styles = StyleSheet.create({
     color: colors.onPrimary,
     fontSize: 12.5,
     fontWeight: '900'
-  },
-  routingPilotBadge: {
-    minHeight: 30,
-    alignSelf: 'flex-start',
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: '#CBE6D5',
-    backgroundColor: colors.white,
-    paddingHorizontal: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6
-  },
-  routingPilotText: {
-    color: colors.primary,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0.35
   },
   externalDirectionsButton: {
     minHeight: 42,
@@ -811,12 +830,6 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 11.5,
     fontWeight: '900'
-  },
-  connectionHint: {
-    color: colors.muted,
-    fontSize: 9.8,
-    lineHeight: 14,
-    textAlign: 'center'
   },
   section: {
     gap: spacing.sm

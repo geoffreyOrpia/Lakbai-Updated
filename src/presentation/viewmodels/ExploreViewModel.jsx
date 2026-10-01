@@ -361,7 +361,7 @@ export class ExploreViewModel extends ViewModel {
     } catch (error) {
       return {
         ok: false,
-        message: userMessage(error, 'The offline guide could not be removed.'),
+        message: userMessage(error, 'The downloaded guide could not be removed.'),
       };
     } finally {
       this.setState({ busyId: null });

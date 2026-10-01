@@ -658,8 +658,7 @@ const NavigationMapContent = ({
             <View style={[styles.mapLoadingCard, shadows.card]}>
               <ActivityIndicator size="small" color={colors.primary} />
               <View style={styles.mapLoadingCopy}>
-                <Text style={styles.mapLoadingTitle}>Opening offline map</Text>
-                <Text style={styles.mapLoadingText}>Loading roads, places and navigation details…</Text>
+                <Text style={styles.mapLoadingTitle}>Loading map</Text>
               </View>
             </View>
           </View> : null}
@@ -700,10 +699,10 @@ const NavigationMapContent = ({
       <Text style={styles.caption}>
         {detailedOffline
           ? route.type === 'multi-stop-journey' && itineraryContextData
-            ? 'Works offline · Green: current leg · Gray dashed: later itinerary'
-            : ferryData ? 'Works offline · Dashed line: ferry crossing'
-            : trailData ? 'Works offline · Dashed line: walking trail'
-            : 'Works offline · Drag to move, pinch to zoom'
+            ? 'Green: current leg · Gray dashed: later itinerary'
+            : ferryData ? 'Dashed line: ferry crossing'
+            : trailData ? 'Dashed line: walking trail'
+            : 'Drag to move · Pinch to zoom'
           : 'Map details could not load. Your route and guide places are still available.'}
       </Text>
     </View>;

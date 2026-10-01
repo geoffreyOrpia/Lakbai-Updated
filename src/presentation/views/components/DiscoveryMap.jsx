@@ -24,7 +24,7 @@ const pointCollection = (fix, pins) => ({
 
 export const DiscoveryMap = ({ basemapUri, fix, pins, onDropPin }) => {
   if (!basemapUri) return <View style={styles.unavailable}>
-      <Text style={styles.unavailableTitle}>Offline map unavailable</Text>
+      <Text style={styles.unavailableTitle}>Map unavailable</Text>
       <Text style={styles.unavailableText}>
         The map could not open. You can still search for places and streets.
       </Text>
@@ -81,7 +81,7 @@ export const DiscoveryMap = ({ basemapUri, fix, pins, onDropPin }) => {
         </Map>
       </View>
       <Text style={styles.caption}>
-        Long-press the offline provincial map to save a device-local pin. A dropped pin is your selected coordinate, not a verified entrance or access point.
+        Long-press the map to save a pin. Pins mark the coordinate you chose; they may not be an entrance or access point.
       </Text>
     </View>;
 };

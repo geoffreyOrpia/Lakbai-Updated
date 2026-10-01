@@ -366,6 +366,65 @@ const createFerryVm = () => {
 };
 
 describe('NavigationViewModel', () => {
+  test('changes destination mid-route from the current GPS position without ending tracking', async () => {
+    const { vm, routingDeps } = createVm();
+    await vm.load();
+    await vm.startFromGps();
+    const previousRoute = vm.state.route;
+    vm.setState({ tracking: true });
+
+    const result = await vm.switchDestination({
+      destinationId: 'tagum',
+      destinationName: 'Tagum City',
+      area: 'Tagum City',
+      target: {
+        label: 'New destination',
+        lat: 7.285,
+        lng: 125.6805,
+      },
+      coverage: 'Mainland Davao del Norte',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(vm.state.tracking).toBe(true);
+    expect(vm.state.destinationId).toBe('tagum');
+    expect(vm.state.destinationName).toBe('Tagum City');
+    expect(vm.state.target.label).toBe('New destination');
+    expect(vm.state.route).not.toBe(previousRoute);
+    expect(vm.state.route).toEqual(expect.objectContaining({ ok: true }));
+    expect(vm.state.remainingKm).toBeGreaterThan(0);
+    expect(vm.state.remainingMin).toBeGreaterThan(0);
+    expect(routingDeps.routingGraphRepository.getForDestination).toHaveBeenLastCalledWith(
+      'tagum',
+      'file:///packs/panabo/routing.graph.json',
+      expect.objectContaining({ label: 'New destination' }),
+      null,
+    );
+  });
+
+  test('restores the current route when a mid-route destination switch cannot be calculated', async () => {
+    const { vm, routingDeps } = createVm();
+    await vm.load();
+    await vm.startFromGps();
+    const previousRoute = vm.state.route;
+    const previousTarget = vm.state.target;
+    vm.setState({ tracking: true });
+    routingDeps.routingGraphRepository.getForDestination.mockResolvedValueOnce(null);
+
+    const result = await vm.switchDestination({
+      destinationId: 'tagum',
+      destinationName: 'Tagum City',
+      target: { label: 'Unavailable target', lat: 7.285, lng: 125.6805 },
+    });
+
+    expect(result.ok).toBe(false);
+    expect(vm.state.tracking).toBe(true);
+    expect(vm.state.destinationId).toBe('panabo');
+    expect(vm.state.target).toEqual(previousTarget);
+    expect(vm.state.route).toBe(previousRoute);
+    expect(vm.state.switchingDestination).toBe(false);
+  });
+
   test('keeps a foreground GPS watch while Android background navigation is active', async () => {
     const { vm, locationService, routingDeps } = createVm();
     const navigationSessionRepository = {
@@ -425,7 +484,7 @@ describe('NavigationViewModel', () => {
 
     expect(vm.state.backgroundNavigation).toBe(true);
     expect(vm.state.notificationPermission).toBe('denied');
-    expect(vm.state.backgroundWarning).toContain('active-apps area');
+    expect(vm.state.backgroundWarning).toContain('notifications are blocked');
   });
 
   test('falls back to the foreground GPS watch when background permission is denied', async () => {
@@ -557,7 +616,7 @@ describe('NavigationViewModel', () => {
       totalDurationKnown: false,
     }));
     expect(vm.state.remainingMin).toBeGreaterThanOrEqual(30);
-    expect(vm.state.coverage).toContain('ferry link');
+    expect(vm.state.coverage).toContain('ferry route');
 
     await vm.startNavigation();
     const reroute = jest.spyOn(vm, 'rerouteFrom').mockResolvedValue();

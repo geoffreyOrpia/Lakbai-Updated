@@ -54,7 +54,7 @@ describe('release catalog safety', () => {
       expect(pack.destination.verification.reviewedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(pack.destination.verification.reviewMethod).toBe('online-source-review');
       expect(pack.destination.verification.fieldVerified).toBe(false);
-      expect(pack.destination.verification.operationalNote).toContain('not a field inspection');
+      expect(pack.destination.verification.operationalNote).toContain('not checked on site');
       if (pack.destination.status === 'available') {
         expect(pack.destination.verification.sources.length).toBeGreaterThan(0);
         for (const source of pack.destination.verification.sources) {
@@ -91,9 +91,9 @@ describe('release catalog safety', () => {
     const panabo = seedPacks.find(pack => pack.id === 'panabo');
     const trail = panabo?.trails[0];
 
-    expect(trail.description).toContain('Historical Panabo City pages report differing total boardwalk lengths');
-    expect(trail.description).toContain('approximately 214-meter OpenStreetMap segment');
-    expect(trail.verification.summary).toContain('different boardwalk lengths');
+    expect(trail.description).toContain('approximately 214-meter mapped pedestrian segment');
+    expect(trail.description).toContain('published historical lengths differ');
+    expect(trail.verification.summary).toContain('does not represent the full current boardwalk');
     expect(trail.verification.summary).not.toContain('reports a 430-meter boardwalk');
   });
 
