@@ -38,7 +38,25 @@ npm ci
 npm start
 ```
 
-MapLibre uses native code, so map-enabled testing requires a development/native build rather than Expo Go.
+LakBai requires its own development app on your phone because MapLibre uses native code that Expo Go does not include. Expo Go cannot run all of LakBai's existing features. The QR code from `npm start` opens the LakBai development app, so Expo Go may ignore it.
+
+For Android, create the development app once:
+
+```bash
+npx eas-cli build --platform android --profile development
+```
+
+Sign in to your Expo account when prompted, then install the APK from the build link on your phone. Run `npm start` on your computer with both devices on the same Wi-Fi network. Scan the QR code with your phone camera or open the installed LakBai development app and select the development server.
+
+If your Wi-Fi blocks the connection, use:
+
+```bash
+npm run start:tunnel
+```
+
+Accept Expo's prompt to install its tunnel helper if needed. Keep the server running while testing. Rebuild the development app when native dependencies or native configuration change; ordinary screen and logic edits only need the running server.
+
+`npm run start:go` explicitly generates an Expo Go QR code for troubleshooting, but it does not add MapLibre support to Expo Go. This project uses SDK 54, so Expo Go would also need a compatible SDK 54 version. Use the development app to test the complete project.
 
 Run the full project checks with:
 

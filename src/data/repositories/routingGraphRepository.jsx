@@ -1,10 +1,16 @@
 import { validateCompactRoutingGraph } from '../../core/routing/compactGraph.jsx';
 import { File } from 'expo-file-system';
+import { Platform } from 'react-native';
 import { getBundledRoutingGraph } from '../assets/routingGraphs.jsx';
 import { routingRegionFor } from '../assets/routingRegionAssets.jsx';
 import { sharedRoutingStorage } from '../services/sharedRoutingStorage.jsx';
 
-const defaultReadText = uri => new File(uri).text();
+const defaultReadText = uri => Platform.OS === 'web'
+  ? fetch(uri).then(response => {
+    if (!response.ok) throw new Error('Saved routing data could not be read');
+    return response.text();
+  })
+  : new File(uri).text();
 export class BundledRoutingGraphRepository {
   constructor(readText = defaultReadText, sharedStorage = sharedRoutingStorage) {
     this.readText = readText;
